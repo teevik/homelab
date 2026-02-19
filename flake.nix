@@ -13,12 +13,31 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nixidy = {
+      url = "github:arnarg/nixidy";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
     inputs:
-    inputs.blueprint {
-      inherit inputs;
-      systems = [ "x86_64-linux" ];
+    let
+      system = "x86_64-linux";
+
+      blueprintOutputs = inputs.blueprint {
+        inherit inputs;
+        systems = [ system ];
+      };
+
+      pkgs = inputs.nixpkgs.legacyPackages.${system};
+    in
+    blueprintOutputs
+    // {
+      nixidyEnvs.${system} = inputs.nixidy.lib.mkEnvs {
+        inherit pkgs;
+
+        envs.homelab.modules = [ ./kubernetes/homelab.nix ];
+      };
     };
 }
