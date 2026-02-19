@@ -17,13 +17,13 @@
   disko.devices = import ./disk-config.nix { disks = [ "/dev/nvme0n1" ]; };
 
   # Networking
-  networking.hostName = "homelab-1";
+  networking.hostName = "homelab-2";
 
   # Ignore lid close so the laptop doesn't sleep
   services.logind.settings.Login.HandleLidSwitch = "ignore";
 
-  # Initial HA cluster server
-  homelab.kubernetes.clusterInit = true;
+  # Join existing HA cluster
+  homelab.kubernetes.serverAddr = "https://homelab-1:6443";
 
   nixpkgs.hostPlatform = "x86_64-linux";
   system.stateVersion = "25.05";

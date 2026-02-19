@@ -19,3 +19,6 @@ install TARGET-IP HOST:
 
   # Reboot
   # ssh root@{{TARGET-IP}} "reboot"
+
+deploy NAME:
+  nh os switch .#nixosConfigurations.{{NAME}} --target-host {{NAME}} --hostname {{NAME}}

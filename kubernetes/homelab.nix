@@ -82,9 +82,7 @@
 
       values = {
         defaultSettings = {
-          # Single-node setup: only 1 replica needed
-          # TODO: increase for 3 pc setup
-          defaultReplicaCount = 1;
+          defaultReplicaCount = 3;
         };
       };
     };
