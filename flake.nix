@@ -23,6 +23,11 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nixhelm = {
+      url = "github:farcaller/nixhelm";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -41,6 +46,8 @@
     // {
       nixidyEnvs.${system} = inputs.nixidy.lib.mkEnvs {
         inherit pkgs;
+
+        charts = inputs.nixhelm.chartsDerivations.${system};
 
         envs.homelab.modules = [ ./kubernetes/homelab.nix ];
       };

@@ -13,8 +13,6 @@
     flake.nixosModules.kubernetes
   ];
 
-  homelab.kubernetes.enable = true;
-
   # Disk configuration
   disko.devices = import ./disk-config.nix { disks = [ "/dev/nvme0n1" ]; };
 

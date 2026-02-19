@@ -28,7 +28,12 @@ in
   };
 
   # Networking
-  networking.networkmanager.enable = true;
+  networking = {
+    networkmanager.enable = true;
+    firewall.enable = false;
+
+    firewall.trustedInterfaces = [ "tailscale0" ];
+  };
 
   # Tailscale
   services.tailscale = {
@@ -37,8 +42,6 @@ in
     authKeyFile = config.sops.secrets.tailscale_key.path;
     extraUpFlags = [ "--operator=teevik" ];
   };
-
-  networking.firewall.trustedInterfaces = [ "tailscale0" ];
 
   # Sops secrets
   sops.defaultSopsFile = ../../secrets.yaml;
