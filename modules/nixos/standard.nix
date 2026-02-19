@@ -1,8 +1,16 @@
-{ pkgs, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 {
   # Boot
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+
+  # Autologin
+  services.getty.autologinUser = lib.mkForce "teevik";
 
   # Enable SSH
   services.openssh = {
@@ -15,6 +23,23 @@
 
   # Networking
   networking.networkmanager.enable = true;
+
+  # Tailscale
+  services.tailscale = {
+    enable = true;
+    openFirewall = true;
+    authKeyFile = config.sops.secrets.tailscale_key.path;
+    extraUpFlags = [ "--operator=teevik" ];
+  };
+
+  networking.firewall.trustedInterfaces = [ "tailscale0" ];
+
+  # Sops secrets
+  sops.defaultSopsFile = ../../secrets.yaml;
+  sops.age.keyFile = "/home/teevik/.config/sops/age/keys.txt";
+  sops.age.sshKeyPaths = [ ];
+
+  sops.secrets.tailscale_key = { };
 
   # System user
   users.users.teevik = {
