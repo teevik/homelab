@@ -6,61 +6,6 @@
   nixidy.target.branch = "main";
   nixidy.target.rootPath = "./manifests/homelab";
 
-  # Traefik ingress controller
-  applications.traefik = {
-    namespace = "traefik";
-    createNamespace = true;
-
-    helm.releases.traefik = {
-      chart = charts.traefik.traefik;
-
-      values = {
-        ingressClass = {
-          enabled = true;
-          isDefaultClass = true;
-        };
-
-        # Expose Traefik to the tailnet via Tailscale ProxyGroup (HA mode)
-        service = {
-          loadBalancerClass = "tailscale";
-          annotations = {
-            "tailscale.com/proxy-group" = "ingress";
-            "tailscale.com/hostname" = "homelab";
-          };
-        };
-      };
-    };
-
-    # Wildcard TLS certificate and Traefik default TLS store
-    yamls = [
-      ''
-        apiVersion: cert-manager.io/v1
-        kind: Certificate
-        metadata:
-          name: lab-teevik-no-wildcard
-          namespace: traefik
-        spec:
-          secretName: lab-teevik-no-tls
-          issuerRef:
-            name: letsencrypt
-            kind: ClusterIssuer
-          dnsNames:
-            - "lab.teevik.no"
-            - "*.lab.teevik.no"
-      ''
-      ''
-        apiVersion: traefik.io/v1alpha1
-        kind: TLSStore
-        metadata:
-          name: default
-          namespace: traefik
-        spec:
-          defaultCertificate:
-            secretName: lab-teevik-no-tls
-      ''
-    ];
-  };
-
   applications.tailscale-operator = {
     namespace = "tailscale";
     createNamespace = true;
@@ -117,49 +62,6 @@
     ];
   };
 
-  # cert-manager for TLS certificates
-  applications.cert-manager = {
-    namespace = "cert-manager";
-    createNamespace = true;
-
-    helm.releases.cert-manager = {
-      chart = charts.jetstack.cert-manager;
-
-      values = {
-        crds.enabled = true;
-
-        # Use public DNS for ACME DNS-01 propagation checks
-        # (cluster DNS can't resolve _acme-challenge records)
-        extraArgs = [
-          "--dns01-recursive-nameservers-only"
-          "--dns01-recursive-nameservers=1.1.1.1:53,8.8.8.8:53"
-        ];
-      };
-    };
-
-    # ClusterIssuer for Let's Encrypt via Cloudflare DNS-01 challenge
-    yamls = [
-      ''
-        apiVersion: cert-manager.io/v1
-        kind: ClusterIssuer
-        metadata:
-          name: letsencrypt
-        spec:
-          acme:
-            email: teemuvikoren1@gmail.com
-            server: https://acme-v02.api.letsencrypt.org/directory
-            privateKeySecretRef:
-              name: letsencrypt-account-key
-            solvers:
-              - dns01:
-                  cloudflare:
-                    apiTokenSecretRef:
-                      name: cloudflare-api-token
-                      key: api-token
-      ''
-    ];
-  };
-
   # Longhorn distributed storage
   applications.longhorn = {
     namespace = "longhorn-system";
@@ -172,33 +74,6 @@
         defaultSettings = {
           defaultReplicaCount = 3;
         };
-      };
-    };
-  };
-
-  # external-dns for automatic Cloudflare DNS record management
-  applications.external-dns = {
-    namespace = "external-dns";
-    createNamespace = true;
-
-    helm.releases.external-dns = {
-      chart = charts."external-dns"."external-dns";
-
-      values = {
-        provider.name = "cloudflare";
-        sources = [ "ingress" ];
-        domainFilters = [ "teevik.no" ];
-        policy = "sync";
-
-        env = [
-          {
-            name = "CF_API_TOKEN";
-            valueFrom.secretKeyRef = {
-              name = "cloudflare-api-token";
-              key = "api-token";
-            };
-          }
-        ];
       };
     };
   };
@@ -240,27 +115,22 @@
         </html>
       '';
 
-      ingresses.nginx.spec = {
-        tls = [
-          {
-            hosts = [ "nginx.lab.teevik.no" ];
-          }
-        ];
-        rules = [
-          {
-            host = "nginx.lab.teevik.no";
-            http.paths = [
-              {
-                path = "/";
-                pathType = "Prefix";
-                backend.service = {
-                  name = "nginx";
-                  port.number = 80;
-                };
-              }
-            ];
-          }
-        ];
+      ingresses.nginx = {
+        metadata.annotations = {
+          "tailscale.com/proxy-group" = "ingress";
+        };
+        spec = {
+          ingressClassName = "tailscale";
+          defaultBackend.service = {
+            name = "nginx";
+            port.number = 80;
+          };
+          tls = [
+            {
+              hosts = [ "nginx" ];
+            }
+          ];
+        };
       };
     };
   };

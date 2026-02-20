@@ -27,7 +27,6 @@ in
     sops.secrets.k3s_token = { };
     sops.secrets.tailscale_oauth_client_id = { };
     sops.secrets.tailscale_oauth_client_secret = { };
-    sops.secrets.cloudflare_api_token = { };
 
     services.k3s = {
       enable = true;
@@ -37,7 +36,7 @@ in
       serverAddr = lib.mkIf (cfg.serverAddr != null) cfg.serverAddr;
       extraFlags = toString [
         "--write-kubeconfig-mode=0644"
-        "--disable=traefik" # Manage ingress via nixidy instead
+        "--disable=traefik" # Use Tailscale ingress instead
         "--disable=local-storage" # Use Longhorn instead
         "--disable=servicelb" # Use MetalLB instead
       ];
@@ -82,39 +81,5 @@ in
       '';
     };
 
-    # Create Cloudflare API token secret for cert-manager and external-dns (initial server only)
-    systemd.services.cloudflare-k8s-secret = lib.mkIf cfg.clusterInit {
-      description = "Create Cloudflare API token Kubernetes secrets";
-      after = [ "k3s.service" ];
-      wants = [ "k3s.service" ];
-      wantedBy = [ "multi-user.target" ];
-      partOf = [ "k3s.service" ];
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        Environment = "KUBECONFIG=/etc/rancher/k3s/k3s.yaml";
-      };
-      path = [ pkgs.kubectl ];
-      script = ''
-        until kubectl get ns >/dev/null 2>&1; do sleep 2; done
-
-        # Extract bare token (sops secret is stored as CF_DNS_API_TOKEN=<token>)
-        TOKEN=$(${pkgs.gnused}/bin/sed 's/^.*=//' ${config.sops.secrets.cloudflare_api_token.path})
-
-        # cert-manager namespace
-        kubectl create namespace cert-manager --dry-run=client -o yaml | kubectl apply -f -
-        kubectl create secret generic cloudflare-api-token \
-          --namespace cert-manager \
-          --from-literal=api-token="$TOKEN" \
-          --dry-run=client -o yaml | kubectl apply -f -
-
-        # external-dns namespace
-        kubectl create namespace external-dns --dry-run=client -o yaml | kubectl apply -f -
-        kubectl create secret generic cloudflare-api-token \
-          --namespace external-dns \
-          --from-literal=api-token="$TOKEN" \
-          --dry-run=client -o yaml | kubectl apply -f -
-      '';
-    };
   };
 }
