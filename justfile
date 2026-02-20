@@ -21,4 +21,7 @@ install TARGET-IP HOST:
   # ssh root@{{TARGET-IP}} "reboot"
 
 deploy NAME:
-  nh os switch .#nixosConfigurations.{{NAME}} --target-host {{NAME}} --hostname {{NAME}}
+  nixos-rebuild switch --flake .#{{NAME}} --target-host {{NAME}} --use-remote-sudo
+
+[parallel]
+deploy-all: (deploy "homelab-1") (deploy "homelab-2") (deploy "homelab-3")

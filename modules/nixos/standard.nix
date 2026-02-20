@@ -66,6 +66,9 @@ in
     openssh.authorizedKeys.keys = sshKeys;
   };
 
+  # Allow passwordless sudo for automated deploys
+  security.sudo.wheelNeedsPassword = false;
+
   # Nix settings
   nix.settings = {
     experimental-features = [
