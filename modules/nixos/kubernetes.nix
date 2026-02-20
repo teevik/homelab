@@ -82,9 +82,9 @@ in
       '';
     };
 
-    # Create Cloudflare API token secret for cert-manager (initial server only)
+    # Create Cloudflare API token secret for cert-manager and external-dns (initial server only)
     systemd.services.cloudflare-k8s-secret = lib.mkIf cfg.clusterInit {
-      description = "Create Cloudflare API token Kubernetes secret for cert-manager";
+      description = "Create Cloudflare API token Kubernetes secrets";
       after = [ "k3s.service" ];
       wants = [ "k3s.service" ];
       wantedBy = [ "multi-user.target" ];
@@ -97,12 +97,21 @@ in
       path = [ pkgs.kubectl ];
       script = ''
         until kubectl get ns >/dev/null 2>&1; do sleep 2; done
-        kubectl create namespace cert-manager --dry-run=client -o yaml | kubectl apply -f -
 
         # Extract bare token (sops secret is stored as CF_DNS_API_TOKEN=<token>)
         TOKEN=$(${pkgs.gnused}/bin/sed 's/^.*=//' ${config.sops.secrets.cloudflare_api_token.path})
+
+        # cert-manager namespace
+        kubectl create namespace cert-manager --dry-run=client -o yaml | kubectl apply -f -
         kubectl create secret generic cloudflare-api-token \
           --namespace cert-manager \
+          --from-literal=api-token="$TOKEN" \
+          --dry-run=client -o yaml | kubectl apply -f -
+
+        # external-dns namespace
+        kubectl create namespace external-dns --dry-run=client -o yaml | kubectl apply -f -
+        kubectl create secret generic cloudflare-api-token \
+          --namespace external-dns \
           --from-literal=api-token="$TOKEN" \
           --dry-run=client -o yaml | kubectl apply -f -
       '';

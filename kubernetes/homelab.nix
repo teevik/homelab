@@ -176,66 +176,29 @@
     };
   };
 
-  # CoreDNS for lab.teevik.no resolution (used with Tailscale Split DNS)
-  applications.coredns = {
-    namespace = "coredns";
+  # external-dns for automatic Cloudflare DNS record management
+  applications.external-dns = {
+    namespace = "external-dns";
     createNamespace = true;
 
-    resources = {
-      configMaps.coredns.data."Corefile" = ''
-        lab.teevik.no:53 {
-          template IN A {
-            answer "{{ .Name }} 60 IN A 100.103.158.180"
-          }
-          template IN AAAA {
-            rcode NOERROR
-          }
-        }
-      '';
+    helm.releases.external-dns = {
+      chart = charts."external-dns"."external-dns";
 
-      deployments.coredns.spec = {
-        replicas = 2;
-        selector.matchLabels.app = "coredns";
-        template = {
-          metadata.labels.app = "coredns";
-          spec = {
-            containers.coredns = {
-              image = "coredns/coredns:1.12.0";
-              args = [
-                "-conf"
-                "/etc/coredns/Corefile"
-              ];
-              ports."dns-udp" = {
-                containerPort = 53;
-                protocol = "UDP";
-              };
-              ports."dns-tcp" = {
-                containerPort = 53;
-                protocol = "TCP";
-              };
-              volumeMounts."/etc/coredns".name = "config";
+      values = {
+        provider.name = "cloudflare";
+        sources = [ "ingress" ];
+        domainFilters = [ "teevik.no" ];
+        policy = "sync";
+
+        env = [
+          {
+            name = "CF_API_TOKEN";
+            valueFrom.secretKeyRef = {
+              name = "cloudflare-api-token";
+              key = "api-token";
             };
-            volumes.config.configMap.name = "coredns";
-          };
-        };
-      };
-
-      services.coredns = {
-        metadata.annotations = {
-          "tailscale.com/expose" = "true";
-          "tailscale.com/hostname" = "homelab-dns";
-        };
-        spec = {
-          selector.app = "coredns";
-          ports."dns-udp" = {
-            port = 53;
-            protocol = "UDP";
-          };
-          ports."dns-tcp" = {
-            port = 53;
-            protocol = "TCP";
-          };
-        };
+          }
+        ];
       };
     };
   };
