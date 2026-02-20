@@ -23,5 +23,8 @@ install TARGET-IP HOST:
 deploy NAME:
   nixos-rebuild switch --flake .#{{NAME}} --target-host {{NAME}} --use-remote-sudo
 
+apply:
+  nixidy apply .#homelab
+
 [parallel]
 deploy-all: (deploy "homelab-1") (deploy "homelab-2") (deploy "homelab-3")
