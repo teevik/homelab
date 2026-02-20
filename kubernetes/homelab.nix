@@ -23,7 +23,7 @@
         # Expose Traefik to the tailnet via the Tailscale operator
         service.annotations = {
           "tailscale.com/expose" = "true";
-          "tailscale.com/hostname" = "traefik";
+          "tailscale.com/hostname" = "homelab";
         };
       };
     };
