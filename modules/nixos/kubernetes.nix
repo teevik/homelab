@@ -63,6 +63,7 @@ in
       after = [ "k3s.service" ];
       wants = [ "k3s.service" ];
       wantedBy = [ "multi-user.target" ];
+      partOf = [ "k3s.service" ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
