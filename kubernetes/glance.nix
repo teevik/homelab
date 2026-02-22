@@ -2,12 +2,76 @@
 let
   glanceConfig = builtins.toJSON {
     pages = [
+      # Home tab - News and content
       {
         name = "Home";
         columns = [
           {
             size = "small";
             widgets = [
+              {
+                type = "custom-api";
+                title = "Homelab Status";
+                cache = "2m";
+                url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(kube_node_status_condition{condition=%22Ready%22,status=%22true%22})";
+                subrequests = {
+                  nodesTotal = {
+                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(kube_node_info)";
+                  };
+                  podsRunning = {
+                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(kube_pod_status_phase{phase=%22Running%22})";
+                  };
+                  alertsFiring = {
+                    url = "http://vmalertmanager-victoria-metrics-k8s-stack.monitoring.svc:9093/api/v2/alerts?active=true&silenced=false&inhibited=false";
+                    skip-json-validation = true;
+                  };
+                  storageUsage = {
+                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=avg(node_filesystem_size_bytes%20/%20node_filesystem_size_bytes%20*%20100)";
+                  };
+                };
+                template = ''
+                  <div class="flex flex-col gap-8">
+                    {{ $nodesRunning := .JSON.String "data.result.0.value.1" }}
+                    {{ $nodesTotalReq := .Subrequest "nodesTotal" }}
+                    {{ $nodesTotal := $nodesTotalReq.JSON.String "data.result.0.value.1" }}
+                    {{ $podsRunningReq := .Subrequest "podsRunning" }}
+                    {{ $podsRunning := $podsRunningReq.JSON.String "data.result.0.value.1" }}
+                    {{ $alertsReq := .Subrequest "alertsFiring" }}
+                    {{ $alerts := len ($alertsReq.JSON.Array ".") }}
+                    {{ $storageReq := .Subrequest "storageUsage" }}
+                    {{ $storage := $storageReq.JSON.String "data.result.0.value.1" }}
+                    
+                    <div class="flex justify-between items-center">
+                      <span class="size-h6 color-paragraph">Nodes</span>
+                      <span class="size-h4 color-highlight">{{ $nodesRunning }}</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                      <span class="size-h6 color-paragraph">Pods Running</span>
+                      <span class="size-h4 color-highlight">{{ $podsRunning }}</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                      <span class="size-h6 color-paragraph">Alerts</span>
+                      <span class="size-h4 {{ if eq $alerts 0 }}color-positive{{ else }}color-negative{{ end }}">
+                        {{ if eq $alerts 0 }}None{{ else }}{{ $alerts }} firing{{ end }}
+                      </span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                      <span class="size-h6 color-paragraph">Storage Usage</span>
+                      <span class="size-h4 color-highlight">
+                        {{ if $storage }}{{ $storage }}%{{ else }}--{{ end }}
+                      </span>
+                    </div>
+                    
+                    <div class="flex justify-center mt-2">
+                      <a href="/homelab" class="color-highlight size-h6">View Details →</a>
+                    </div>
+                  </div>
+                '';
+              }
+
               {
                 type = "calendar";
                 first-day-of-week = "monday";
@@ -23,8 +87,8 @@ let
               {
                 type = "rss";
                 title = "News & Blogs";
-                limit = 15;
-                collapse-after = 5;
+                limit = 10;
+                collapse-after = 3;
                 cache = "12h";
                 feeds = [
                   {
@@ -157,7 +221,7 @@ let
         ];
       }
 
-      # Homelab monitoring page - Enhanced with cluster info
+      # Homelab tab - Service health front and center + node stats
       {
         name = "Homelab";
         columns = [
@@ -208,164 +272,6 @@ let
               }
 
               {
-                type = "bookmarks";
-                title = "Quick Links";
-                groups = [
-                  {
-                    title = "Observability";
-                    color = "30 80 50";
-                    links = [
-                      {
-                        title = "Grafana";
-                        url = "https://grafana";
-                        icon = "si:grafana";
-                      }
-                      {
-                        title = "Alertmanager";
-                        url = "http://vmalertmanager-victoria-metrics-k8s-stack.monitoring.svc:9093";
-                        icon = "si:prometheus";
-                      }
-                    ];
-                  }
-                  {
-                    title = "Infrastructure";
-                    color = "10 70 50";
-                    links = [
-                      {
-                        title = "Longhorn";
-                        url = "https://longhorn.local";
-                        icon = "si:longhorn";
-                      }
-                      {
-                        title = "ArgoCD";
-                        url = "https://argocd.local";
-                        icon = "si:argo";
-                      }
-                    ];
-                  }
-                  {
-                    title = "Networking";
-                    color = "200 50 50";
-                    links = [
-                      {
-                        title = "Tailscale";
-                        url = "https://login.tailscale.com/admin/machines";
-                        icon = "si:tailscale";
-                      }
-                    ];
-                  }
-                ];
-              }
-
-              {
-                type = "server-stats";
-                title = "Glance Server";
-                servers = [
-                  {
-                    type = "local";
-                    name = "Glance Pod";
-                  }
-                ];
-              }
-            ];
-          }
-
-          {
-            size = "full";
-            widgets = [
-              {
-                type = "custom-api";
-                title = "Cluster Nodes";
-                cache = "1m";
-                url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=kube_node_status_condition{condition=%22Ready%22,status=%22true%22}";
-                template = ''
-                  <div class="flex flex-col gap-10">
-                    <table class="table">
-                      <thead>
-                        <tr>
-                          <th>Node</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                      {{ range .JSON.Array "data.result" }}
-                        <tr>
-                          <td>{{ .String "metric.node" }}</td>
-                          <td>
-                            {{ $status := .String "metric.status" }}
-                            {{ if eq $status "true" }}
-                              <span class="color-positive">Ready</span>
-                            {{ else }}
-                              <span class="color-negative">Not Ready</span>
-                            {{ end }}
-                          </td>
-                        </tr>
-                      {{ end }}
-                      </tbody>
-                    </table>
-                  </div>
-                '';
-              }
-
-              {
-                type = "custom-api";
-                title = "Pod Overview";
-                cache = "1m";
-                url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count%20by%20(namespace)%20(kube_pod_info)";
-                template = ''
-                  <div class="flex flex-col gap-10">
-                    <table class="table">
-                      <thead>
-                        <tr>
-                          <th>Namespace</th>
-                          <th>Pods</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                      {{ range .JSON.Array "data.result" }}
-                        <tr>
-                          <td>{{ .String "metric.namespace" }}</td>
-                          <td class="text-right">{{ .String "value.1" }}</td>
-                        </tr>
-                      {{ end }}
-                      </tbody>
-                    </table>
-                  </div>
-                '';
-              }
-
-              {
-                type = "custom-api";
-                title = "VictoriaMetrics Health";
-                cache = "30s";
-                url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=up{job=%22vmsingle-victoria-metrics-k8s-stack%22}";
-                template = ''
-                  <div class="flex flex-col gap-10">
-                    {{ $results := .JSON.Array "data.result" }}
-                    {{ if eq (len $results) 0 }}
-                      <div class="flex justify-center">
-                        <span class="color-negative size-h3">VM Not Reachable</span>
-                      </div>
-                    {{ else }}
-                      {{ range $results }}
-                        {{ $value := .String "value.1" }}
-                        <div class="flex justify-between">
-                          <span class="size-h6 color-paragraph">Status</span>
-                          <span class="size-h4 {{ if eq $value "1" }}color-positive{{ else }}color-negative{{ end }}">
-                            {{ if eq $value "1" }}Healthy{{ else }}Down{{ end }}
-                          </span>
-                        </div>
-                        <div class="flex justify-between">
-                          <span class="size-h6 color-paragraph">Instance</span>
-                          <span class="size-h4 color-highlight">{{ .String "metric.instance" }}</span>
-                        </div>
-                      {{ end }}
-                    {{ end }}
-                  </div>
-                '';
-              }
-
-              {
                 type = "custom-api";
                 title = "Active Alerts";
                 cache = "1m";
@@ -391,46 +297,84 @@ let
                   {{ end }}
                 '';
               }
+
+              {
+                type = "bookmarks";
+                title = "Quick Links";
+                groups = [
+                  {
+                    title = "Observability";
+                    color = "30 80 50";
+                    links = [
+                      {
+                        title = "Grafana";
+                        url = "http://grafana";
+                        icon = "si:grafana";
+                      }
+                    ];
+                  }
+                  {
+                    title = "Infrastructure";
+                    color = "10 70 50";
+                    links = [
+                      {
+                        title = "Longhorn";
+                        url = "https://longhorn.local";
+                        icon = "si:longhorn";
+                      }
+                      {
+                        title = "ArgoCD";
+                        url = "https://argocd.local";
+                        icon = "si:argo";
+                      }
+                    ];
+                  }
+                ];
+              }
             ];
           }
 
           {
-            size = "small";
+            size = "full";
             widgets = [
+              # All 3 nodes side by side
               {
-                type = "custom-api";
-                title = "Storage Overview";
-                cache = "5m";
-                url = "http://longhorn-backend.longhorn-system.svc:9500/v1/volumes";
-                allow-insecure = true;
-                template = ''
-                  <div class="flex flex-col gap-10">
-                    {{ $volumes := .JSON.Array "data" }}
-                    {{ $healthy := 0 }}
-                    {{ $total := len $volumes }}
-                    {{ range $volumes }}
-                      {{ if eq (.String "state") "attached" }}
-                        {{ $healthy = add $healthy 1 }}
-                      {{ end }}
-                    {{ end }}
-                    <div class="flex justify-between">
-                      <span class="size-h6 color-paragraph">Volumes Healthy</span>
-                      <span class="size-h4 {{ if eq $healthy $total }}color-positive{{ else }}color-negative{{ end }}">
-                        {{ $healthy }} / {{ $total }}
-                      </span>
-                    </div>
-                    <div class="flex justify-between">
-                      <span class="size-h6 color-paragraph">Total Size</span>
-                      <span class="size-h4 color-highlight">
-                        {{ $size := 0 }}
-                        {{ range $volumes }}
-                          {{ $size = add $size (.Int "size") }}
-                        {{ end }}
-                        {{ div (toFloat $size) 1073741824 | printf "%.1f" }} GiB
-                      </span>
-                    </div>
-                  </div>
-                '';
+                type = "split-column";
+                widgets = [
+                  {
+                    type = "server-stats";
+                    title = "homelab-1";
+                    servers = [
+                      {
+                        type = "remote";
+                        name = "homelab-1";
+                        url = "http://homelab-1:27973";
+                      }
+                    ];
+                  }
+                  {
+                    type = "server-stats";
+                    title = "homelab-2";
+                    servers = [
+                      {
+                        type = "remote";
+                        name = "homelab-2";
+                        url = "http://homelab-2:27973";
+                      }
+                    ];
+                  }
+                  {
+                    type = "server-stats";
+                    title = "homelab-3";
+                    servers = [
+                      {
+                        type = "remote";
+                        name = "homelab-3";
+                        url = "http://homelab-3:27973";
+                      }
+                    ];
+                  }
+                ];
               }
             ];
           }

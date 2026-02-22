@@ -99,6 +99,30 @@
         };
       };
     };
+
+    # Tailscale ingress for Longhorn UI
+    resources = {
+      services.longhorn-ui = {
+        metadata = {
+          name = "longhorn-ui";
+          annotations = {
+            "tailscale.com/proxy-group" = "ingress";
+            "tailscale.com/hostname" = "longhorn";
+          };
+        };
+        spec = {
+          type = "LoadBalancer";
+          loadBalancerClass = "tailscale";
+          selector = {
+            app = "longhorn-ui";
+          };
+          ports.http = {
+            port = 80;
+            targetPort = 8000;
+          };
+        };
+      };
+    };
   };
 
   # Example application: nginx
