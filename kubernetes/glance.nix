@@ -25,9 +25,6 @@ let
                     url = "http://vmalertmanager-victoria-metrics-k8s-stack.monitoring.svc:9093/api/v2/alerts?active=true&silenced=false&inhibited=false";
                     skip-json-validation = true;
                   };
-                  storageUsage = {
-                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=avg(node_filesystem_size_bytes%20/%20node_filesystem_size_bytes%20*%20100)";
-                  };
                 };
                 template = ''
                   {{ $nodesRunning := .JSON.String "data.result.0.value.1" }}
@@ -37,44 +34,37 @@ let
                   {{ $podsRunning := $podsRunningReq.JSON.String "data.result.0.value.1" }}
                   {{ $alertsReq := .Subrequest "alertsFiring" }}
                   {{ $alerts := len ($alertsReq.JSON.Array ".") }}
-                  {{ $storageReq := .Subrequest "storageUsage" }}
-                  {{ $storage := $storageReq.JSON.String "data.result.0.value.1" }}
 
-                  <div class="grid grid-cols-2 gap-20 margin-top-10 margin-bottom-10">
-                    <!-- Nodes Card -->
-                    <div class="flex flex-col items-center gap-10 padding-10">
-                      <span class="size-h2">🖥️</span>
-                      <span class="size-h1 color-highlight">{{ $nodesRunning }}</span>
-                      <span class="size-h6 color-paragraph">Nodes Ready</span>
+                  <a href="/homelab" class="block text-decoration-none">
+                    <div class="grid grid-cols-3 gap-15 margin-top-10 margin-bottom-10">
+                      <!-- Nodes Card -->
+                      <div class="flex flex-col items-center gap-10 padding-10">
+                        <span class="size-h2">🖥️</span>
+                        <span class="size-h1 color-highlight">{{ $nodesRunning }}</span>
+                        <span class="size-h6 color-paragraph">Nodes Ready</span>
+                      </div>
+                      
+                      <!-- Pods Card -->
+                      <div class="flex flex-col items-center gap-10 padding-10">
+                        <span class="size-h2">📦</span>
+                        <span class="size-h1 color-highlight">{{ $podsRunning }}</span>
+                        <span class="size-h6 color-paragraph">Pods Running</span>
+                      </div>
+                      
+                      <!-- Alerts Card -->
+                      <div class="flex flex-col items-center gap-10 padding-10">
+                        <span class="size-h2">{{ if eq $alerts 0 }}✅{{ else }}⚠️{{ end }}</span>
+                        <span class="size-h1 {{ if eq $alerts 0 }}color-positive{{ else }}color-negative{{ end }}">
+                          {{ if eq $alerts 0 }}OK{{ else }}{{ $alerts }}{{ end }}
+                        </span>
+                        <span class="size-h6 color-paragraph">{{ if eq $alerts 0 }}No Alerts{{ else }}Alerts{{ end }}</span>
+                      </div>
                     </div>
-                    
-                    <!-- Pods Card -->
-                    <div class="flex flex-col items-center gap-10 padding-10">
-                      <span class="size-h2">📦</span>
-                      <span class="size-h1 color-highlight">{{ $podsRunning }}</span>
-                      <span class="size-h6 color-paragraph">Pods Running</span>
-                    </div>
-                    
-                    <!-- Alerts Card -->
-                    <div class="flex flex-col items-center gap-10 padding-10">
-                      <span class="size-h2">{{ if eq $alerts 0 }}✅{{ else }}⚠️{{ end }}</span>
-                      <span class="size-h1 {{ if eq $alerts 0 }}color-positive{{ else }}color-negative{{ end }}">
-                        {{ if eq $alerts 0 }}OK{{ else }}{{ $alerts }}{{ end }}
-                      </span>
-                      <span class="size-h6 color-paragraph">{{ if eq $alerts 0 }}No Alerts{{ else }}Alerts{{ end }}</span>
-                    </div>
-                    
-                    <!-- Services Card -->
-                    <div class="flex flex-col items-center gap-10 padding-10">
-                      <span class="size-h2">🔗</span>
-                      <span class="size-h1 color-positive">7/7</span>
-                      <span class="size-h6 color-paragraph">Services Up</span>
-                    </div>
-                  </div>
 
-                  <div class="flex justify-center margin-top-10">
-                    <a href="/homelab" class="color-highlight size-h5">View Details →</a>
-                  </div>
+                    <div class="flex justify-center margin-top-10">
+                      <span class="color-highlight size-h5">View Details →</span>
+                    </div>
+                  </a>
                 '';
               }
 
