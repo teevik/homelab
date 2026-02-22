@@ -49,7 +49,10 @@
 
         charts = inputs.nixhelm.chartsDerivations.${system};
 
-        envs.homelab.modules = [ ./kubernetes/homelab.nix ];
+        envs.homelab.modules = [
+          ./kubernetes/homelab.nix
+          ./kubernetes/glance.nix
+        ];
       };
     };
 }
