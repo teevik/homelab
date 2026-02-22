@@ -13,9 +13,6 @@ in
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  # Autologin
-  services.getty.autologinUser = lib.mkForce "teevik";
-
   # Enable SSH
   services.openssh = {
     enable = true;
