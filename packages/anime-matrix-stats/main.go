@@ -203,14 +203,14 @@ func renderAndPush(healths []NodeHealth, outputPath, asusctlPath string) error {
 	// The diagonal matrix shows a triangle - right side is visible, left is cut off
 	// We need to draw in the RIGHT portion of the image to be visible
 	// Three circles with compact 3x5 numbers above (upside down to appear right-side up)
-	// Circle radius: 4px, spaced 12px apart
+	// Square radius: 3px (7x7 pixels total), spaced 12px apart
 	// Centers at: x=52, x=40, x=28 (REVERSED - right to left to fix horizontal flip)
-	// Circle center at y=22 (upper-middle area)
-	// Numbers at y=31 (4 pixel padding from circle: circle bottom ~26, number bottom 31)
+	// Square center at y=26 (moved down toward bottom edge)
+	// Numbers at y=35 (4 pixel padding from square)
 	centers := []int{52, 40, 28}
-	radius := 4
-	circleY := 22 // center Y for circles
-	numY := 31    // bottom of numbers (4 pixel padding from circle)
+	radius := 3
+	circleY := 26 // center Y for squares (moved down toward bottom)
+	numY := 35    // bottom of numbers (moved down with squares)
 
 	for i, health := range healths {
 		if i >= len(centers) {
@@ -219,18 +219,18 @@ func renderAndPush(healths []NodeHealth, outputPath, asusctlPath string) error {
 
 		cx := centers[i]
 
-		// Draw number above circle (1, 2, or 3) - direct coordinates, upside-down drawing
+		// Draw number above square (1, 2, or 3) - right aligned with the square
 		digit := rune('1' + i)
 		if bitmap, ok := digitBitmaps[digit]; ok {
-			// Center the 3x5 digit above the circle (3 cols wide, center at cx)
-			drawBitmapDigit(img, cx-1, numY, bitmap, white)
+			// Right align: square right edge at cx+3, digit (3px) ends at cx+4, so starts at cx+2
+			drawBitmapDigit(img, cx+2, numY, bitmap, white)
 		}
 
-		// Draw circle below number - direct coordinates, NO flipY
+		// Draw simple square below number - direct coordinates, NO flipY
 		if health.Healthy {
-			drawFilledCircle(img, cx, circleY, radius, white)
+			drawFilledSquare(img, cx, circleY, radius, white)
 		} else {
-			drawCircleOutline(img, cx, circleY, radius, 1, white)
+			drawSquareOutline(img, cx, circleY, radius, white)
 		}
 	}
 
@@ -275,74 +275,45 @@ func drawBitmapDigit(img *image.Gray, x, y int, bitmap [5][3]bool, c color.Gray)
 	}
 }
 
-// drawFilledCircle draws a filled circle using midpoint circle algorithm.
-func drawFilledCircle(img *image.Gray, cx, cy, radius int, c color.Gray) {
-	x := radius
-	y := 0
-	err := 0
-
-	for x >= y {
-		// Draw horizontal lines between symmetric points
-		for dx := cx - x; dx <= cx+x; dx++ {
-			if dx >= 0 && dx < imgWidth && cy+y >= 0 && cy+y < imgHeight {
-				img.SetGray(dx, cy+y, c)
+// drawFilledSquare draws a simple filled square centered at (cx, cy) with given radius.
+// Radius is half the side length (square spans from cx-radius to cx+radius).
+func drawFilledSquare(img *image.Gray, cx, cy, radius int, c color.Gray) {
+	for y := cy - radius; y <= cy+radius; y++ {
+		for x := cx - radius; x <= cx+radius; x++ {
+			if x >= 0 && x < imgWidth && y >= 0 && y < imgHeight {
+				img.SetGray(x, y, c)
 			}
-			if dx >= 0 && dx < imgWidth && cy-y >= 0 && cy-y < imgHeight {
-				img.SetGray(dx, cy-y, c)
-			}
-		}
-		for dx := cx - y; dx <= cx+y; dx++ {
-			if dx >= 0 && dx < imgWidth && cy+x >= 0 && cy+x < imgHeight {
-				img.SetGray(dx, cy+x, c)
-			}
-			if dx >= 0 && dx < imgWidth && cy-x >= 0 && cy-x < imgHeight {
-				img.SetGray(dx, cy-x, c)
-			}
-		}
-
-		if err <= 0 {
-			y++
-			err += 2*y + 1
-		}
-		if err > 0 {
-			x--
-			err -= 2*x + 1
 		}
 	}
 }
 
-// drawCircleOutline draws just the outline of a circle with a given stroke width.
-func drawCircleOutline(img *image.Gray, cx, cy, radius, stroke int, c color.Gray) {
-	// Draw multiple concentric circles for the stroke
-	for r := radius - stroke/2; r <= radius+stroke/2; r++ {
-		if r < 0 {
-			continue
+// drawSquareOutline draws just the outline of a square.
+// Radius is half the side length.
+func drawSquareOutline(img *image.Gray, cx, cy, radius int, c color.Gray) {
+	left := cx - radius
+	right := cx + radius
+	top := cy - radius
+	bottom := cy + radius
+
+	// Draw top and bottom edges
+	for x := left; x <= right; x++ {
+		if x >= 0 && x < imgWidth {
+			if top >= 0 && top < imgHeight {
+				img.SetGray(x, top, c)
+			}
+			if bottom >= 0 && bottom < imgHeight {
+				img.SetGray(x, bottom, c)
+			}
 		}
-		x := r
-		y := 0
-		err := 0
-
-		for x >= y {
-			// Set 8 symmetric points
-			points := [][2]int{
-				{cx + x, cy + y}, {cx + y, cy + x},
-				{cx - y, cy + x}, {cx - x, cy + y},
-				{cx - x, cy - y}, {cx - y, cy - x},
-				{cx + y, cy - x}, {cx + x, cy - y},
+	}
+	// Draw left and right edges
+	for y := top; y <= bottom; y++ {
+		if y >= 0 && y < imgHeight {
+			if left >= 0 && left < imgWidth {
+				img.SetGray(left, y, c)
 			}
-			for _, p := range points {
-				if p[0] >= 0 && p[0] < imgWidth && p[1] >= 0 && p[1] < imgHeight {
-					img.SetGray(p[0], p[1], c)
-				}
-			}
-
-			if err <= 0 {
-				y++
-				err += 2*y + 1
-			}
-			if err > 0 {
-				x--
-				err -= 2*x + 1
+			if right >= 0 && right < imgWidth {
+				img.SetGray(right, y, c)
 			}
 		}
 	}
