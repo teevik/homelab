@@ -295,6 +295,67 @@ let
               }
 
               {
+                type = "custom-api";
+                title = "Longhorn Storage";
+                cache = "2m";
+                url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(longhorn_volume_capacity_bytes)";
+                subrequests = {
+                  attachedVolumes = {
+                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(longhorn_volume_state%7Bstate%3D%22attached%22%7D)";
+                  };
+                  detachedVolumes = {
+                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(longhorn_volume_state%7Bstate%3D%22detached%22%7D)";
+                  };
+                  totalCapacity = {
+                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=sum(longhorn_volume_capacity_bytes)";
+                  };
+                  usedCapacity = {
+                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=sum(longhorn_volume_actual_size_bytes)";
+                  };
+                  healthyNodes = {
+                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(longhorn_node_status%7Bcondition%3D%22Ready%22%7D)";
+                  };
+                };
+                template = ''
+                  <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div>
+                      {{ $totalVolumes := .JSON.String "data.result.0.value.1" }}
+                      {{ $attachedReq := .Subrequest "attachedVolumes" }}
+                      {{ $attached := $attachedReq.JSON.String "data.result.0.value.1" }}
+                      {{ $detachedReq := .Subrequest "detachedVolumes" }}
+                      {{ $detached := $detachedReq.JSON.String "data.result.0.value.1" }}
+                      <p class="color-subdue size-h6">Volumes</p>
+                      <p class="color-highlight size-h3">{{ $totalVolumes }} total</p>
+                      <p class="size-h6"><span class="color-positive">{{ $attached }} attached</span> &middot; {{ $detached }} detached</p>
+                    </div>
+                    <div>
+                      {{ $totalCapReq := .Subrequest "totalCapacity" }}
+                      {{ $totalCapBytes := $totalCapReq.JSON.Float "data.result.0.value.1" }}
+                      {{ $usedCapReq := .Subrequest "usedCapacity" }}
+                      {{ $usedCapBytes := $usedCapReq.JSON.Float "data.result.0.value.1" }}
+                      {{ $totalGB := div $totalCapBytes 1073741824 }}
+                      {{ $usedGB := div $usedCapBytes 1073741824 }}
+                      {{ $usagePercent := 0.0 }}
+                      {{ if gt $totalGB 0.0 }}{{ $usagePercent = mul (div $usedGB $totalGB) 100 }}{{ end }}
+                      <p class="color-subdue size-h6">Storage</p>
+                      <p class="color-highlight size-h3">{{ printf "%.1f" $usedGB }} / {{ printf "%.1f" $totalGB }} GB</p>
+                      <div class="progress-bar progress-bar-combined" style="margin-top: 0.4rem;">
+                        <div class="progress-value" style="--percent: {{ printf "%.0f" $usagePercent }}"></div>
+                      </div>
+                      <p class="size-h6" style="margin-top: 0.25rem;">{{ printf "%.1f" $usagePercent }}% used</p>
+                    </div>
+                    <div>
+                      {{ $nodesReq := .Subrequest "healthyNodes" }}
+                      {{ $nodes := $nodesReq.JSON.String "data.result.0.value.1" }}
+                      <p class="color-subdue size-h6">Storage Nodes</p>
+                      <p class="color-highlight size-h3">{{ $nodes }} ready</p>
+                    </div>
+                    <a href="https://longhorn.local" class="color-highlight size-h6" style="text-decoration: none;">Open Longhorn UI →</a>
+                  </div>
+                '';
+              }
+
+              {
                 type = "bookmarks";
                 title = "Quick Links";
                 groups = [
