@@ -257,7 +257,7 @@ let
                   {
                     title = "Longhorn UI";
                     url = "http://longhorn-frontend.longhorn-system.svc:80";
-                    icon = "di:longhorn";
+                    icon = "auto-invert https://raw.githubusercontent.com/cncf/artwork/main/projects/longhorn/icon/black/longhorn-icon-black.svg";
                   }
                   {
                     title = "Nginx";
