@@ -33,7 +33,7 @@ let
                   {{ $podsRunningReq := .Subrequest "podsRunning" }}
                   {{ $podsRunning := $podsRunningReq.JSON.String "data.result.0.value.1" }}
                   {{ $alertsReq := .Subrequest "alertsFiring" }}
-                  {{ $alerts := len ($alertsReq.JSON.Array ".") }}
+                  {{ $alerts := len ($alertsReq.JSON.Array "") }}
 
                   <a href="/homelab" class="block text-decoration-none">
                     <div class="grid grid-cols-3 gap-15 margin-top-10 margin-bottom-10">
@@ -235,33 +235,6 @@ let
 
               {
                 type = "custom-api";
-                title = "Active Alerts";
-                cache = "1m";
-                url = "http://vmalertmanager-victoria-metrics-k8s-stack.monitoring.svc:9093/api/v2/alerts?active=true&silenced=false&inhibited=false";
-                template = ''
-                  {{ $alerts := .JSON.Array "." }}
-                  {{ if eq ($alerts | len) 0 }}
-                    <div class="flex justify-center">
-                      <span class="color-positive size-h3">No active alerts</span>
-                    </div>
-                  {{ else }}
-                    <ul class="list list-gap-8">
-                    {{ range $alerts }}
-                      <li class="flex flex-col gap-4">
-                        <div class="flex items-center gap-8">
-                          <span class="color-negative size-h4">{{ .String "labels.alertname" }}</span>
-                          <span class="size-h5 color-paragraph">{{ .String "labels.severity" }}</span>
-                        </div>
-                        <div class="size-h6 color-paragraph">{{ .String "annotations.summary" }}</div>
-                      </li>
-                    {{ end }}
-                    </ul>
-                  {{ end }}
-                '';
-              }
-
-              {
-                type = "custom-api";
                 title = "Longhorn Storage";
                 cache = "2m";
                 url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(longhorn_volume_capacity_bytes)";
@@ -364,6 +337,43 @@ let
                     ];
                   }
                 ];
+              }
+
+              {
+                type = "custom-api";
+                title = "Active Alerts";
+                cache = "1m";
+                url = "http://vmalertmanager-victoria-metrics-k8s-stack.monitoring.svc:9093/api/v2/alerts?active=true&silenced=false&inhibited=false";
+                template = ''
+                  {{ $alerts := .JSON.Array "" }}
+                  {{ if eq ($alerts | len) 0 }}
+                    <div class="flex justify-center">
+                      <span class="color-positive size-h3">No active alerts</span>
+                    </div>
+                  {{ else }}
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                    {{ range $alerts }}
+                      {{ $severity := .String "labels.severity" }}
+                      <li style="padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.07);">
+                        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 4px;">
+                          <span class="size-h4" style="color: {{ if or (eq $severity "critical") (eq $severity "error") }}var(--color-negative){{ else if eq $severity "warning" }}#f59e0b{{ else }}var(--color-subdue){{ end }};">{{ .String "labels.alertname" }}</span>
+                          <span class="color-subdue size-h6">&nbsp;·&nbsp;</span>
+                          <span class="color-paragraph size-h6">{{ .String "labels.severity" }}</span>
+                          {{ if .String "labels.node" }}
+                            <span class="color-subdue size-h6">&nbsp;·&nbsp;</span>
+                            <span class="color-highlight size-h6">{{ .String "labels.node" }}</span>
+                          {{ end }}
+                          {{ if .String "labels.namespace" }}
+                            <span class="color-subdue size-h6">&nbsp;·&nbsp;</span>
+                            <span class="color-subdue size-h6">{{ .String "labels.namespace" }}</span>
+                          {{ end }}
+                        </div>
+                        <div class="color-paragraph size-h6" style="padding-left: 2px;">{{ .String "annotations.summary" }}</div>
+                      </li>
+                    {{ end }}
+                    </ul>
+                  {{ end }}
+                '';
               }
             ];
           }
