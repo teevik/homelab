@@ -19,7 +19,7 @@ in
     serverAddr = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
-      description = "Address of an existing server to join (e.g. https://homelab-1:6443). Leave null for the initial server.";
+      description = "Address of an existing server to join (e.g. https://192.168.1.114:6443). Leave null for the initial server.";
     };
   };
 
@@ -27,14 +27,6 @@ in
     sops.secrets.k3s_token = { };
     sops.secrets.tailscale_oauth_client_id = { };
     sops.secrets.tailscale_oauth_client_secret = { };
-
-    # Ensure k3s starts after Tailscale is connected, so that MagicDNS
-    # names (e.g. homelab-1) are resolvable when joining the cluster.
-    # Without this, flannel may fail to initialize on joining nodes.
-    systemd.services.k3s = {
-      after = [ "tailscaled-autoconnect.service" ];
-      wants = [ "tailscaled-autoconnect.service" ];
-    };
 
     services.k3s = {
       enable = true;

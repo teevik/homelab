@@ -12,6 +12,15 @@
 
     helm.releases.tailscale-operator = {
       chart = charts.tailscale.tailscale-operator;
+
+      values = {
+        operatorConfig = {
+          hostname = "tailscale-operator-homelab";
+        };
+        apiServerProxyConfig = {
+          mode = "true";
+        };
+      };
     };
 
     # ProxyGroup for HA ingress proxies (one per node)

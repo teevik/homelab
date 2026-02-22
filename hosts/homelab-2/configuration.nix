@@ -23,7 +23,7 @@
   services.logind.settings.Login.HandleLidSwitch = "ignore";
 
   # Join existing HA cluster
-  homelab.kubernetes.serverAddr = "https://homelab-1:6443";
+  homelab.kubernetes.serverAddr = "https://192.168.1.114:6443";
 
   nixpkgs.hostPlatform = "x86_64-linux";
   system.stateVersion = "25.05";
