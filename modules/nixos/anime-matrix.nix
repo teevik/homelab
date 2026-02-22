@@ -44,6 +44,7 @@ in
         Type = "simple";
         Restart = "on-failure";
         RestartSec = "10s";
+        TimeoutStopSec = "10s";
 
         ExecStart = lib.concatStringsSep " " [
           "${flake.packages.${pkgs.system}.anime-matrix-stats}/bin/anime-matrix-stats"

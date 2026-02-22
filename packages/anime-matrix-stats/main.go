@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"image"
@@ -12,32 +11,25 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"sort"
 	"syscall"
 	"time"
 
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/basicfont"
-	"golang.org/x/image/math/fixed"
-
-	"k8s.io/apimachinery/pkg/api/resource"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
 const (
-	// Image dimensions - 192x108 gives ~3x oversampling of the ~64x36 effective
-	// AniMe Matrix resolution, which works well for text rendering with basicfont.
 	imgWidth  = 192
 	imgHeight = 108
 )
 
-// ClusterStats holds the collected cluster metrics.
-type ClusterStats struct {
-	NodesReady int
-	NodesTotal int
-	CPUPercent float64
-	MemPercent float64
+// NodeHealth tracks the health status of a single node.
+type NodeHealth struct {
+	Name    string
+	Healthy bool
 }
 
 func main() {
@@ -57,7 +49,7 @@ func main() {
 		log.Fatalf("Failed to create kubernetes client: %v", err)
 	}
 
-	// Handle graceful shutdown - turn off the display
+	// Handle graceful shutdown
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
@@ -75,14 +67,14 @@ func main() {
 	log.Printf("Starting anime-matrix-stats (interval=%s)", *interval)
 
 	for {
-		stats, err := getClusterStats(clientset)
+		healths, err := getNodeHealths(clientset)
 		if err != nil {
-			log.Printf("Error getting cluster stats: %v", err)
+			log.Printf("Error getting node healths: %v", err)
 			time.Sleep(*interval)
 			continue
 		}
 
-		if err := renderAndPush(stats, *outputPath, *asusctlPath); err != nil {
+		if err := renderAndPush(healths, *outputPath, *asusctlPath); err != nil {
 			log.Printf("Error rendering/pushing: %v", err)
 		}
 
@@ -90,80 +82,79 @@ func main() {
 	}
 }
 
-// getClusterStats collects node status and resource usage from the cluster.
-func getClusterStats(clientset *kubernetes.Clientset) (*ClusterStats, error) {
+// getNodeHealths checks each node's Ready status and whether all pods on it are Running/Succeeded.
+func getNodeHealths(clientset *kubernetes.Clientset) ([]NodeHealth, error) {
 	ctx := context.Background()
 
-	// Get nodes
+	// Get all nodes
 	nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("list nodes: %w", err)
 	}
 
-	stats := &ClusterStats{
-		NodesTotal: len(nodes.Items),
+	// Sort nodes by name for consistent ordering
+	sort.Slice(nodes.Items, func(i, j int) bool {
+		return nodes.Items[i].Name < nodes.Items[j].Name
+	})
+
+	// Get all pods across all namespaces
+	pods, err := clientset.CoreV1().Pods("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("list pods: %w", err)
 	}
 
-	var totalAllocatableCPU, totalAllocatableMem int64
+	// Group pods by node
+	podsByNode := make(map[string][]corev1.Pod)
+	for _, pod := range pods.Items {
+		if pod.Spec.NodeName != "" {
+			podsByNode[pod.Spec.NodeName] = append(podsByNode[pod.Spec.NodeName], pod)
+		}
+	}
 
+	healths := make([]NodeHealth, 0, len(nodes.Items))
 	for _, node := range nodes.Items {
+		health := NodeHealth{Name: node.Name}
+
+		// Check if node is Ready
+		nodeReady := false
 		for _, cond := range node.Status.Conditions {
 			if cond.Type == "Ready" && cond.Status == "True" {
-				stats.NodesReady++
+				nodeReady = true
+				break
 			}
 		}
-		totalAllocatableCPU += node.Status.Allocatable.Cpu().MilliValue()
-		totalAllocatableMem += node.Status.Allocatable.Memory().Value()
-	}
 
-	// Fetch node metrics from the metrics API (requires metrics-server)
-	result := clientset.RESTClient().
-		Get().
-		AbsPath("/apis/metrics.k8s.io/v1beta1/nodes").
-		Do(ctx)
-
-	rawData, err := result.Raw()
-	if err != nil {
-		log.Printf("Warning: metrics unavailable (is metrics-server running?): %v", err)
-		return stats, nil
-	}
-
-	var metricsResponse struct {
-		Items []struct {
-			Usage struct {
-				CPU    string `json:"cpu"`
-				Memory string `json:"memory"`
-			} `json:"usage"`
-		} `json:"items"`
-	}
-
-	if err := json.Unmarshal(rawData, &metricsResponse); err != nil {
-		log.Printf("Warning: failed to parse metrics response: %v", err)
-		return stats, nil
-	}
-
-	var totalUsedCPU, totalUsedMem int64
-	for _, item := range metricsResponse.Items {
-		if cpuQty, err := resource.ParseQuantity(item.Usage.CPU); err == nil {
-			totalUsedCPU += cpuQty.MilliValue()
+		if !nodeReady {
+			// Node not ready = unhealthy
+			health.Healthy = false
+			healths = append(healths, health)
+			continue
 		}
-		if memQty, err := resource.ParseQuantity(item.Usage.Memory); err == nil {
-			totalUsedMem += memQty.Value()
+
+		// Check all pods on this node
+		nodePods := podsByNode[node.Name]
+		allPodsHealthy := true
+		for _, pod := range nodePods {
+			// Skip pods that are being deleted
+			if pod.DeletionTimestamp != nil {
+				continue
+			}
+			// Only Running and Succeeded phases are considered healthy
+			if pod.Status.Phase != corev1.PodRunning && pod.Status.Phase != corev1.PodSucceeded {
+				allPodsHealthy = false
+				break
+			}
 		}
+
+		health.Healthy = allPodsHealthy
+		healths = append(healths, health)
 	}
 
-	if totalAllocatableCPU > 0 {
-		stats.CPUPercent = float64(totalUsedCPU) / float64(totalAllocatableCPU) * 100
-	}
-	if totalAllocatableMem > 0 {
-		stats.MemPercent = float64(totalUsedMem) / float64(totalAllocatableMem) * 100
-	}
-
-	return stats, nil
+	return healths, nil
 }
 
-// renderAndPush renders the stats to a PNG image and pushes it to the AniMe Matrix.
-func renderAndPush(stats *ClusterStats, outputPath, asusctlPath string) error {
+// renderAndPush draws three circles (filled for healthy, empty for unhealthy) and pushes to the display.
+func renderAndPush(healths []NodeHealth, outputPath, asusctlPath string) error {
 	img := image.NewGray(image.Rect(0, 0, imgWidth, imgHeight))
 
 	// Fill black background
@@ -174,51 +165,26 @@ func renderAndPush(stats *ClusterStats, outputPath, asusctlPath string) error {
 	}
 
 	white := color.Gray{Y: 255}
-	dim := color.Gray{Y: 100}
 
-	// Draw title
-	drawString(img, 4, 14, "K3S CLUSTER", white)
+	// Draw three circles horizontally centered
+	// Circle radius: 28px, spaced 64px apart
+	// Centers at: x=32, x=96, x=160 (for 3 nodes)
+	// All at y=54 (vertical center of 108px height)
+	centers := []int{32, 96, 160}
+	radius := 28
 
-	// Draw separator line
-	for x := 4; x < imgWidth-4; x++ {
-		img.SetGray(x, 20, dim)
-	}
-
-	// Draw node status
-	nodeStr := fmt.Sprintf("NODES  %d/%d", stats.NodesReady, stats.NodesTotal)
-	nodeColor := white
-	if stats.NodesReady < stats.NodesTotal {
-		nodeColor = color.Gray{Y: 180} // slightly dimmer if degraded
-	}
-	drawString(img, 4, 38, nodeStr, nodeColor)
-
-	// Draw node status indicator dots
-	dotY := 32
-	for i := 0; i < stats.NodesTotal; i++ {
-		dotX := imgWidth - 20 + (i * 6)
-		c := white
-		if i >= stats.NodesReady {
-			c = dim
+	for i, health := range healths {
+		if i >= len(centers) {
+			break // Only show first 3 nodes
 		}
-		drawDot(img, dotX, dotY, c)
+		cx := centers[i]
+		cy := 54
+		if health.Healthy {
+			drawFilledCircle(img, cx, cy, radius, white)
+		} else {
+			drawCircleOutline(img, cx, cy, radius, 3, white)
+		}
 	}
-
-	// Draw CPU bar
-	drawString(img, 4, 58, fmt.Sprintf("CPU  %3.0f%%", stats.CPUPercent), white)
-	drawBar(img, 80, 50, 104, 10, stats.CPUPercent/100.0, white, dim)
-
-	// Draw memory bar
-	drawString(img, 4, 78, fmt.Sprintf("MEM  %3.0f%%", stats.MemPercent), white)
-	drawBar(img, 80, 70, 104, 10, stats.MemPercent/100.0, white, dim)
-
-	// Draw bottom separator
-	for x := 4; x < imgWidth-4; x++ {
-		img.SetGray(x, 88, dim)
-	}
-
-	// Draw timestamp
-	timeStr := time.Now().Format("15:04:05")
-	drawString(img, 4, 102, timeStr, dim)
 
 	// Write PNG
 	f, err := os.Create(outputPath)
@@ -240,50 +206,67 @@ func renderAndPush(stats *ClusterStats, outputPath, asusctlPath string) error {
 	return nil
 }
 
-// drawString renders text onto a grayscale image using basicfont.
-func drawString(img *image.Gray, x, y int, text string, c color.Gray) {
-	point := fixed.Point26_6{
-		X: fixed.I(x),
-		Y: fixed.I(y),
-	}
-	d := &font.Drawer{
-		Dst:  img,
-		Src:  image.NewUniform(c),
-		Face: basicfont.Face7x13,
-		Dot:  point,
-	}
-	d.DrawString(text)
-}
+// drawFilledCircle draws a filled circle using midpoint circle algorithm.
+func drawFilledCircle(img *image.Gray, cx, cy, radius int, c color.Gray) {
+	x := radius
+	y := 0
+	err := 0
 
-// drawBar renders a horizontal progress bar.
-func drawBar(img *image.Gray, x, y, width, height int, fill float64, fg, bg color.Gray) {
-	if fill < 0 {
-		fill = 0
-	}
-	if fill > 1 {
-		fill = 1
-	}
-	fillWidth := int(float64(width) * fill)
+	for x >= y {
+		// Draw horizontal lines between symmetric points
+		for dx := cx - x; dx <= cx+x; dx++ {
+			img.SetGray(dx, cy+y, c)
+			img.SetGray(dx, cy-y, c)
+		}
+		for dx := cx - y; dx <= cx+y; dx++ {
+			img.SetGray(dx, cy+x, c)
+			img.SetGray(dx, cy-x, c)
+		}
 
-	for dy := 0; dy < height; dy++ {
-		for dx := 0; dx < width; dx++ {
-			px := x + dx
-			py := y + dy
-			// Border
-			if dy == 0 || dy == height-1 || dx == 0 || dx == width-1 {
-				img.SetGray(px, py, bg)
-			} else if dx <= fillWidth {
-				img.SetGray(px, py, fg)
-			}
+		if err <= 0 {
+			y++
+			err += 2*y + 1
+		}
+		if err > 0 {
+			x--
+			err -= 2*x + 1
 		}
 	}
 }
 
-// drawDot renders a small filled circle (3x3).
-func drawDot(img *image.Gray, cx, cy int, c color.Gray) {
-	img.SetGray(cx, cy-1, c)
-	img.SetGray(cx-1, cy, c)
-	img.SetGray(cx, cy, c)
-	img.SetGray(cx+1, cy, c)
-	img.SetGray(cx, cy+1, c)
+// drawCircleOutline draws just the outline of a circle with a given stroke width.
+func drawCircleOutline(img *image.Gray, cx, cy, radius, stroke int, c color.Gray) {
+	// Draw multiple concentric circles for the stroke
+	for r := radius - stroke/2; r <= radius+stroke/2; r++ {
+		if r < 0 {
+			continue
+		}
+		x := r
+		y := 0
+		err := 0
+
+		for x >= y {
+			// Set 8 symmetric points
+			points := [][2]int{
+				{cx + x, cy + y}, {cx + y, cy + x},
+				{cx - y, cy + x}, {cx - x, cy + y},
+				{cx - x, cy - y}, {cx - y, cy - x},
+				{cx + y, cy - x}, {cx + x, cy - y},
+			}
+			for _, p := range points {
+				if p[0] >= 0 && p[0] < imgWidth && p[1] >= 0 && p[1] < imgHeight {
+					img.SetGray(p[0], p[1], c)
+				}
+			}
+
+			if err <= 0 {
+				y++
+				err += 2*y + 1
+			}
+			if err > 0 {
+				x--
+				err -= 2*x + 1
+			}
+		}
+	}
 }
