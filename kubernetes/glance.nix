@@ -155,11 +155,11 @@ let
                     links = [
                       {
                         title = "Longhorn";
-                        url = "https://longhorn.local";
+                        url = "http://longhorn";
                       }
                       {
                         title = "ArgoCD";
-                        url = "https://argocd.local";
+                        url = "http://argocd";
                       }
                     ];
                   }
@@ -350,7 +350,7 @@ let
                       <p class="color-subdue size-h6">Storage Nodes</p>
                       <p class="color-highlight size-h3">{{ $nodes }} ready</p>
                     </div>
-                    <a href="https://longhorn.local" class="color-highlight size-h6" style="text-decoration: none;">Open Longhorn UI →</a>
+                    <a href="http://longhorn" class="color-highlight size-h6" style="text-decoration: none;">Open Longhorn UI →</a>
                   </div>
                 '';
               }
