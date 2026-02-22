@@ -175,6 +175,16 @@ let
                     icon = "si:glance";
                   }
                   {
+                    title = "Grafana";
+                    url = "http://victoria-metrics-k8s-stack-grafana.monitoring.svc:80";
+                    icon = "si:grafana";
+                  }
+                  {
+                    title = "VictoriaMetrics";
+                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428";
+                    icon = "si:victoriametrics";
+                  }
+                  {
                     title = "Longhorn UI";
                     url = "http://longhorn-frontend.longhorn-system.svc:80";
                     icon = "si:longhorn";
@@ -191,6 +201,17 @@ let
                 type = "bookmarks";
                 title = "Cluster Services";
                 groups = [
+                  {
+                    title = "Observability";
+                    color = "30 80 50";
+                    links = [
+                      {
+                        title = "Grafana";
+                        url = "https://grafana";
+                        icon = "si:grafana";
+                      }
+                    ];
+                  }
                   {
                     title = "Infrastructure";
                     color = "10 70 50";
