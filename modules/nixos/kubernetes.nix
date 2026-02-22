@@ -55,6 +55,14 @@ in
       "L+ /usr/local/bin - - - - /run/current-system/sw/bin/"
     ];
 
+    # Allow traffic on CNI and flannel interfaces for cross-node networking
+    # Fixes DNS and service IP issues on NixOS with k3s
+    # See: https://github.com/NixOS/nixpkgs/issues/98766
+    networking.firewall.trustedInterfaces = [
+      "cni+"
+      "flannel.+"
+    ];
+
     # Longhorn prerequisites
     services.openiscsi = {
       enable = true;

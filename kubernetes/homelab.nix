@@ -71,6 +71,20 @@
       chart = charts.longhorn.longhorn;
 
       values = {
+        # Hotfix images for v1.11.0 regression issues
+        # See: https://github.com/longhorn/longhorn/releases/tag/v1.11.0
+        image = {
+          longhorn.manager.repository = "longhornio/longhorn-manager";
+          longhorn.manager.tag = "v1.11.0-hotfix-1";
+          longhorn.instanceManager.repository = "longhornio/longhorn-instance-manager";
+          longhorn.instanceManager.tag = "v1.11.0-hotfix-1";
+        };
+
+        # Disable version check to allow hotfix "downgrade"
+        preUpgradeChecker = {
+          upgradeVersionCheck = false;
+        };
+
         defaultSettings = {
           defaultReplicaCount = 3;
         };
@@ -91,6 +105,15 @@
         template = {
           metadata.labels.app = "nginx";
           spec = {
+            # Ensure nginx pods are evenly distributed across all nodes
+            topologySpreadConstraints = [
+              {
+                maxSkew = 1;
+                topologyKey = "kubernetes.io/hostname";
+                whenUnsatisfiable = "ScheduleAnyway";
+                labelSelector.matchLabels.app = "nginx";
+              }
+            ];
             initContainers.generate-html = {
               image = "busybox:latest";
               command = [
