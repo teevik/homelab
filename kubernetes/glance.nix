@@ -375,11 +375,13 @@ let
                     </div>
                   {{ else }}
                     <ul style="list-style: none; margin: 0; padding: 0;">
+                    {{ $firstAlert := true }}
                     {{ range $alerts }}
                       {{ $name := .String "labels.alertname" }}
                       {{ if and (ne $name "Watchdog") (ne $name "InfoInhibitor") }}
                         {{ $severity := .String "labels.severity" }}
-                        <li style="padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.07);">
+                        <li style="padding: 10px 0; {{ if not $firstAlert }}border-top: 1px solid rgba(255,255,255,0.07);{{ end }}">
+                          {{ $firstAlert = false }}
                           <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 4px;">
                             <span class="size-h4" style="color: {{ if or (eq $severity "critical") (eq $severity "error") }}var(--color-negative){{ else if eq $severity "warning" }}#f59e0b{{ else }}var(--color-subdue){{ end }};">{{ $name }}</span>
                             <span class="color-subdue size-h6">&nbsp;·&nbsp;</span>
