@@ -86,50 +86,40 @@
 
     resources = {
       deployments.nginx.spec = {
-        replicas = 1;
+        replicas = 3;
         selector.matchLabels.app = "nginx";
         template = {
           metadata.labels.app = "nginx";
           spec = {
+            initContainers.generate-html = {
+              image = "busybox:latest";
+              command = [
+                "/bin/sh"
+                "-c"
+                ''echo "<!DOCTYPE html><html><body><h1>Hello from nixidy!</h1><p>Pod: $(hostname)</p></body></html>" > /html/index.html''
+              ];
+              volumeMounts."/html".name = "html";
+            };
             containers.nginx = {
               image = "nginx:latest";
               ports.http.containerPort = 80;
               volumeMounts."/usr/share/nginx/html".name = "html";
             };
-            volumes.html.configMap.name = "nginx-html";
+            volumes.html.emptyDir = { };
           };
         };
       };
 
-      services.nginx.spec = {
-        selector.app = "nginx";
-        ports.http.port = 80;
-      };
-
-      configMaps.nginx-html.data."index.html" = ''
-        <!DOCTYPE html>
-        <html>
-          <body>
-            <h1>Hello from nixidy!</h1>
-          </body>
-        </html>
-      '';
-
-      ingresses.nginx = {
+      services.nginx = {
         metadata.annotations = {
           "tailscale.com/proxy-group" = "ingress";
+          "tailscale.com/hostname" = "nginx";
         };
         spec = {
-          ingressClassName = "tailscale";
-          defaultBackend.service = {
-            name = "nginx";
-            port.number = 80;
-          };
-          tls = [
-            {
-              hosts = [ "nginx" ];
-            }
-          ];
+          type = "LoadBalancer";
+          loadBalancerClass = "tailscale";
+          selector.app = "nginx";
+          ports.http.port = 80;
         };
       };
     };
