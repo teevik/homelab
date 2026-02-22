@@ -22,9 +22,42 @@ import (
 )
 
 const (
-	imgWidth  = 192
-	imgHeight = 108
+	// Native AniMe Matrix resolution - 64x36 for 1:1 LED pixel mapping
+	// This maps 1:1 to the actual LED grid when using pixel-image mode
+	imgWidth  = 64
+	imgHeight = 36
 )
+
+// flipY converts a Y coordinate from top-origin to bottom-origin (flips image vertically)
+func flipY(y int) int {
+	return imgHeight - 1 - y
+}
+
+// Compact 3x5 bitmap font for digits 1-3 for 64x36 native resolution
+// Each digit is represented as 5 rows of 3 bits - optimized for LED matrix
+var digitBitmaps = map[rune][5][3]bool{
+	'1': {
+		{false, true, false},
+		{true, true, false},
+		{false, true, false},
+		{false, true, false},
+		{true, true, true},
+	},
+	'2': {
+		{true, true, true},
+		{false, false, true},
+		{true, true, true},
+		{true, false, false},
+		{true, true, true},
+	},
+	'3': {
+		{true, true, true},
+		{false, false, true},
+		{true, true, true},
+		{false, false, true},
+		{true, true, true},
+	},
+}
 
 // NodeHealth tracks the health status of a single node.
 type NodeHealth struct {
@@ -153,7 +186,7 @@ func getNodeHealths(clientset *kubernetes.Clientset) ([]NodeHealth, error) {
 	return healths, nil
 }
 
-// renderAndPush draws three circles (filled for healthy, empty for unhealthy) and pushes to the display.
+// renderAndPush draws three circles with numbers above them and pushes to the display.
 func renderAndPush(healths []NodeHealth, outputPath, asusctlPath string) error {
 	img := image.NewGray(image.Rect(0, 0, imgWidth, imgHeight))
 
@@ -166,23 +199,38 @@ func renderAndPush(healths []NodeHealth, outputPath, asusctlPath string) error {
 
 	white := color.Gray{Y: 255}
 
-	// Draw three circles horizontally centered
-	// Circle radius: 28px, spaced 64px apart
-	// Centers at: x=32, x=96, x=160 (for 3 nodes)
-	// All at y=54 (vertical center of 108px height)
-	centers := []int{32, 96, 160}
-	radius := 28
+	// Layout: Positioned in the VISIBLE area of the diagonal matrix
+	// The diagonal matrix shows a triangle - right side is visible, left is cut off
+	// We need to draw in the RIGHT portion of the image to be visible
+	// Three circles with compact 3x5 numbers above (upside down to appear right-side up)
+	// Circle radius: 4px, spaced 12px apart
+	// Centers at: x=52, x=40, x=28 (REVERSED - right to left to fix horizontal flip)
+	// Circle center at y=22 (upper-middle area)
+	// Numbers at y=31 (4 pixel padding from circle: circle bottom ~26, number bottom 31)
+	centers := []int{52, 40, 28}
+	radius := 4
+	circleY := 22 // center Y for circles
+	numY := 31    // bottom of numbers (4 pixel padding from circle)
 
 	for i, health := range healths {
 		if i >= len(centers) {
 			break // Only show first 3 nodes
 		}
+
 		cx := centers[i]
-		cy := 54
+
+		// Draw number above circle (1, 2, or 3) - direct coordinates, upside-down drawing
+		digit := rune('1' + i)
+		if bitmap, ok := digitBitmaps[digit]; ok {
+			// Center the 3x5 digit above the circle (3 cols wide, center at cx)
+			drawBitmapDigit(img, cx-1, numY, bitmap, white)
+		}
+
+		// Draw circle below number - direct coordinates, NO flipY
 		if health.Healthy {
-			drawFilledCircle(img, cx, cy, radius, white)
+			drawFilledCircle(img, cx, circleY, radius, white)
 		} else {
-			drawCircleOutline(img, cx, cy, radius, 3, white)
+			drawCircleOutline(img, cx, circleY, radius, 1, white)
 		}
 	}
 
@@ -197,13 +245,34 @@ func renderAndPush(healths []NodeHealth, outputPath, asusctlPath string) error {
 		return fmt.Errorf("encode png: %w", err)
 	}
 
-	// Push to AniMe Matrix display
-	cmd := exec.Command(asusctlPath, "anime", "image", "--path", outputPath)
+	// Push to AniMe Matrix display using pixel-image mode for 1:1 LED mapping
+	cmd := exec.Command(asusctlPath, "anime", "pixel-image", "--path", outputPath)
 	if output, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("asusctl anime image: %v: %s", err, output)
+		return fmt.Errorf("asusctl anime pixel-image: %v: %s", err, output)
 	}
 
 	return nil
+}
+
+// drawBitmapDigit draws a 3x5 digit at the specified position.
+// Digits are drawn upside-down and horizontally-flipped to appear correctly on the diagonal matrix.
+func drawBitmapDigit(img *image.Gray, x, y int, bitmap [5][3]bool, c color.Gray) {
+	// Draw upside down and horizontally flipped
+	// row 0 at bottom (y), grows upward (decreasing y)
+	// columns reversed (2-col, 1-col, 0-col) to flip horizontally
+	for row := 0; row < 5; row++ {
+		for col := 0; col < 3; col++ {
+			if bitmap[row][col] {
+				// Flip horizontally: col 0→2, col 1→1, col 2→0
+				px := x + (2 - col)
+				py := y - row // Subtract row to go upward (flipped)
+
+				if px >= 0 && px < imgWidth && py >= 0 && py < imgHeight {
+					img.SetGray(px, py, c)
+				}
+			}
+		}
+	}
 }
 
 // drawFilledCircle draws a filled circle using midpoint circle algorithm.
@@ -215,12 +284,20 @@ func drawFilledCircle(img *image.Gray, cx, cy, radius int, c color.Gray) {
 	for x >= y {
 		// Draw horizontal lines between symmetric points
 		for dx := cx - x; dx <= cx+x; dx++ {
-			img.SetGray(dx, cy+y, c)
-			img.SetGray(dx, cy-y, c)
+			if dx >= 0 && dx < imgWidth && cy+y >= 0 && cy+y < imgHeight {
+				img.SetGray(dx, cy+y, c)
+			}
+			if dx >= 0 && dx < imgWidth && cy-y >= 0 && cy-y < imgHeight {
+				img.SetGray(dx, cy-y, c)
+			}
 		}
 		for dx := cx - y; dx <= cx+y; dx++ {
-			img.SetGray(dx, cy+x, c)
-			img.SetGray(dx, cy-x, c)
+			if dx >= 0 && dx < imgWidth && cy+x >= 0 && cy+x < imgHeight {
+				img.SetGray(dx, cy+x, c)
+			}
+			if dx >= 0 && dx < imgWidth && cy-x >= 0 && cy-x < imgHeight {
+				img.SetGray(dx, cy-x, c)
+			}
 		}
 
 		if err <= 0 {
