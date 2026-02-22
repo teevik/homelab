@@ -119,6 +119,21 @@
             matchNames:
               - longhorn-system
       ''
+
+      # When a node goes down, Longhorn by default does nothing about pods stuck in
+      # Terminating on that node. This causes a Multi-Attach deadlock: the new pod
+      # on a healthy node can't attach the volume because Kubernetes still considers
+      # it owned by the terminating pod on the dead node.
+      # "delete-statefulset-pod" makes Longhorn proactively delete those stuck pods,
+      # releasing the volume lock immediately so it can reattach on the new node.
+      ''
+        apiVersion: longhorn.io/v1beta2
+        kind: Setting
+        metadata:
+          name: node-down-pod-deletion-policy
+          namespace: longhorn-system
+        value: delete-statefulset-pod
+      ''
     ];
 
     # Tailscale ingress for Longhorn UI

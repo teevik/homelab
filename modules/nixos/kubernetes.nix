@@ -39,6 +39,15 @@ in
         "--disable=traefik" # Use Tailscale ingress instead
         "--disable=local-storage" # Use Longhorn instead
         "--disable=servicelb" # Use MetalLB instead
+
+        # Speed up node failure detection: mark node unhealthy after 20s of missed heartbeats
+        # (default is 40s; must be a multiple of node-monitor-period which defaults to 5s)
+        "--kube-controller-manager-arg=node-monitor-grace-period=20s"
+
+        # Reduce default pod eviction toleration from 300s (5 min) to 30s.
+        # In Kubernetes 1.24+ this is set via the DefaultTolerationSeconds admission plugin.
+        "--kube-apiserver-arg=default-not-ready-toleration-seconds=30"
+        "--kube-apiserver-arg=default-unreachable-toleration-seconds=30"
       ];
     };
 
