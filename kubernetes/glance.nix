@@ -43,14 +43,14 @@ let
                         <span class="size-h1 color-highlight">{{ $nodesRunning }}</span>
                         <span class="size-h6 color-paragraph">Nodes Ready</span>
                       </div>
-                      
+
                       <!-- Pods Card -->
                       <div class="flex flex-col items-center gap-10 padding-10">
                         <span class="size-h2">📦</span>
                         <span class="size-h1 color-highlight">{{ $podsRunning }}</span>
                         <span class="size-h6 color-paragraph">Pods Running</span>
                       </div>
-                      
+
                       <!-- Alerts Card -->
                       <div class="flex flex-col items-center gap-10 padding-10">
                         <span class="size-h2">{{ if eq $alerts 0 }}✅{{ else }}⚠️{{ end }}</span>
@@ -257,7 +257,7 @@ let
                   {
                     title = "Longhorn UI";
                     url = "http://longhorn-frontend.longhorn-system.svc:80";
-                    icon = "si:longhorn";
+                    icon = "di:longhorn";
                   }
                   {
                     title = "Nginx";
@@ -313,7 +313,7 @@ let
                     url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=sum(longhorn_volume_actual_size_bytes)";
                   };
                   healthyNodes = {
-                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(longhorn_node_status%7Bcondition%3D%22Ready%22%7D)";
+                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(longhorn_node_status%7Bcondition%3D%22ready%22%7D)";
                   };
                 };
                 template = ''

@@ -100,6 +100,27 @@
       };
     };
 
+    # Scrape Longhorn metrics into VictoriaMetrics
+    yamls = [
+      ''
+        apiVersion: operator.victoriametrics.com/v1beta1
+        kind: VMServiceScrape
+        metadata:
+          name: longhorn
+          namespace: monitoring
+        spec:
+          endpoints:
+            - port: manager
+              path: /metrics
+          selector:
+            matchLabels:
+              app: longhorn-manager
+          namespaceSelector:
+            matchNames:
+              - longhorn-system
+      ''
+    ];
+
     # Tailscale ingress for Longhorn UI
     resources = {
       services.longhorn-ui = {
