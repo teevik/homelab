@@ -67,6 +67,9 @@
               default_home_dashboard_path = "/var/lib/grafana/dashboards/default/kubernetes-views-global.json";
             };
           };
+          deploymentStrategy = {
+            type = "Recreate";
+          };
           # Enable anonymous access for iframe embedding
           env = {
             GF_AUTH_ANONYMOUS_ENABLED = "true";
