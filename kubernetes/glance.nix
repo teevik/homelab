@@ -231,12 +231,14 @@ let
                 sites = [
                   {
                     title = "Glance";
-                    url = "http://glance.glance.svc";
+                    url = "http://glance";
+                    check-url = "http://glance.glance.svc";
                     icon = "si:glance";
                   }
                   {
                     title = "Grafana";
-                    url = "http://victoria-metrics-k8s-stack-grafana.monitoring.svc:80";
+                    url = "http://grafana";
+                    check-url = "http://victoria-metrics-k8s-stack-grafana.monitoring.svc:80";
                     icon = "si:grafana";
                   }
                   {
@@ -256,12 +258,14 @@ let
                   }
                   {
                     title = "Longhorn UI";
-                    url = "http://longhorn-frontend.longhorn-system.svc:80";
+                    url = "http://longhorn";
+                    check-url = "http://longhorn-frontend.longhorn-system.svc:80";
                     icon = "auto-invert https://raw.githubusercontent.com/cncf/artwork/main/projects/longhorn/icon/black/longhorn-icon-black.svg";
                   }
                   {
                     title = "Nginx";
-                    url = "http://nginx.nginx.svc:80";
+                    url = "http://nginx";
+                    check-url = "http://nginx.nginx.svc:80";
                     icon = "si:nginx";
                   }
                 ];
