@@ -150,20 +150,16 @@ let
                 type = "markets";
                 markets = [
                   {
-                    symbol = "SPY";
-                    name = "S&P 500";
-                  }
-                  {
-                    symbol = "BTC-USD";
-                    name = "Bitcoin";
-                  }
-                  {
-                    symbol = "ETH-USD";
-                    name = "Ethereum";
+                    symbol = "KOG.OL";
+                    name = "Kongsberg Gruppen";
                   }
                   {
                     symbol = "NVDA";
                     name = "NVIDIA";
+                  }
+                  {
+                    symbol = "NVO";
+                    name = "Novo Nordisk ADR";
                   }
                 ];
               }
