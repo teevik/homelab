@@ -20,6 +20,7 @@
               ports.http.containerPort = 27973;
               env = {
                 HIDE_MOUNTPOINTS_BY_DEFAULT.value = "true";
+                MOUNTPOINTS.value = "/:Root";
               };
             };
           };
