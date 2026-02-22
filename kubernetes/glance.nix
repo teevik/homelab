@@ -147,40 +147,6 @@ let
             size = "small";
             widgets = [
               {
-                type = "bookmarks";
-                groups = [
-                  {
-                    title = "Homelab";
-                    color = "10 70 50";
-                    links = [
-                      {
-                        title = "Longhorn";
-                        url = "http://longhorn";
-                      }
-                      {
-                        title = "ArgoCD";
-                        url = "http://argocd";
-                      }
-                    ];
-                  }
-                  {
-                    title = "General";
-                    color = "200 50 50";
-                    links = [
-                      {
-                        title = "GitHub";
-                        url = "https://github.com";
-                      }
-                      {
-                        title = "Wikipedia";
-                        url = "https://en.wikipedia.org";
-                      }
-                    ];
-                  }
-                ];
-              }
-
-              {
                 type = "markets";
                 markets = [
                   {
