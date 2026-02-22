@@ -354,40 +354,6 @@ let
                   </div>
                 '';
               }
-
-              {
-                type = "bookmarks";
-                title = "Quick Links";
-                groups = [
-                  {
-                    title = "Observability";
-                    color = "30 80 50";
-                    links = [
-                      {
-                        title = "Grafana";
-                        url = "http://grafana";
-                        icon = "si:grafana";
-                      }
-                    ];
-                  }
-                  {
-                    title = "Infrastructure";
-                    color = "10 70 50";
-                    links = [
-                      {
-                        title = "Longhorn";
-                        url = "https://longhorn.local";
-                        icon = "si:longhorn";
-                      }
-                      {
-                        title = "ArgoCD";
-                        url = "https://argocd.local";
-                        icon = "si:argo";
-                      }
-                    ];
-                  }
-                ];
-              }
             ];
           }
 
