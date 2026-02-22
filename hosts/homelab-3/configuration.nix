@@ -11,6 +11,7 @@
     inputs.sops-nix.nixosModules.sops
     flake.nixosModules.standard
     flake.nixosModules.kubernetes
+    flake.nixosModules.anime-matrix
   ];
 
   # Disk configuration
@@ -22,7 +23,7 @@
   # Ignore lid close so the laptop doesn't sleep
   services.logind.settings.Login.HandleLidSwitch = "ignore";
 
-  # ASUS ROG - disable keyboard LEDs and AniMe Matrix
+  # ASUS ROG - disable keyboard LEDs, configure AniMe Matrix
   services.asusd = {
     enable = true;
     asusdConfig = {
@@ -55,8 +56,8 @@
             boot: [],
             wake: [],
             shutdown: [],
-            display_enabled: false,
-            display_brightness: Off,
+            display_enabled: true,
+            display_brightness: Med,
             builtin_anims_enabled: false,
             off_when_unplugged: true,
             off_when_suspended: true,
@@ -77,6 +78,9 @@
   systemd.tmpfiles.rules = [
     "w /sys/class/leds/asus::kbd_backlight/brightness - - - - 0"
   ];
+
+  # AniMe Matrix cluster stats display
+  homelab.animeMatrix.enable = true;
 
   # Join existing HA cluster
   homelab.kubernetes.serverAddr = "https://192.168.1.114:6443";
