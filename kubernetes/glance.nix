@@ -274,28 +274,95 @@ let
             size = "full";
             widgets = [
               {
-                type = "split-column";
-                widgets = [
-                  {
-                    type = "iframe";
-                    title = "Node Overview";
-                    source = "https://grafana/d/disk/kubernetes-views-nodes?orgId=1&refresh=5s&kiosk&theme=dark";
-                    height = 350;
-                  }
-                  {
-                    type = "iframe";
-                    title = "Pod Status";
-                    source = "https://grafana/d/k8s_views_pods/kubernetes-views-pods?orgId=1&refresh=5s&kiosk&theme=dark";
-                    height = 350;
-                  }
-                ];
+                type = "custom-api";
+                title = "Cluster Nodes";
+                cache = "1m";
+                url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=kube_node_status_condition{condition=%22Ready%22,status=%22true%22}";
+                template = ''
+                  <div class="flex flex-col gap-10">
+                    <table class="table">
+                      <thead>
+                        <tr>
+                          <th>Node</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                      {{ range .JSON.Array "data.result" }}
+                        <tr>
+                          <td>{{ .String "metric.node" }}</td>
+                          <td>
+                            {{ $status := .String "metric.status" }}
+                            {{ if eq $status "true" }}
+                              <span class="color-positive">Ready</span>
+                            {{ else }}
+                              <span class="color-negative">Not Ready</span>
+                            {{ end }}
+                          </td>
+                        </tr>
+                      {{ end }}
+                      </tbody>
+                    </table>
+                  </div>
+                '';
               }
 
               {
-                type = "iframe";
+                type = "custom-api";
+                title = "Pod Overview";
+                cache = "1m";
+                url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count%20by%20(namespace)%20(kube_pod_info)";
+                template = ''
+                  <div class="flex flex-col gap-10">
+                    <table class="table">
+                      <thead>
+                        <tr>
+                          <th>Namespace</th>
+                          <th>Pods</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                      {{ range .JSON.Array "data.result" }}
+                        <tr>
+                          <td>{{ .String "metric.namespace" }}</td>
+                          <td class="text-right">{{ .String "value.1" }}</td>
+                        </tr>
+                      {{ end }}
+                      </tbody>
+                    </table>
+                  </div>
+                '';
+              }
+
+              {
+                type = "custom-api";
                 title = "VictoriaMetrics Health";
-                source = "https://grafana/d/victoriametrics/victoriametrics?orgId=1&refresh=5s&kiosk&theme=dark";
-                height = 280;
+                cache = "30s";
+                url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=up{job=%22vmsingle-victoria-metrics-k8s-stack%22}";
+                template = ''
+                  <div class="flex flex-col gap-10">
+                    {{ $results := .JSON.Array "data.result" }}
+                    {{ if eq (len $results) 0 }}
+                      <div class="flex justify-center">
+                        <span class="color-negative size-h3">VM Not Reachable</span>
+                      </div>
+                    {{ else }}
+                      {{ range $results }}
+                        {{ $value := .String "value.1" }}
+                        <div class="flex justify-between">
+                          <span class="size-h6 color-paragraph">Status</span>
+                          <span class="size-h4 {{ if eq $value "1" }}color-positive{{ else }}color-negative{{ end }}">
+                            {{ if eq $value "1" }}Healthy{{ else }}Down{{ end }}
+                          </span>
+                        </div>
+                        <div class="flex justify-between">
+                          <span class="size-h6 color-paragraph">Instance</span>
+                          <span class="size-h4 color-highlight">{{ .String "metric.instance" }}</span>
+                        </div>
+                      {{ end }}
+                    {{ end }}
+                  </div>
+                '';
               }
 
               {

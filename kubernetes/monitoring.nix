@@ -62,6 +62,13 @@
             size = "5Gi";
           };
           defaultDashboardsTimezone = "browser";
+          # Enable anonymous access for iframe embedding
+          env = {
+            GF_AUTH_ANONYMOUS_ENABLED = "true";
+            GF_AUTH_ANONYMOUS_ORG_ROLE = "Viewer";
+            GF_SECURITY_ALLOW_EMBEDDING = "true";
+            GF_SECURITY_COOKIE_SAMESITE = "none";
+          };
         };
 
         # k3s uses kubelet on a different port and doesn't run kube-proxy/etcd/scheduler/controller-manager as separate pods
