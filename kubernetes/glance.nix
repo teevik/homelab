@@ -10,6 +10,32 @@ let
             size = "small";
             widgets = [
               {
+                type = "monitor";
+                title = "Service Health";
+                cache = "1m";
+                sites = [
+                  {
+                    title = "Glance";
+                    url = "http://glance";
+                    check-url = "http://glance.glance.svc";
+                    icon = "si:glance";
+                  }
+                ];
+              }
+
+              {
+                type = "server-stats";
+                title = "Server";
+                servers = [
+                  {
+                    type = "remote";
+                    name = "homelab";
+                    url = "http://homelab:27973";
+                  }
+                ];
+              }
+
+              {
                 type = "calendar";
                 first-day-of-week = "monday";
               }
@@ -119,47 +145,6 @@ let
         ];
       }
 
-      # Homelab tab - Service health and server stats
-      {
-        name = "Homelab";
-        columns = [
-          {
-            size = "small";
-            widgets = [
-              {
-                type = "monitor";
-                title = "Service Health";
-                cache = "1m";
-                sites = [
-                  {
-                    title = "Glance";
-                    url = "http://glance";
-                    check-url = "http://glance.glance.svc";
-                    icon = "si:glance";
-                  }
-                ];
-              }
-            ];
-          }
-
-          {
-            size = "full";
-            widgets = [
-              {
-                type = "server-stats";
-                title = "Server";
-                servers = [
-                  {
-                    type = "remote";
-                    name = "homelab";
-                    url = "http://homelab:27973";
-                  }
-                ];
-              }
-            ];
-          }
-        ];
-      }
     ];
   };
 
