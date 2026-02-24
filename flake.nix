@@ -55,6 +55,8 @@
           ./kubernetes/glance.nix
           ./kubernetes/glance-agent.nix
           ./kubernetes/immich.nix
+          ./kubernetes/kodekamp.nix
+          ./kubernetes/cloudflare-tunnel.nix
         ];
       };
     };

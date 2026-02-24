@@ -25,9 +25,13 @@
           # Reserve 15% disk space as safety margin
           storageMinimalAvailablePercentage = 15;
           storageReservedPercentageForDefaultDisk = 15;
-          # S3 backup target — configure later:
-          # backupTarget = "s3://bucket@region/";
-          # backupTargetCredentialSecret = "longhorn-backup-secret";
+        };
+
+        # S3 backup target (Hetzner Object Storage, hel1)
+        defaultBackupStore = {
+          backupTarget = "s3://homelab-longhorn-backup@hel1/";
+          backupTargetCredentialSecret = "longhorn-backup-secret";
+          pollInterval = "5m0s";
         };
 
         # Single replica for UI on single-node

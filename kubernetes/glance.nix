@@ -32,6 +32,12 @@ let
                     check-url = "http://immich-tailscale.immich.svc";
                     icon = "si:immich";
                   }
+                  {
+                    title = "KodeKamp";
+                    url = "https://kodekamp.teevik.no";
+                    check-url = "http://kodekamp-web.kodekamp.svc:3000";
+                    icon = "si:codewars";
+                  }
                 ];
               }
 
