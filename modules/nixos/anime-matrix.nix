@@ -18,26 +18,14 @@ in
       default = "15s";
       description = "How often to refresh the server stats display (Go duration format).";
     };
-
-    kubeconfig = lib.mkOption {
-      type = lib.types.str;
-      default = "/etc/rancher/k3s/k3s.yaml";
-      description = "Path to the kubeconfig file for accessing k3s.";
-    };
   };
 
   config = lib.mkIf cfg.enable {
     # Systemd service to run anime-matrix-stats
     systemd.services.anime-matrix-stats = {
-      description = "Display Kubernetes server stats on AniMe Matrix";
-      after = [
-        "k3s.service"
-        "asusd.service"
-      ];
-      wants = [
-        "k3s.service"
-        "asusd.service"
-      ];
+      description = "Display server CPU, memory and disk stats on AniMe Matrix";
+      after = [ "asusd.service" ];
+      wants = [ "asusd.service" ];
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
@@ -48,12 +36,11 @@ in
 
         ExecStart = lib.concatStringsSep " " [
           "${flake.packages.${pkgs.system}.anime-matrix-stats}/bin/anime-matrix-stats"
-          "--kubeconfig=${cfg.kubeconfig}"
           "--interval=${cfg.interval}"
           "--asusctl=${pkgs.asusctl}/bin/asusctl"
         ];
 
-        # Run as root to access kubeconfig and asusctl
+        # Run as root to access asusctl
         User = "root";
 
         # Disable the display on stop

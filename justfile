@@ -13,7 +13,7 @@ install TARGET-IP:
     ssh root@{{ TARGET-IP }} "chown -R 1000:100 /mnt/home/teevik"
 
 deploy:
-    nixos-rebuild switch --flake .#homelab --target-host homelab --use-remote-sudo
+    nixos-rebuild switch --flake .#homelab --target-host homelab --sudo
 
 apply:
     nixidy apply .#homelab

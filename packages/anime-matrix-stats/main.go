@@ -1,7 +1,7 @@
 package main
 
 import (
-	"context"
+	"bufio"
 	"flag"
 	"fmt"
 	"image"
@@ -11,13 +11,10 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
-
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 const (
@@ -26,29 +23,24 @@ const (
 	imgHeight = 36
 )
 
-// ServerHealth tracks the health status of the server.
-type ServerHealth struct {
-	NodeReady   bool
-	TotalPods   int
-	HealthyPods int
+// SystemStats holds CPU, memory and disk usage percentages.
+type SystemStats struct {
+	CPUPercent  float64
+	MemPercent  float64
+	DiskPercent float64
+}
+
+// cpuTimes holds the relevant fields from /proc/stat.
+type cpuTimes struct {
+	idle  uint64
+	total uint64
 }
 
 func main() {
-	kubeconfig := flag.String("kubeconfig", "/etc/rancher/k3s/k3s.yaml", "path to kubeconfig")
 	interval := flag.Duration("interval", 15*time.Second, "refresh interval")
 	asusctlPath := flag.String("asusctl", "asusctl", "path to asusctl binary")
 	outputPath := flag.String("output", "/tmp/anime-matrix-stats.png", "path to output image")
 	flag.Parse()
-
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	if err != nil {
-		log.Fatalf("Failed to build kubeconfig: %v", err)
-	}
-
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		log.Fatalf("Failed to create kubernetes client: %v", err)
-	}
 
 	// Handle graceful shutdown
 	sigCh := make(chan os.Signal, 1)
@@ -68,14 +60,16 @@ func main() {
 	log.Printf("Starting anime-matrix-stats (interval=%s)", *interval)
 
 	for {
-		health, err := getServerHealth(clientset)
+		stats, err := getSystemStats()
 		if err != nil {
-			log.Printf("Error getting server health: %v", err)
+			log.Printf("Error getting system stats: %v", err)
 			time.Sleep(*interval)
 			continue
 		}
 
-		if err := renderAndPush(health, *outputPath, *asusctlPath); err != nil {
+		log.Printf("CPU: %.1f%%  MEM: %.1f%%  DISK: %.1f%%", stats.CPUPercent, stats.MemPercent, stats.DiskPercent)
+
+		if err := renderAndPush(stats, *outputPath, *asusctlPath); err != nil {
 			log.Printf("Error rendering/pushing: %v", err)
 		}
 
@@ -83,49 +77,158 @@ func main() {
 	}
 }
 
-// getServerHealth checks the node's Ready status and pod health.
-func getServerHealth(clientset *kubernetes.Clientset) (*ServerHealth, error) {
-	ctx := context.Background()
-
-	health := &ServerHealth{}
-
-	// Get the node (should be only one)
-	nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+// getSystemStats collects CPU, memory and disk usage.
+func getSystemStats() (*SystemStats, error) {
+	cpu, err := getCPUPercent()
 	if err != nil {
-		return nil, fmt.Errorf("list nodes: %w", err)
+		return nil, fmt.Errorf("cpu: %w", err)
 	}
 
-	if len(nodes.Items) > 0 {
-		node := nodes.Items[0]
-		for _, cond := range node.Status.Conditions {
-			if cond.Type == "Ready" && cond.Status == "True" {
-				health.NodeReady = true
-				break
-			}
-		}
-	}
-
-	// Get all pods
-	pods, err := clientset.CoreV1().Pods("").List(ctx, metav1.ListOptions{})
+	mem, err := getMemPercent()
 	if err != nil {
-		return nil, fmt.Errorf("list pods: %w", err)
+		return nil, fmt.Errorf("mem: %w", err)
 	}
 
-	for _, pod := range pods.Items {
-		if pod.DeletionTimestamp != nil {
-			continue
-		}
-		health.TotalPods++
-		if pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodSucceeded {
-			health.HealthyPods++
-		}
+	disk, err := getDiskPercent("/")
+	if err != nil {
+		return nil, fmt.Errorf("disk: %w", err)
 	}
 
-	return health, nil
+	return &SystemStats{
+		CPUPercent:  cpu,
+		MemPercent:  mem,
+		DiskPercent: disk,
+	}, nil
 }
 
-// renderAndPush draws a single status indicator and pushes to the display.
-func renderAndPush(health *ServerHealth, outputPath, asusctlPath string) error {
+// readCPUTimes parses the first "cpu" line from /proc/stat.
+func readCPUTimes() (cpuTimes, error) {
+	f, err := os.Open("/proc/stat")
+	if err != nil {
+		return cpuTimes{}, err
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "cpu ") {
+			fields := strings.Fields(line)
+			if len(fields) < 5 {
+				return cpuTimes{}, fmt.Errorf("unexpected /proc/stat format")
+			}
+
+			var total, idle uint64
+			for i, field := range fields[1:] {
+				val, err := strconv.ParseUint(field, 10, 64)
+				if err != nil {
+					return cpuTimes{}, fmt.Errorf("parse field %d: %w", i, err)
+				}
+				total += val
+				// Field index 3 (4th value after "cpu") is idle time
+				if i == 3 {
+					idle = val
+				}
+			}
+
+			return cpuTimes{idle: idle, total: total}, nil
+		}
+	}
+
+	return cpuTimes{}, fmt.Errorf("/proc/stat: no cpu line found")
+}
+
+// getCPUPercent measures CPU usage over a short sampling interval.
+func getCPUPercent() (float64, error) {
+	t1, err := readCPUTimes()
+	if err != nil {
+		return 0, err
+	}
+
+	time.Sleep(500 * time.Millisecond)
+
+	t2, err := readCPUTimes()
+	if err != nil {
+		return 0, err
+	}
+
+	totalDelta := float64(t2.total - t1.total)
+	idleDelta := float64(t2.idle - t1.idle)
+
+	if totalDelta == 0 {
+		return 0, nil
+	}
+
+	return (1.0 - idleDelta/totalDelta) * 100.0, nil
+}
+
+// getMemPercent reads /proc/meminfo to calculate memory usage percentage.
+func getMemPercent() (float64, error) {
+	f, err := os.Open("/proc/meminfo")
+	if err != nil {
+		return 0, err
+	}
+	defer f.Close()
+
+	var memTotal, memAvailable uint64
+	found := 0
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() && found < 2 {
+		line := scanner.Text()
+
+		if strings.HasPrefix(line, "MemTotal:") {
+			memTotal, err = parseMemInfoValue(line)
+			if err != nil {
+				return 0, err
+			}
+			found++
+		} else if strings.HasPrefix(line, "MemAvailable:") {
+			memAvailable, err = parseMemInfoValue(line)
+			if err != nil {
+				return 0, err
+			}
+			found++
+		}
+	}
+
+	if memTotal == 0 {
+		return 0, fmt.Errorf("could not read MemTotal from /proc/meminfo")
+	}
+
+	used := memTotal - memAvailable
+	return float64(used) / float64(memTotal) * 100.0, nil
+}
+
+// parseMemInfoValue extracts the numeric kB value from a /proc/meminfo line.
+func parseMemInfoValue(line string) (uint64, error) {
+	fields := strings.Fields(line)
+	if len(fields) < 2 {
+		return 0, fmt.Errorf("unexpected meminfo line: %s", line)
+	}
+	return strconv.ParseUint(fields[1], 10, 64)
+}
+
+// getDiskPercent returns disk usage percentage for the given mount point.
+func getDiskPercent(path string) (float64, error) {
+	var stat syscall.Statfs_t
+	if err := syscall.Statfs(path, &stat); err != nil {
+		return 0, fmt.Errorf("statfs %s: %w", path, err)
+	}
+
+	total := stat.Blocks * uint64(stat.Bsize)
+	free := stat.Bfree * uint64(stat.Bsize)
+
+	if total == 0 {
+		return 0, nil
+	}
+
+	used := total - free
+	return float64(used) / float64(total) * 100.0, nil
+}
+
+// renderAndPush draws the three metric bars and pushes to the display.
+func renderAndPush(stats *SystemStats, outputPath, asusctlPath string) error {
 	img := image.NewGray(image.Rect(0, 0, imgWidth, imgHeight))
 
 	// Fill black background
@@ -136,19 +239,65 @@ func renderAndPush(health *ServerHealth, outputPath, asusctlPath string) error {
 	}
 
 	white := color.Gray{Y: 255}
+	dim := color.Gray{Y: 60}
 
-	// Draw a single larger square in the visible area of the diagonal matrix
-	// The right side of the image is the visible part
-	cx := 46 // center X - positioned in visible area
-	cy := 22 // center Y
-	radius := 6
+	// Layout: three rows of [Letter] [Bar] in the visible right portion
+	// The AniMe Matrix diagonal layout means the right side is most visible
+	startX := 17            // left edge of our drawing area (lower = more left in flipped view)
+	barStartX := startX + 6 // after the letter + 1px gap
+	fullBarWidth := imgWidth - barStartX - 3
+	barHeight := 5
 
-	allHealthy := health.NodeReady && health.TotalPods == health.HealthyPods
+	// Each row has a different bar width to fit the diagonal display edge
+	metrics := []struct {
+		letter   [5][3]bool // 3x5 bitmap
+		percent  float64
+		barWidth int
+	}{
+		{letter: letterC, percent: stats.CPUPercent, barWidth: fullBarWidth},
+		{letter: letterM, percent: stats.MemPercent, barWidth: fullBarWidth * 3 / 4},
+		{letter: letterD, percent: stats.DiskPercent, barWidth: fullBarWidth / 2},
+	}
 
-	if allHealthy {
-		drawFilledSquare(img, cx, cy, radius, white)
-	} else {
-		drawSquareOutline(img, cx, cy, radius, white)
+	for i, m := range metrics {
+		rowY := 1 + i*8 // vertical spacing between rows (lower = more up in flipped view)
+
+		// Draw letter
+		drawLetter(img, startX, rowY, m.letter, white)
+
+		// Draw bar background (dim outline)
+		barY := rowY
+		for x := barStartX; x < barStartX+m.barWidth; x++ {
+			img.SetGray(x, barY, dim)
+			img.SetGray(x, barY+barHeight-1, dim)
+		}
+		for y := barY; y < barY+barHeight; y++ {
+			img.SetGray(barStartX, y, dim)
+			img.SetGray(barStartX+m.barWidth-1, y, dim)
+		}
+
+		// Draw filled portion
+		pct := m.percent
+		if pct > 100 {
+			pct = 100
+		}
+		if pct < 0 {
+			pct = 0
+		}
+		fillWidth := int(float64(m.barWidth-2) * pct / 100.0)
+		for y := barY + 1; y < barY+barHeight-1; y++ {
+			for x := barStartX + 1; x < barStartX+1+fillWidth; x++ {
+				img.SetGray(x, y, white)
+			}
+		}
+	}
+
+	// Flip the image both vertically and horizontally (the AniMe Matrix display is rotated 180°)
+	flipped := image.NewGray(img.Bounds())
+	for y := 0; y < imgHeight; y++ {
+		for x := 0; x < imgWidth; x++ {
+			flipped.SetGray(x, y, img.GrayAt(imgWidth-1-x, imgHeight-1-y))
+		}
 	}
 
 	// Write PNG
@@ -158,7 +307,7 @@ func renderAndPush(health *ServerHealth, outputPath, asusctlPath string) error {
 	}
 	defer f.Close()
 
-	if err := png.Encode(f, img); err != nil {
+	if err := png.Encode(f, flipped); err != nil {
 		return fmt.Errorf("encode png: %w", err)
 	}
 
@@ -171,44 +320,42 @@ func renderAndPush(health *ServerHealth, outputPath, asusctlPath string) error {
 	return nil
 }
 
-// drawFilledSquare draws a simple filled square centered at (cx, cy) with given radius.
-func drawFilledSquare(img *image.Gray, cx, cy, radius int, c color.Gray) {
-	for y := cy - radius; y <= cy+radius; y++ {
-		for x := cx - radius; x <= cx+radius; x++ {
-			if x >= 0 && x < imgWidth && y >= 0 && y < imgHeight {
-				img.SetGray(x, y, c)
+// drawLetter renders a 3x5 bitmap letter onto the image.
+func drawLetter(img *image.Gray, x, y int, bitmap [5][3]bool, c color.Gray) {
+	for row := 0; row < 5; row++ {
+		for col := 0; col < 3; col++ {
+			if bitmap[row][col] {
+				px := x + col
+				py := y + row
+				if px >= 0 && px < imgWidth && py >= 0 && py < imgHeight {
+					img.SetGray(px, py, c)
+				}
 			}
 		}
 	}
 }
 
-// drawSquareOutline draws just the outline of a square.
-func drawSquareOutline(img *image.Gray, cx, cy, radius int, c color.Gray) {
-	left := cx - radius
-	right := cx + radius
-	top := cy - radius
-	bottom := cy + radius
+// 3x5 bitmap font definitions for C, M, D
+var letterC = [5][3]bool{
+	{true, true, true},
+	{true, false, false},
+	{true, false, false},
+	{true, false, false},
+	{true, true, true},
+}
 
-	// Draw top and bottom edges
-	for x := left; x <= right; x++ {
-		if x >= 0 && x < imgWidth {
-			if top >= 0 && top < imgHeight {
-				img.SetGray(x, top, c)
-			}
-			if bottom >= 0 && bottom < imgHeight {
-				img.SetGray(x, bottom, c)
-			}
-		}
-	}
-	// Draw left and right edges
-	for y := top; y <= bottom; y++ {
-		if y >= 0 && y < imgHeight {
-			if left >= 0 && left < imgWidth {
-				img.SetGray(left, y, c)
-			}
-			if right >= 0 && right < imgWidth {
-				img.SetGray(right, y, c)
-			}
-		}
-	}
+var letterM = [5][3]bool{
+	{true, false, true},
+	{true, true, true},
+	{true, true, true},
+	{true, false, true},
+	{true, false, true},
+}
+
+var letterD = [5][3]bool{
+	{true, true, false},
+	{true, false, true},
+	{true, false, true},
+	{true, false, true},
+	{true, true, false},
 }

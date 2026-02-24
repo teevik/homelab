@@ -8,10 +8,10 @@ pkgs.buildGoModule {
 
   src = ./.;
 
-  vendorHash = "sha256-CDeHiW+wQPSaJDad5rPqAtIJ3wDsdlho/XLwYAn7Cg0=";
+  vendorHash = null;
 
   meta = {
-    description = "Display Kubernetes cluster stats on ASUS ROG AniMe Matrix";
+    description = "Display server CPU, memory and disk stats on ASUS ROG AniMe Matrix";
     mainProgram = "anime-matrix-stats";
   };
 }
