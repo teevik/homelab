@@ -247,10 +247,10 @@ let
                 url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(longhorn_volume_capacity_bytes)";
                 subrequests = {
                   attachedVolumes = {
-                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(longhorn_volume_state%7Bstate%3D%22attached%22%7D)";
+                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(longhorn_volume_state%7Bstate%3D%22attached%22%7D%3D%3D1)";
                   };
                   detachedVolumes = {
-                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(longhorn_volume_state%7Bstate%3D%22detached%22%7D)";
+                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(longhorn_volume_state%7Bstate%3D%22detached%22%7D%3D%3D1)";
                   };
                   totalCapacity = {
                     url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=sum(longhorn_volume_capacity_bytes)";
