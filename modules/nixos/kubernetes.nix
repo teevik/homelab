@@ -11,11 +11,21 @@
     sops.secrets.tailscale_oauth_client_id = { };
     sops.secrets.tailscale_oauth_client_secret = { };
 
+    # Longhorn requires binaries at standard FHS paths (iscsiadm, mount, etc.)
+    systemd.tmpfiles.rules = [
+      "L+ /usr/local/bin - - - - /run/current-system/sw/bin/"
+    ];
+
     # Longhorn v1 engine requires open-iscsi on the host
     services.openiscsi = {
       enable = true;
       name = "iqn.2016-04.io.longhorn:homelab";
     };
+
+    # nfs-utils needed for Longhorn NFS backup targets and RWX volumes
+    environment.systemPackages = with pkgs; [
+      nfs-utils
+    ];
 
     services.k3s = {
       enable = true;
