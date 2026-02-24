@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"sort"
 	"syscall"
 	"time"
 
@@ -23,46 +22,15 @@ import (
 
 const (
 	// Native AniMe Matrix resolution - 64x36 for 1:1 LED pixel mapping
-	// This maps 1:1 to the actual LED grid when using pixel-image mode
 	imgWidth  = 64
 	imgHeight = 36
 )
 
-// flipY converts a Y coordinate from top-origin to bottom-origin (flips image vertically)
-func flipY(y int) int {
-	return imgHeight - 1 - y
-}
-
-// Compact 3x5 bitmap font for digits 1-3 for 64x36 native resolution
-// Each digit is represented as 5 rows of 3 bits - optimized for LED matrix
-var digitBitmaps = map[rune][5][3]bool{
-	'1': {
-		{false, true, false},
-		{true, true, false},
-		{false, true, false},
-		{false, true, false},
-		{true, true, true},
-	},
-	'2': {
-		{true, true, true},
-		{false, false, true},
-		{true, true, true},
-		{true, false, false},
-		{true, true, true},
-	},
-	'3': {
-		{true, true, true},
-		{false, false, true},
-		{true, true, true},
-		{false, false, true},
-		{true, true, true},
-	},
-}
-
-// NodeHealth tracks the health status of a single node.
-type NodeHealth struct {
-	Name    string
-	Healthy bool
+// ServerHealth tracks the health status of the server.
+type ServerHealth struct {
+	NodeReady   bool
+	TotalPods   int
+	HealthyPods int
 }
 
 func main() {
@@ -100,14 +68,14 @@ func main() {
 	log.Printf("Starting anime-matrix-stats (interval=%s)", *interval)
 
 	for {
-		healths, err := getNodeHealths(clientset)
+		health, err := getServerHealth(clientset)
 		if err != nil {
-			log.Printf("Error getting node healths: %v", err)
+			log.Printf("Error getting server health: %v", err)
 			time.Sleep(*interval)
 			continue
 		}
 
-		if err := renderAndPush(healths, *outputPath, *asusctlPath); err != nil {
+		if err := renderAndPush(health, *outputPath, *asusctlPath); err != nil {
 			log.Printf("Error rendering/pushing: %v", err)
 		}
 
@@ -115,79 +83,49 @@ func main() {
 	}
 }
 
-// getNodeHealths checks each node's Ready status and whether all pods on it are Running/Succeeded.
-func getNodeHealths(clientset *kubernetes.Clientset) ([]NodeHealth, error) {
+// getServerHealth checks the node's Ready status and pod health.
+func getServerHealth(clientset *kubernetes.Clientset) (*ServerHealth, error) {
 	ctx := context.Background()
 
-	// Get all nodes
+	health := &ServerHealth{}
+
+	// Get the node (should be only one)
 	nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("list nodes: %w", err)
 	}
 
-	// Sort nodes by name for consistent ordering
-	sort.Slice(nodes.Items, func(i, j int) bool {
-		return nodes.Items[i].Name < nodes.Items[j].Name
-	})
+	if len(nodes.Items) > 0 {
+		node := nodes.Items[0]
+		for _, cond := range node.Status.Conditions {
+			if cond.Type == "Ready" && cond.Status == "True" {
+				health.NodeReady = true
+				break
+			}
+		}
+	}
 
-	// Get all pods across all namespaces
+	// Get all pods
 	pods, err := clientset.CoreV1().Pods("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("list pods: %w", err)
 	}
 
-	// Group pods by node
-	podsByNode := make(map[string][]corev1.Pod)
 	for _, pod := range pods.Items {
-		if pod.Spec.NodeName != "" {
-			podsByNode[pod.Spec.NodeName] = append(podsByNode[pod.Spec.NodeName], pod)
-		}
-	}
-
-	healths := make([]NodeHealth, 0, len(nodes.Items))
-	for _, node := range nodes.Items {
-		health := NodeHealth{Name: node.Name}
-
-		// Check if node is Ready
-		nodeReady := false
-		for _, cond := range node.Status.Conditions {
-			if cond.Type == "Ready" && cond.Status == "True" {
-				nodeReady = true
-				break
-			}
-		}
-
-		if !nodeReady {
-			// Node not ready = unhealthy
-			health.Healthy = false
-			healths = append(healths, health)
+		if pod.DeletionTimestamp != nil {
 			continue
 		}
-
-		// Check all pods on this node
-		nodePods := podsByNode[node.Name]
-		allPodsHealthy := true
-		for _, pod := range nodePods {
-			// Skip pods that are being deleted
-			if pod.DeletionTimestamp != nil {
-				continue
-			}
-			// Only Running and Succeeded phases are considered healthy
-			if pod.Status.Phase != corev1.PodRunning && pod.Status.Phase != corev1.PodSucceeded {
-				allPodsHealthy = false
-				break
-			}
+		health.TotalPods++
+		if pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodSucceeded {
+			health.HealthyPods++
 		}
-
-		health.Healthy = allPodsHealthy
-		healths = append(healths, health)
 	}
 
-	return healths, nil
+	return health, nil
 }
 
-// renderAndPush draws three circles with numbers above them and pushes to the display.
-func renderAndPush(healths []NodeHealth, outputPath, asusctlPath string) error {
+// renderAndPush draws a single status indicator and pushes to the display.
+func renderAndPush(health *ServerHealth, outputPath, asusctlPath string) error {
 	img := image.NewGray(image.Rect(0, 0, imgWidth, imgHeight))
 
 	// Fill black background
@@ -199,39 +137,18 @@ func renderAndPush(healths []NodeHealth, outputPath, asusctlPath string) error {
 
 	white := color.Gray{Y: 255}
 
-	// Layout: Positioned in the VISIBLE area of the diagonal matrix
-	// The diagonal matrix shows a triangle - right side is visible, left is cut off
-	// We need to draw in the RIGHT portion of the image to be visible
-	// Three circles with compact 3x5 numbers above (upside down to appear right-side up)
-	// Square radius: 3px (7x7 pixels total), spaced 12px apart
-	// Centers at: x=52, x=40, x=28 (REVERSED - right to left to fix horizontal flip)
-	// Square center at y=26 (moved down toward bottom edge)
-	// Numbers at y=35 (4 pixel padding from square)
-	centers := []int{52, 40, 28}
-	radius := 3
-	circleY := 26 // center Y for squares (moved down toward bottom)
-	numY := 35    // bottom of numbers (moved down with squares)
+	// Draw a single larger square in the visible area of the diagonal matrix
+	// The right side of the image is the visible part
+	cx := 46 // center X - positioned in visible area
+	cy := 22 // center Y
+	radius := 6
 
-	for i, health := range healths {
-		if i >= len(centers) {
-			break // Only show first 3 nodes
-		}
+	allHealthy := health.NodeReady && health.TotalPods == health.HealthyPods
 
-		cx := centers[i]
-
-		// Draw number above square (1, 2, or 3) - right aligned with the square
-		digit := rune('1' + i)
-		if bitmap, ok := digitBitmaps[digit]; ok {
-			// Right align: square right edge at cx+3, digit (3px) ends at cx+4, so starts at cx+2
-			drawBitmapDigit(img, cx+2, numY, bitmap, white)
-		}
-
-		// Draw simple square below number - direct coordinates, NO flipY
-		if health.Healthy {
-			drawFilledSquare(img, cx, circleY, radius, white)
-		} else {
-			drawSquareOutline(img, cx, circleY, radius, white)
-		}
+	if allHealthy {
+		drawFilledSquare(img, cx, cy, radius, white)
+	} else {
+		drawSquareOutline(img, cx, cy, radius, white)
 	}
 
 	// Write PNG
@@ -254,29 +171,7 @@ func renderAndPush(healths []NodeHealth, outputPath, asusctlPath string) error {
 	return nil
 }
 
-// drawBitmapDigit draws a 3x5 digit at the specified position.
-// Digits are drawn upside-down and horizontally-flipped to appear correctly on the diagonal matrix.
-func drawBitmapDigit(img *image.Gray, x, y int, bitmap [5][3]bool, c color.Gray) {
-	// Draw upside down and horizontally flipped
-	// row 0 at bottom (y), grows upward (decreasing y)
-	// columns reversed (2-col, 1-col, 0-col) to flip horizontally
-	for row := 0; row < 5; row++ {
-		for col := 0; col < 3; col++ {
-			if bitmap[row][col] {
-				// Flip horizontally: col 0→2, col 1→1, col 2→0
-				px := x + (2 - col)
-				py := y - row // Subtract row to go upward (flipped)
-
-				if px >= 0 && px < imgWidth && py >= 0 && py < imgHeight {
-					img.SetGray(px, py, c)
-				}
-			}
-		}
-	}
-}
-
 // drawFilledSquare draws a simple filled square centered at (cx, cy) with given radius.
-// Radius is half the side length (square spans from cx-radius to cx+radius).
 func drawFilledSquare(img *image.Gray, cx, cy, radius int, c color.Gray) {
 	for y := cy - radius; y <= cy+radius; y++ {
 		for x := cx - radius; x <= cx+radius; x++ {
@@ -288,7 +183,6 @@ func drawFilledSquare(img *image.Gray, cx, cy, radius int, c color.Gray) {
 }
 
 // drawSquareOutline draws just the outline of a square.
-// Radius is half the side length.
 func drawSquareOutline(img *image.Gray, cx, cy, radius int, c color.Gray) {
 	left := cx - radius
 	right := cx + radius

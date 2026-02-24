@@ -52,7 +52,6 @@
         envs.homelab.modules = [
           ./kubernetes/homelab.nix
           ./kubernetes/glance.nix
-          ./kubernetes/monitoring.nix
           ./kubernetes/glance-agent.nix
         ];
       };

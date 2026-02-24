@@ -18,7 +18,7 @@
   disko.devices = import ./disk-config.nix { disks = [ "/dev/nvme0n1" ]; };
 
   # Networking
-  networking.hostName = "homelab-3";
+  networking.hostName = "homelab";
 
   # Ignore lid close so the laptop doesn't sleep
   services.logind.settings.Login.HandleLidSwitch = "ignore";
@@ -79,11 +79,8 @@
     "w /sys/class/leds/asus::kbd_backlight/brightness - - - - 0"
   ];
 
-  # AniMe Matrix cluster stats display
+  # AniMe Matrix stats display
   homelab.animeMatrix.enable = true;
-
-  # Join existing HA cluster
-  homelab.kubernetes.serverAddr = "https://192.168.1.114:6443";
 
   nixpkgs.hostPlatform = "x86_64-linux";
   system.stateVersion = "25.05";

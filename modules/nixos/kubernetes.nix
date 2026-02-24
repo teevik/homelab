@@ -5,24 +5,7 @@
   ...
 }:
 
-let
-  cfg = config.homelab.kubernetes;
-in
 {
-  options.homelab.kubernetes = {
-    clusterInit = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Initialize the HA cluster with embedded etcd. Only set on the first server.";
-    };
-
-    serverAddr = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = "Address of an existing server to join (e.g. https://192.168.1.114:6443). Leave null for the initial server.";
-    };
-  };
-
   config = {
     sops.secrets.k3s_token = { };
     sops.secrets.tailscale_oauth_client_id = { };
@@ -31,32 +14,16 @@ in
     services.k3s = {
       enable = true;
       role = "server";
-      clusterInit = cfg.clusterInit;
+      clusterInit = true;
       tokenFile = config.sops.secrets.k3s_token.path;
-      serverAddr = lib.mkIf (cfg.serverAddr != null) cfg.serverAddr;
       extraFlags = toString [
         "--write-kubeconfig-mode=0644"
         "--disable=traefik" # Use Tailscale ingress instead
-        "--disable=local-storage" # Use Longhorn instead
-        "--disable=servicelb" # Use MetalLB instead
-
-        # Speed up node failure detection: mark node unhealthy after 20s of missed heartbeats
-        # (default is 40s; must be a multiple of node-monitor-period which defaults to 5s)
-        "--kube-controller-manager-arg=node-monitor-grace-period=20s"
-
-        # Reduce default pod eviction toleration from 300s (5 min) to 30s.
-        # In Kubernetes 1.24+ this is set via the DefaultTolerationSeconds admission plugin.
-        "--kube-apiserver-arg=default-not-ready-toleration-seconds=30"
-        "--kube-apiserver-arg=default-unreachable-toleration-seconds=30"
+        "--disable=servicelb" # Not needed with Tailscale
       ];
     };
 
-    # Longhorn requires binaries at standard FHS paths
-    systemd.tmpfiles.rules = [
-      "L+ /usr/local/bin - - - - /run/current-system/sw/bin/"
-    ];
-
-    # Allow traffic on CNI and flannel interfaces for cross-node networking
+    # Allow traffic on CNI and flannel interfaces
     # Fixes DNS and service IP issues on NixOS with k3s
     # See: https://github.com/NixOS/nixpkgs/issues/98766
     networking.firewall.trustedInterfaces = [
@@ -64,18 +31,8 @@ in
       "flannel.+"
     ];
 
-    # Longhorn prerequisites
-    services.openiscsi = {
-      enable = true;
-      name = "${config.networking.hostName}-initiatorhost";
-    };
-
-    environment.systemPackages = with pkgs; [
-      nfs-utils
-    ];
-
-    # Create Tailscale operator OAuth secret from sops-nix (initial server only)
-    systemd.services.tailscale-k8s-secret = lib.mkIf cfg.clusterInit {
+    # Create Tailscale operator OAuth secret from sops-nix
+    systemd.services.tailscale-k8s-secret = {
       description = "Create Tailscale operator OAuth Kubernetes secret";
       after = [ "k3s.service" ];
       wants = [ "k3s.service" ];

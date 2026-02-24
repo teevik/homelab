@@ -10,72 +10,6 @@ let
             size = "small";
             widgets = [
               {
-                type = "custom-api";
-                title = "Homelab Status";
-                cache = "2m";
-                url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(kube_node_status_condition{condition=%22Ready%22,status=%22true%22})";
-                subrequests = {
-                  nodesTotal = {
-                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(kube_node_info)";
-                  };
-                  podsRunning = {
-                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(kube_pod_status_phase{phase=%22Running%22})";
-                  };
-                  alertsFiring = {
-                    url = "http://vmalertmanager-victoria-metrics-k8s-stack.monitoring.svc:9093/api/v2/alerts?active=true&silenced=false&inhibited=false";
-                    skip-json-validation = true;
-                  };
-                };
-                template = ''
-                  {{ $nodesRunning := .JSON.String "data.result.0.value.1" }}
-                  {{ $nodesTotalReq := .Subrequest "nodesTotal" }}
-                  {{ $nodesTotal := $nodesTotalReq.JSON.String "data.result.0.value.1" }}
-                  {{ $podsRunningReq := .Subrequest "podsRunning" }}
-                  {{ $podsRunning := $podsRunningReq.JSON.String "data.result.0.value.1" }}
-                  {{ $alertsReq := .Subrequest "alertsFiring" }}
-                  {{ $allAlerts := $alertsReq.JSON.Array "" }}
-                  {{ $alerts := 0 }}
-                  {{ range $allAlerts }}
-                    {{ $name := .String "labels.alertname" }}
-                    {{ if and (ne $name "Watchdog") (ne $name "InfoInhibitor") }}
-                      {{ $alerts = add $alerts 1 }}
-                    {{ end }}
-                  {{ end }}
-
-                  <a href="/homelab" class="block text-decoration-none">
-                    <div class="grid grid-cols-3 gap-15 margin-top-10 margin-bottom-10">
-                      <!-- Nodes Card -->
-                      <div class="flex flex-col items-center gap-10 padding-10">
-                        <span class="size-h2">🖥️</span>
-                        <span class="size-h1 color-highlight">{{ $nodesRunning }}</span>
-                        <span class="size-h6 color-paragraph">Nodes Ready</span>
-                      </div>
-
-                      <!-- Pods Card -->
-                      <div class="flex flex-col items-center gap-10 padding-10">
-                        <span class="size-h2">📦</span>
-                        <span class="size-h1 color-highlight">{{ $podsRunning }}</span>
-                        <span class="size-h6 color-paragraph">Pods Running</span>
-                      </div>
-
-                      <!-- Alerts Card -->
-                      <div class="flex flex-col items-center gap-10 padding-10">
-                        <span class="size-h2">{{ if eq $alerts 0 }}✅{{ else }}⚠️{{ end }}</span>
-                        <span class="size-h1 {{ if eq $alerts 0 }}color-positive{{ else }}color-negative{{ end }}">
-                          {{ if eq $alerts 0 }}OK{{ else }}{{ $alerts }}{{ end }}
-                        </span>
-                        <span class="size-h6 color-paragraph">{{ if eq $alerts 0 }}No Alerts{{ else }}Alerts{{ end }}</span>
-                      </div>
-                    </div>
-
-                    <div class="flex justify-center margin-top-10">
-                      <span class="color-highlight size-h5">View Details →</span>
-                    </div>
-                  </a>
-                '';
-              }
-
-              {
                 type = "calendar";
                 first-day-of-week = "monday";
               }
@@ -176,7 +110,6 @@ let
                 cache = "1d";
                 repositories = [
                   "glanceapp/glance"
-                  "longhorn/longhorn"
                   "k3s-io/k3s"
                   "NixOS/nixpkgs"
                 ];
@@ -186,7 +119,7 @@ let
         ];
       }
 
-      # Homelab tab - Service health front and center + node stats
+      # Homelab tab - Service health and server stats
       {
         name = "Homelab";
         columns = [
@@ -204,101 +137,7 @@ let
                     check-url = "http://glance.glance.svc";
                     icon = "si:glance";
                   }
-                  {
-                    title = "Grafana";
-                    url = "http://grafana";
-                    check-url = "http://victoria-metrics-k8s-stack-grafana.monitoring.svc:80";
-                    icon = "si:grafana";
-                  }
-                  {
-                    title = "VictoriaMetrics";
-                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428";
-                    icon = "si:victoriametrics";
-                  }
-                  {
-                    title = "Alertmanager";
-                    url = "http://vmalertmanager-victoria-metrics-k8s-stack.monitoring.svc:9093";
-                    icon = "si:prometheus";
-                  }
-                  {
-                    title = "VMAgent";
-                    url = "http://vmagent-victoria-metrics-k8s-stack.monitoring.svc:8429";
-                    icon = "si:victoriametrics";
-                  }
-                  {
-                    title = "Longhorn UI";
-                    url = "http://longhorn";
-                    check-url = "http://longhorn-frontend.longhorn-system.svc:80";
-                    icon = "auto-invert https://raw.githubusercontent.com/cncf/artwork/main/projects/longhorn/icon/black/longhorn-icon-black.svg";
-                  }
-                  {
-                    title = "Nginx";
-                    url = "http://nginx";
-                    check-url = "http://nginx.nginx.svc:80";
-                    icon = "si:nginx";
-                  }
                 ];
-              }
-
-              {
-                type = "custom-api";
-                title = "Longhorn Storage";
-                cache = "2m";
-                url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(longhorn_volume_capacity_bytes)";
-                subrequests = {
-                  attachedVolumes = {
-                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(longhorn_volume_state%7Bstate%3D%22attached%22%7D%3D%3D1)";
-                  };
-                  detachedVolumes = {
-                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(longhorn_volume_state%7Bstate%3D%22detached%22%7D%3D%3D1)";
-                  };
-                  totalCapacity = {
-                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=sum(longhorn_volume_capacity_bytes)";
-                  };
-                  usedCapacity = {
-                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=sum(longhorn_volume_actual_size_bytes)";
-                  };
-                  healthyNodes = {
-                    url = "http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/query?query=count(longhorn_node_status%7Bcondition%3D%22ready%22%7D)";
-                  };
-                };
-                template = ''
-                  <div style="display: flex; flex-direction: column; gap: 1rem;">
-                    <div>
-                      {{ $totalVolumes := .JSON.String "data.result.0.value.1" }}
-                      {{ $attachedReq := .Subrequest "attachedVolumes" }}
-                      {{ $attached := $attachedReq.JSON.String "data.result.0.value.1" }}
-                      {{ $detachedReq := .Subrequest "detachedVolumes" }}
-                      {{ $detached := $detachedReq.JSON.String "data.result.0.value.1" }}
-                      <p class="color-subdue size-h6">Volumes</p>
-                      <p class="color-highlight size-h3">{{ $totalVolumes }} total</p>
-                      <p class="size-h6"><span class="color-positive">{{ $attached }} attached</span> &middot; {{ $detached }} detached</p>
-                    </div>
-                    <div>
-                      {{ $totalCapReq := .Subrequest "totalCapacity" }}
-                      {{ $totalCapBytes := $totalCapReq.JSON.Float "data.result.0.value.1" }}
-                      {{ $usedCapReq := .Subrequest "usedCapacity" }}
-                      {{ $usedCapBytes := $usedCapReq.JSON.Float "data.result.0.value.1" }}
-                      {{ $totalGB := div $totalCapBytes 1073741824 }}
-                      {{ $usedGB := div $usedCapBytes 1073741824 }}
-                      {{ $usagePercent := 0.0 }}
-                      {{ if gt $totalGB 0.0 }}{{ $usagePercent = mul (div $usedGB $totalGB) 100 }}{{ end }}
-                      <p class="color-subdue size-h6">Storage</p>
-                      <p class="color-highlight size-h3">{{ printf "%.1f" $usedGB }} / {{ printf "%.1f" $totalGB }} GB</p>
-                      <div class="progress-bar progress-bar-combined" style="margin-top: 0.4rem;">
-                        <div class="progress-value" style="--percent: {{ printf "%.0f" $usagePercent }}"></div>
-                      </div>
-                      <p class="size-h6" style="margin-top: 0.25rem;">{{ printf "%.1f" $usagePercent }}% used</p>
-                    </div>
-                    <div>
-                      {{ $nodesReq := .Subrequest "healthyNodes" }}
-                      {{ $nodes := $nodesReq.JSON.String "data.result.0.value.1" }}
-                      <p class="color-subdue size-h6">Storage Nodes</p>
-                      <p class="color-highlight size-h3">{{ $nodes }} ready</p>
-                    </div>
-                    <a href="http://longhorn" class="color-highlight size-h6" style="text-decoration: none;">Open Longhorn UI →</a>
-                  </div>
-                '';
               }
             ];
           }
@@ -306,102 +145,16 @@ let
           {
             size = "full";
             widgets = [
-              # All 3 nodes side by side
               {
-                type = "split-column";
-                widgets = [
+                type = "server-stats";
+                title = "Server";
+                servers = [
                   {
-                    type = "server-stats";
-                    title = "homelab-1";
-                    servers = [
-                      {
-                        type = "remote";
-                        name = "homelab-1";
-                        url = "http://homelab-1:27973";
-                      }
-                    ];
-                  }
-                  {
-                    type = "server-stats";
-                    title = "homelab-2";
-                    servers = [
-                      {
-                        type = "remote";
-                        name = "homelab-2";
-                        url = "http://homelab-2:27973";
-                      }
-                    ];
-                  }
-                  {
-                    type = "server-stats";
-                    title = "homelab-3";
-                    servers = [
-                      {
-                        type = "remote";
-                        name = "homelab-3";
-                        url = "http://homelab-3:27973";
-                      }
-                    ];
+                    type = "remote";
+                    name = "homelab";
+                    url = "http://homelab:27973";
                   }
                 ];
-              }
-
-              {
-                type = "custom-api";
-                title = "Active Alerts";
-                cache = "1m";
-                url = "http://vmalertmanager-victoria-metrics-k8s-stack.monitoring.svc:9093/api/v2/alerts?active=true&silenced=false&inhibited=false";
-                template = ''
-                  {{ $alerts := .JSON.Array "" }}
-                  {{ $watchdogPresent := false }}
-                  {{ $hasRealAlerts := false }}
-                  {{ range $alerts }}
-                    {{ $name := .String "labels.alertname" }}
-                    {{ if eq $name "Watchdog" }}{{ $watchdogPresent = true }}{{ end }}
-                    {{ if and (ne $name "Watchdog") (ne $name "InfoInhibitor") }}
-                      {{ $hasRealAlerts = true }}
-                    {{ end }}
-                  {{ end }}
-
-                  {{ if not $watchdogPresent }}
-                    <div style="padding: 8px 0; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.07);">
-                      <span style="color: var(--color-negative);">&#9888; Watchdog alert missing — alerting pipeline may be down</span>
-                    </div>
-                  {{ end }}
-
-                  {{ if not $hasRealAlerts }}
-                    <div class="flex justify-center">
-                      <span class="color-positive size-h3">No active alerts</span>
-                    </div>
-                  {{ else }}
-                    <ul style="list-style: none; margin: 0; padding: 0;">
-                    {{ $firstAlert := true }}
-                    {{ range $alerts }}
-                      {{ $name := .String "labels.alertname" }}
-                      {{ if and (ne $name "Watchdog") (ne $name "InfoInhibitor") }}
-                        {{ $severity := .String "labels.severity" }}
-                        <li style="padding: 10px 0; {{ if not $firstAlert }}border-top: 1px solid rgba(255,255,255,0.07);{{ end }}">
-                          {{ $firstAlert = false }}
-                          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 4px;">
-                            <span class="size-h4" style="color: {{ if or (eq $severity "critical") (eq $severity "error") }}var(--color-negative){{ else if eq $severity "warning" }}#f59e0b{{ else }}var(--color-subdue){{ end }};">{{ $name }}</span>
-                            <span class="color-subdue size-h6">&nbsp;·&nbsp;</span>
-                            <span class="color-paragraph size-h6">{{ $severity }}</span>
-                            {{ if .String "labels.node" }}
-                              <span class="color-subdue size-h6">&nbsp;·&nbsp;</span>
-                              <span class="color-highlight size-h6">{{ .String "labels.node" }}</span>
-                            {{ end }}
-                            {{ if .String "labels.namespace" }}
-                              <span class="color-subdue size-h6">&nbsp;·&nbsp;</span>
-                              <span class="color-subdue size-h6">{{ .String "labels.namespace" }}</span>
-                            {{ end }}
-                          </div>
-                          <div class="color-paragraph size-h6" style="padding-left: 2px;">{{ .String "annotations.summary" }}</div>
-                        </li>
-                      {{ end }}
-                    {{ end }}
-                    </ul>
-                  {{ end }}
-                '';
               }
             ];
           }

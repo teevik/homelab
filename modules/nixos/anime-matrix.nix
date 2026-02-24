@@ -11,25 +11,25 @@ let
 in
 {
   options.homelab.animeMatrix = {
-    enable = lib.mkEnableOption "AniMe Matrix cluster stats display";
+    enable = lib.mkEnableOption "AniMe Matrix server stats display";
 
     interval = lib.mkOption {
       type = lib.types.str;
       default = "15s";
-      description = "How often to refresh the cluster stats display (Go duration format).";
+      description = "How often to refresh the server stats display (Go duration format).";
     };
 
     kubeconfig = lib.mkOption {
       type = lib.types.str;
       default = "/etc/rancher/k3s/k3s.yaml";
-      description = "Path to the kubeconfig file for accessing the cluster.";
+      description = "Path to the kubeconfig file for accessing k3s.";
     };
   };
 
   config = lib.mkIf cfg.enable {
     # Systemd service to run anime-matrix-stats
     systemd.services.anime-matrix-stats = {
-      description = "Display Kubernetes cluster stats on AniMe Matrix";
+      description = "Display Kubernetes server stats on AniMe Matrix";
       after = [
         "k3s.service"
         "asusd.service"
