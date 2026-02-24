@@ -20,6 +20,18 @@ let
                     check-url = "http://glance.glance.svc";
                     icon = "si:glance";
                   }
+                  {
+                    title = "Longhorn";
+                    url = "http://longhorn";
+                    check-url = "http://longhorn-tailscale.longhorn-system.svc";
+                    icon = "auto-invert https://raw.githubusercontent.com/cncf/artwork/main/projects/longhorn/icon/black/longhorn-icon-black.svg";
+                  }
+                  {
+                    title = "Immich";
+                    url = "http://immich";
+                    check-url = "http://immich-tailscale.immich.svc";
+                    icon = "si:immich";
+                  }
                 ];
               }
 
