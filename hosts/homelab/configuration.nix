@@ -82,6 +82,9 @@
   # AniMe Matrix stats display
   homelab.animeMatrix.enable = true;
 
+  # Enable GPU driver/firmware support (needed for ROCm in containers)
+  hardware.graphics.enable = true;
+
   nixpkgs.hostPlatform = "x86_64-linux";
   system.stateVersion = "25.05";
 }

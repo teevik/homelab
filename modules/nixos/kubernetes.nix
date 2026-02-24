@@ -11,6 +11,12 @@
     sops.secrets.tailscale_oauth_client_id = { };
     sops.secrets.tailscale_oauth_client_secret = { };
 
+    # Longhorn v1 engine requires open-iscsi on the host
+    services.openiscsi = {
+      enable = true;
+      name = "iqn.2016-04.io.longhorn:homelab";
+    };
+
     services.k3s = {
       enable = true;
       role = "server";
@@ -20,6 +26,7 @@
         "--write-kubeconfig-mode=0644"
         "--disable=traefik" # Use Tailscale ingress instead
         "--disable=servicelb" # Not needed with Tailscale
+        "--disable=local-storage" # Use Longhorn instead of local-path provisioner
       ];
     };
 

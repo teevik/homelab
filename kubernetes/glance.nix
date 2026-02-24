@@ -36,11 +36,6 @@ let
               }
 
               {
-                type = "calendar";
-                first-day-of-week = "monday";
-              }
-
-              {
                 type = "weather";
                 location = "Oslo, Norway";
                 units = "metric";
@@ -113,6 +108,11 @@ let
           {
             size = "small";
             widgets = [
+              {
+                type = "calendar";
+                first-day-of-week = "monday";
+              }
+
               {
                 type = "markets";
                 markets = [

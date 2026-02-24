@@ -51,8 +51,10 @@
 
         envs.homelab.modules = [
           ./kubernetes/homelab.nix
+          ./kubernetes/longhorn.nix
           ./kubernetes/glance.nix
           ./kubernetes/glance-agent.nix
+          ./kubernetes/immich.nix
         ];
       };
     };
