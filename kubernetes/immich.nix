@@ -79,17 +79,23 @@ in
 
     resources = {
       # PVC for the photo/video library
-      persistentVolumeClaims.immich-library.spec = {
-        storageClassName = "longhorn";
-        accessModes = [ "ReadWriteOnce" ];
-        resources.requests.storage = "50Gi";
+      persistentVolumeClaims.immich-library = {
+        metadata.labels."recurring-job-group.longhorn.io/backup" = "enabled";
+        spec = {
+          storageClassName = "longhorn";
+          accessModes = [ "ReadWriteOnce" ];
+          resources.requests.storage = "50Gi";
+        };
       };
 
       # PVC for PostgreSQL data
-      persistentVolumeClaims.immich-postgresql-data.spec = {
-        storageClassName = "longhorn";
-        accessModes = [ "ReadWriteOnce" ];
-        resources.requests.storage = "10Gi";
+      persistentVolumeClaims.immich-postgresql-data = {
+        metadata.labels."recurring-job-group.longhorn.io/backup" = "enabled";
+        spec = {
+          storageClassName = "longhorn";
+          accessModes = [ "ReadWriteOnce" ];
+          resources.requests.storage = "10Gi";
+        };
       };
 
       # PostgreSQL with pgvecto.rs extension (required by Immich)

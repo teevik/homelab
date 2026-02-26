@@ -36,6 +36,22 @@
 
         # Single replica for UI on single-node
         longhornUI.replicas = 1;
+
+        # Daily backup to S3 — targets volumes labeled with the "backup" group
+        extraObjects = [
+          {
+            apiVersion = "longhorn.io/v1beta2";
+            kind = "RecurringJob";
+            metadata.name = "daily-backup";
+            spec = {
+              cron = "0 2 * * *";
+              task = "backup";
+              retain = 14;
+              concurrency = 1;
+              groups = [ "backup" ];
+            };
+          }
+        ];
       };
     };
 
