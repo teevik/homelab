@@ -15,6 +15,7 @@
       # MongoDB deployment
       deployments.kodekamp-db.spec = {
         replicas = 1;
+        strategy.type = "Recreate"; # Required for RWO PVC - can't have two pods mounting it
         selector.matchLabels.app = "kodekamp-db";
         template = {
           metadata.labels.app = "kodekamp-db";
