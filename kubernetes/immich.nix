@@ -25,6 +25,8 @@ in
         # Enable Valkey (Redis) with persistent storage
         valkey = {
           enabled = true;
+          controllers.main.containers.main.image.tag =
+            "9.0.3-alpine@sha256:ad4541b28b017bf4cd83ee057c51aafb21ea32e898e3f3b8b75e268650f2ac20";
           persistence.data = {
             enabled = true;
             type = "persistentVolumeClaim";
@@ -109,7 +111,7 @@ in
           metadata.labels.app = "immich-postgresql";
           spec = {
             containers.postgresql = {
-              image = "docker.io/tensorchord/pgvecto-rs:pg16-v0.3.0";
+              image = "docker.io/tensorchord/pgvecto-rs:pg16-v0.3.0@sha256:b89f8ddbb28400d428d3c5e3e860f578cde85ad8e78544a8b687b97937cfc50b";
               ports.postgresql.containerPort = 5432;
               env = {
                 POSTGRES_USER.value = "immich";

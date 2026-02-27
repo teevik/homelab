@@ -17,3 +17,7 @@ deploy:
 
 apply:
     nixidy apply .#homelab
+
+check-images:
+    nixidy build .#homelab
+    python3 ./scripts/check-images.py ./result

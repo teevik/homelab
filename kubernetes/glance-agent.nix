@@ -16,7 +16,7 @@
           spec = {
             hostNetwork = true;
             containers.glance-agent = {
-              image = "glanceapp/agent:latest";
+              image = "glanceapp/agent:v0.1.0@sha256:f57ee10cd2f23e66ae6a8325fb6106e12878e1f985a88aaa914687d14489017c";
               ports.http.containerPort = 27973;
               env = {
                 HIDE_MOUNTPOINTS_BY_DEFAULT.value = "true";
