@@ -111,7 +111,12 @@ in
           metadata.labels.app = "immich-postgresql";
           spec = {
             containers.postgresql = {
-              image = "docker.io/tensorchord/pgvecto-rs:pg16-v0.3.0@sha256:b89f8ddbb28400d428d3c5e3e860f578cde85ad8e78544a8b687b97937cfc50b";
+              image = "docker.io/tensorchord/vchord-postgres:pg16-v1.1.0@sha256:6cd96c0fbe03aea7280d2ef21ea08508bf035c545e66a61e044be64e99b24fb7";
+              args = [
+                "postgres"
+                "-c"
+                "shared_preload_libraries=vchord.so"
+              ];
               ports.postgresql.containerPort = 5432;
               env = {
                 POSTGRES_USER.value = "immich";
