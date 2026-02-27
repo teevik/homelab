@@ -11,6 +11,9 @@ in
       chart = charts.immich.immich;
 
       values = {
+        # Pin Immich image tag to stay current when chart lags app releases
+        controllers.main.containers.main.image.tag = "v2.5.6";
+
         # Database connection (shared across components)
         controllers.main.containers.main.env = {
           DB_HOSTNAME = "immich-postgresql";
@@ -37,7 +40,7 @@ in
           # Use ROCm image variant for AMD GPU acceleration
           controllers.main = {
             containers.main = {
-              image.tag = "v2.0.0-rocm";
+              image.tag = "v2.5.6-rocm";
               env.HSA_OVERRIDE_GFX_VERSION = "10.3.0";
             };
             # Grant GPU device access to the pod
