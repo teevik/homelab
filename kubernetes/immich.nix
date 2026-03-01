@@ -44,6 +44,12 @@ in
             containers.main = {
               image.tag = "v2.5.6-rocm";
               env.HSA_OVERRIDE_GFX_VERSION = "10.3.0";
+              securityContext = {
+                privileged = true;
+                allowPrivilegeEscalation = true;
+                seccompProfile.type = "Unconfined";
+                capabilities.add = [ "SYS_PTRACE" ];
+              };
             };
             # Grant GPU device access to the pod
             pod.securityContext.supplementalGroups = [
