@@ -91,7 +91,10 @@ in
     resources = {
       # PVC for the photo/video library
       persistentVolumeClaims.immich-library = {
-        metadata.labels."recurring-job-group.longhorn.io/backup" = "enabled";
+        metadata.labels = {
+          "recurring-job-group.longhorn.io/snapshot" = "enabled";
+          "recurring-job-group.longhorn.io/backup" = "enabled";
+        };
         spec = {
           storageClassName = "longhorn";
           accessModes = [ "ReadWriteOnce" ];
@@ -101,7 +104,10 @@ in
 
       # PVC for PostgreSQL data
       persistentVolumeClaims.immich-postgresql-data = {
-        metadata.labels."recurring-job-group.longhorn.io/backup" = "enabled";
+        metadata.labels = {
+          "recurring-job-group.longhorn.io/snapshot" = "enabled";
+          "recurring-job-group.longhorn.io/backup" = "enabled";
+        };
         spec = {
           storageClassName = "longhorn";
           accessModes = [ "ReadWriteOnce" ];
