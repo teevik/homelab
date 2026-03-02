@@ -4,7 +4,7 @@ data:
     [analytics]
     check_for_updates = true
     [dashboards]
-    default_home_dashboard_path = /var/lib/grafana/dashboards/default/kubernetes-views-global.json
+    default_home_dashboard_path = /var/lib/grafana/dashboards/default/homelab-overview.json
     [log]
     mode = console
     [paths]

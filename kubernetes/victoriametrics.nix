@@ -30,10 +30,16 @@
         grafana.plugins = [ "victoriametrics-metrics-datasource" ];
 
         grafana."grafana.ini".dashboards.default_home_dashboard_path =
-          "/var/lib/grafana/dashboards/default/kubernetes-views-global.json";
+          "/var/lib/grafana/dashboards/default/homelab-overview.json";
 
         grafana.adminPassword = "admin";
       };
+    };
+
+    # Custom homelab overview dashboard
+    resources.configMaps.homelab-overview = {
+      metadata.labels.grafana_dashboard = "1";
+      data."homelab-overview.json" = builtins.readFile ./dashboards/homelab-overview.json;
     };
 
     # Tailscale LoadBalancer to expose Grafana
