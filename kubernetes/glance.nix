@@ -33,6 +33,18 @@ let
                     icon = "si:immich";
                   }
                   {
+                    title = "Grafana";
+                    url = "http://grafana";
+                    check-url = "http://grafana-tailscale.victoria-metrics.svc";
+                    icon = "si:grafana";
+                  }
+                  {
+                    title = "ArgoCD";
+                    url = "http://argocd";
+                    check-url = "http://argocd-tailscale.argocd.svc";
+                    icon = "si:argo";
+                  }
+                  {
                     title = "KodeKamp";
                     url = "https://kodekamp.teevik.no";
                     check-url = "http://kodekamp-web.kodekamp.svc:3000";
@@ -186,7 +198,7 @@ in
           };
           spec = {
             containers.glance = {
-              image = "glanceapp/glance:latest";
+              image = "glanceapp/glance:v0.8.4@sha256:6df86a7e8868d1eda21f35205134b1962c422957e42a0c44d4717c8e8f741b1a";
               ports.http.containerPort = 8080;
               volumeMounts."/app/config/glance.yml" = {
                 name = "config";

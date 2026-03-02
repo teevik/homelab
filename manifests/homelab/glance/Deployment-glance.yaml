@@ -11,12 +11,12 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 333de8d58f4fd4f0fb53f92a1b3bc0f59ddca2beade3ff7c4a0a186ce215fbd7
+        checksum/config: 08830ee1b1d2de211449ec156227f97afa08f6421d10d61a7aca77f76707c88e
       labels:
         app: glance
     spec:
       containers:
-        - image: glanceapp/glance:latest
+        - image: glanceapp/glance:v0.8.4@sha256:6df86a7e8868d1eda21f35205134b1962c422957e42a0c44d4717c8e8f741b1a
           name: glance
           ports:
             - containerPort: 8080
