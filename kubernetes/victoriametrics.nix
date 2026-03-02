@@ -12,10 +12,6 @@
       chart = charts.victoriametrics.victoria-metrics-k8s-stack;
 
       values = {
-        # node-exporter-full dashboard is too large for client-side apply
-        # (annotations exceed the 262144 byte k8s limit)
-        defaultDashboards.dashboards.node-exporter-full.enabled = false;
-
         # Single-node VMSingle with Longhorn storage
         vmsingle.spec = {
           retentionPeriod = "3";
