@@ -10,7 +10,7 @@ spec:
   project: default
   source:
     path: ./manifests/homelab/tailscale-operator
-    repoURL: https://github.com/teevik/homelab.git
+    repoURL: git@github.com:teevik/homelab.git
     targetRevision: main
   syncPolicy:
     automated:
