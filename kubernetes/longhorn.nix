@@ -35,7 +35,7 @@
         defaultBackupStore = {
           backupTarget = "s3://homelab-longhorn-backup@hel1/";
           backupTargetCredentialSecret = "longhorn-backup-secret";
-          pollInterval = "5m0s";
+          pollInterval = "300";
         };
 
         # Single replica for UI on single-node

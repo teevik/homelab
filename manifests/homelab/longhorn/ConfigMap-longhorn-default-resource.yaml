@@ -3,7 +3,7 @@ data:
   default-resource.yaml: |-
     backup-target: s3://homelab-longhorn-backup@hel1/
     backup-target-credential-secret: longhorn-backup-secret
-    backupstore-poll-interval: 5m0s
+    backupstore-poll-interval: 300
 kind: ConfigMap
 metadata:
   labels:
