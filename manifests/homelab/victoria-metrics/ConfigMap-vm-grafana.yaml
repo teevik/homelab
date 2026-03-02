@@ -4,7 +4,7 @@ data:
     [analytics]
     check_for_updates = true
     [dashboards]
-    default_home_dashboard_path = /tmp/dashboards/k8s-views-global.json
+    default_home_dashboard_path = /tmp/dashboards/kubernetes-views-global.json
     [log]
     mode = console
     [paths]
