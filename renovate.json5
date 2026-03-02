@@ -1,0 +1,66 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "schedule": ["before 9am on monday"],
+  "timezone": "Europe/Oslo",
+
+  // Disable all default managers -- we only want our custom ones for .nix files
+  "enabledManagers": ["custom.regex"],
+
+  // Custom managers for container image references in .nix files
+  "customManagers": [
+    {
+      // Matches: image = "registry/name:tag@sha256:digest"; and image = "registry/name:tag";
+      "customType": "regex",
+      "fileMatch": ["kubernetes/.*\\.nix$"],
+      "matchStrings": [
+        "image\\s*=\\s*\"(?<depName>[^:\"]+):(?<currentValue>[^@\"]+)@(?<currentDigest>sha256:[a-f0-9]+)\"",
+        "image\\s*=\\s*\"(?<depName>[^:\"]+):(?<currentValue>[^@\"]+)\""
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      // Matches comment-annotated Helm image.tag values:
+      //   # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
+      //   image.tag = "v1.2.3";
+      //   or
+      //   *.image.tag = "v1.2.3@sha256:abcdef...";
+      "customType": "regex",
+      "fileMatch": ["kubernetes/.*\\.nix$"],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+)\\s+depName=(?<depName>[^\\s]+)\\n\\s+.*image\\.tag\\s*=\\s*\\n?\\s*\"(?<currentValue>[^@\"]+)@(?<currentDigest>sha256:[a-f0-9]+)\"",
+        "#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+)\\s+depName=(?<depName>[^\\s]+)\\n\\s+.*image\\.tag\\s*=\\s*\\n?\\s*\"(?<currentValue>[^@\"]+)\""
+      ]
+    }
+  ],
+
+  "packageRules": [
+    {
+      // Ignore kodekamp images -- user doesn't want updates
+      "matchPackagePatterns": ["teevik/kodekamp"],
+      "enabled": false
+    },
+    {
+      // Ignore mongo for kodekamp
+      "matchPackageNames": ["mongo"],
+      "enabled": false
+    },
+    {
+      // Group immich server + ML updates together (they share version numbers)
+      "matchPackagePatterns": ["immich"],
+      "groupName": "immich"
+    },
+    {
+      // Immich ML uses -rocm suffix tags; only match tags like v1.2.3-rocm
+      "matchPackageNames": ["ghcr.io/immich-app/immich-machine-learning"],
+      "allowedVersions": "/-rocm$/"
+    },
+    {
+      // Pin digests for all docker images
+      "matchDatasources": ["docker"],
+      "pinDigests": true
+    }
+  ]
+}

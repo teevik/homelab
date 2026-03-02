@@ -12,6 +12,7 @@ in
 
       values = {
         # Pin Immich image tag to stay current when chart lags app releases
+        # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
         controllers.main.containers.main.image.tag = "v2.5.6";
 
         # Database connection (shared across components)
@@ -25,6 +26,7 @@ in
         # Enable Valkey (Redis) with persistent storage
         valkey = {
           enabled = true;
+          # renovate: datasource=docker depName=docker.io/valkey/valkey
           controllers.main.containers.main.image.tag =
             "9.0.3-alpine@sha256:ad4541b28b017bf4cd83ee057c51aafb21ea32e898e3f3b8b75e268650f2ac20";
           persistence.data = {
@@ -42,6 +44,7 @@ in
           # Use ROCm image variant for AMD GPU acceleration
           controllers.main = {
             containers.main = {
+              # renovate: datasource=docker depName=ghcr.io/immich-app/immich-machine-learning
               image.tag = "v2.5.6-rocm";
               env.HSA_OVERRIDE_GFX_VERSION = "10.3.0";
               securityContext = {
