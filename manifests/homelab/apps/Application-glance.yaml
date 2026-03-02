@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: glance
+  namespace: argocd
+spec:
+  destination:
+    namespace: glance
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: ./manifests/homelab/glance
+    repoURL: https://github.com/teevik/homelab.git
+    targetRevision: main
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

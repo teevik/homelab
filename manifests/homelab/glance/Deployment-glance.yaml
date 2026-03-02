@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: glance
+  namespace: glance
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: glance
+  template:
+    metadata:
+      annotations:
+        checksum/config: 333de8d58f4fd4f0fb53f92a1b3bc0f59ddca2beade3ff7c4a0a186ce215fbd7
+      labels:
+        app: glance
+    spec:
+      containers:
+        - image: glanceapp/glance:latest
+          name: glance
+          ports:
+            - containerPort: 8080
+              name: http
+          volumeMounts:
+            - mountPath: /app/config/glance.yml
+              name: config
+              subPath: glance.yml
+      volumes:
+        - configMap:
+            name: glance-config
+          name: config

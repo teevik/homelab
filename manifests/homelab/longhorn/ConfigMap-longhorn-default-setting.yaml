@@ -1,0 +1,18 @@
+apiVersion: v1
+data:
+  default-setting.yaml: |-
+    storage-minimal-available-percentage: "15"
+    storage-reserved-percentage-for-default-disk: "15"
+    default-replica-count: "1"
+    priority-class: "longhorn-critical"
+    disable-revision-counter: "{\"v1\":\"true\"}"
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: longhorn
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/version: v1.11.0
+    helm.sh/chart: longhorn-1.11.0
+  name: longhorn-default-setting
+  namespace: longhorn-system

@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: glance-agent
+  namespace: glance
+spec:
+  selector:
+    matchLabels:
+      app: glance-agent
+  template:
+    metadata:
+      labels:
+        app: glance-agent
+    spec:
+      containers:
+        - env:
+            - name: HIDE_MOUNTPOINTS_BY_DEFAULT
+              value: "true"
+            - name: MOUNTPOINTS
+              value: /:Root
+          image: glanceapp/agent:v0.1.0@sha256:f57ee10cd2f23e66ae6a8325fb6106e12878e1f985a88aaa914687d14489017c
+          name: glance-agent
+          ports:
+            - containerPort: 27973
+              name: http
+      hostNetwork: true

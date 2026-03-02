@@ -4,10 +4,18 @@
     namespace = "victoria-metrics";
     createNamespace = true;
 
+    # Server-side apply avoids the 262144 byte annotation limit,
+    # allowing large resources like the node-exporter-full dashboard.
+    syncPolicy.syncOptions.serverSideApply = true;
+
     helm.releases.vm = {
       chart = charts.victoriametrics.victoria-metrics-k8s-stack;
 
       values = {
+        # node-exporter-full dashboard is too large for client-side apply
+        # (annotations exceed the 262144 byte k8s limit)
+        defaultDashboards.dashboards.node-exporter-full.enabled = false;
+
         # Single-node VMSingle with Longhorn storage
         vmsingle.spec = {
           retentionPeriod = "3";
@@ -17,10 +25,6 @@
             resources.requests.storage = "20Gi";
           };
         };
-
-        # node-exporter-full dashboard is too large for client-side apply
-        # (annotations exceed the 262144 byte k8s limit)
-        defaultDashboards.dashboards.node-exporter-full.enabled = false;
 
         # Required for the victoriametrics-metrics-datasource type in Grafana
         grafana.plugins = [ "victoriametrics-metrics-datasource" ];

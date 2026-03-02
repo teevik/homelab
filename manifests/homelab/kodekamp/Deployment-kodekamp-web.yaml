@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kodekamp-web
+  namespace: kodekamp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kodekamp-web
+  template:
+    metadata:
+      labels:
+        app: kodekamp-web
+    spec:
+      containers:
+        - env:
+            - name: CODE_RUNNER_URL
+              value: http://kodekamp-code-runner:3000
+            - name: DATABASE_URL
+              value: mongodb://kodekamp-db:27017/kode-kamp
+            - name: EMAIL_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: EMAIL_PASS
+                  name: kodekamp-secrets
+            - name: EMAIL_USER
+              valueFrom:
+                secretKeyRef:
+                  key: EMAIL_USER
+                  name: kodekamp-secrets
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: JWT_SECRET
+                  name: kodekamp-secrets
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "3000"
+            - name: SERVER_URL
+              value: https://kodekamp.teevik.no
+          image: ghcr.io/teevik/kodekamp-web:latest
+          name: web
+          ports:
+            - containerPort: 3000
+              name: http

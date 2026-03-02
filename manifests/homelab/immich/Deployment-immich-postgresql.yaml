@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-postgresql
+  namespace: immich
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-postgresql
+  template:
+    metadata:
+      labels:
+        app: immich-postgresql
+    spec:
+      containers:
+        - args:
+            - postgres
+            - -c
+            - shared_preload_libraries=vchord.so
+          env:
+            - name: POSTGRES_DB
+              value: immich
+            - name: POSTGRES_PASSWORD
+              value: immich
+            - name: POSTGRES_USER
+              value: immich
+          image: docker.io/tensorchord/vchord-postgres:pg16-v1.1.0@sha256:6cd96c0fbe03aea7280d2ef21ea08508bf035c545e66a61e044be64e99b24fb7
+          name: postgresql
+          ports:
+            - containerPort: 5432
+              name: postgresql
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: data
+              subPath: pgdata
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: immich-postgresql-data

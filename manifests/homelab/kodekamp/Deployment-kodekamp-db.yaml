@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kodekamp-db
+  namespace: kodekamp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kodekamp-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: kodekamp-db
+    spec:
+      containers:
+        - image: mongo:4.4.6
+          name: mongodb
+          ports:
+            - containerPort: 27017
+              name: mongodb
+          volumeMounts:
+            - mountPath: /data/db
+              name: data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: kodekamp-db-data

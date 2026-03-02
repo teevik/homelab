@@ -1,10 +1,16 @@
 { charts, ... }:
 {
   # Target repository for generated manifests.
-  # Required by nixidy even when using 'nixidy apply' directly.
-  nixidy.target.repository = "https://github.com/teevik/homelab.git";
+  nixidy.target.repository = "git@github.com:teevik/homelab.git";
   nixidy.target.branch = "main";
   nixidy.target.rootPath = "./manifests/homelab";
+
+  # ArgoCD auto-sync defaults: all applications auto-sync, prune, and self-heal
+  nixidy.defaults.syncPolicy.autoSync = {
+    enable = true;
+    prune = true;
+    selfHeal = true;
+  };
 
   applications.tailscale-operator = {
     namespace = "tailscale";

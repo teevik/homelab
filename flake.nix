@@ -51,6 +51,7 @@
 
         envs.homelab.modules = [
           ./kubernetes/homelab.nix
+          ./kubernetes/argocd.nix
           ./kubernetes/longhorn.nix
           ./kubernetes/glance.nix
           ./kubernetes/glance-agent.nix

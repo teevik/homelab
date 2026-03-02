@@ -15,8 +15,11 @@ install TARGET-IP:
 deploy:
     nixos-rebuild switch --flake .#homelab --target-host homelab --sudo
 
-apply:
-    nixidy apply .#homelab
+switch:
+    nixidy switch .#homelab
+
+bootstrap:
+    nixidy bootstrap .#homelab | kubectl apply -f -
 
 check-images:
     nixidy build .#homelab

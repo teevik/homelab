@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kodekamp-code-runner
+  namespace: kodekamp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: kodekamp-code-runner
+  template:
+    metadata:
+      labels:
+        app: kodekamp-code-runner
+    spec:
+      containers:
+        - image: ghcr.io/teevik/kodekamp-code-runner:latest
+          name: code-runner

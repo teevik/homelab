@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloudflare-tunnel
+  namespace: argocd
+spec:
+  destination:
+    namespace: cloudflare-tunnel
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: ./manifests/homelab/cloudflare-tunnel
+    repoURL: https://github.com/teevik/homelab.git
+    targetRevision: main
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

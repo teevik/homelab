@@ -1,0 +1,16 @@
+apiVersion: v1
+data:
+  default-resource.yaml: |-
+    backup-target: s3://homelab-longhorn-backup@hel1/
+    backup-target-credential-secret: longhorn-backup-secret
+    backupstore-poll-interval: 5m0s
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: longhorn
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/version: v1.11.0
+    helm.sh/chart: longhorn-1.11.0
+  name: longhorn-default-resource
+  namespace: longhorn-system

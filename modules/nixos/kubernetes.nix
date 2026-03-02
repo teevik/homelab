@@ -41,6 +41,20 @@ let
         AWS_ENDPOINTS = "https://hel1.your-objectstorage.com";
       };
     };
+
+    argocd-repo-creds = {
+      namespace = "argocd";
+      data = {
+        sshPrivateKey = "argocd_ssh_private_key";
+      };
+      literals = {
+        type = "git";
+        url = "git@github.com:teevik/homelab.git";
+      };
+      labels = {
+        "argocd.argoproj.io/secret-type" = "repository";
+      };
+    };
   };
 
   # Collect all SOPS secret names referenced across all k8sSecrets entries
@@ -83,14 +97,26 @@ let
           Environment = "KUBECONFIG=/etc/rancher/k3s/k3s.yaml";
         };
         path = [ pkgs.kubectl ];
-        script = ''
-          until kubectl get ns >/dev/null 2>&1; do sleep 2; done
-          kubectl create namespace ${secret.namespace} --dry-run=client -o yaml | kubectl apply -f -
-          kubectl create secret generic ${name} \
-            --namespace ${secret.namespace} \
-            ${allArgs} \
-            --dry-run=client -o yaml | kubectl apply -f -
-        '';
+        script =
+          let
+            labelArgs = lib.concatStringsSep " " (
+              lib.mapAttrsToList (key: value: "${key}=${value}") (secret.labels or { })
+            );
+          in
+          ''
+            until kubectl get ns >/dev/null 2>&1; do sleep 2; done
+            kubectl create namespace ${secret.namespace} --dry-run=client -o yaml | kubectl apply -f -
+            kubectl create secret generic ${name} \
+              --namespace ${secret.namespace} \
+              ${allArgs} \
+              --dry-run=client -o yaml | kubectl apply -f -
+          ''
+          + lib.optionalString (secret ? labels) ''
+            kubectl label secret ${name} \
+              --namespace ${secret.namespace} \
+              ${labelArgs} \
+              --overwrite
+          '';
       };
     };
 in
