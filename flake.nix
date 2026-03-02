@@ -57,6 +57,7 @@
           ./kubernetes/immich.nix
           ./kubernetes/kodekamp.nix
           ./kubernetes/cloudflare-tunnel.nix
+          ./kubernetes/victoriametrics.nix
         ];
       };
     };
