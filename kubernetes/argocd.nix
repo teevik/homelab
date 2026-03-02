@@ -4,6 +4,10 @@
     namespace = "argocd";
     createNamespace = true;
 
+    # Server-side apply avoids the 262144 byte annotation limit,
+    # allowing large CRDs like applicationsets.argoproj.io.
+    syncPolicy.syncOptions.serverSideApply = true;
+
     helm.releases.argocd = {
       chart = charts.argoproj.argo-cd;
 
