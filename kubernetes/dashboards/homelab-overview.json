@@ -22,7 +22,7 @@
       "gridPos": { "h": 6, "w": 24, "x": 0, "y": 0 },
       "id": 1,
       "options": {
-        "alertInstanceLabelFilter": "{alertname!=\"Watchdog\"}",
+        "alertInstanceLabelFilter": "{alertname!~\"Watchdog|InfoInhibitor\"}",
         "alertName": "",
         "dashboardAlerts": false,
         "groupBy": [],
