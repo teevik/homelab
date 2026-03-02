@@ -22,6 +22,10 @@
           };
         };
 
+        # Disable admission webhook to avoid TLS certs being regenerated on every build
+        # (Helm's `lookup` function doesn't work with offline rendering)
+        victoria-metrics-operator.admissionWebhooks.enabled = false;
+
         # Required for the victoriametrics-metrics-datasource type in Grafana
         grafana.plugins = [ "victoriametrics-metrics-datasource" ];
 

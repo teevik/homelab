@@ -28,7 +28,6 @@ spec:
             - --zap-log-level=info
             - --leader-elect
             - --health-probe-bind-address=:8081
-            - --webhook.enable=true
           env:
             - name: POD_NAME
               valueFrom:
@@ -74,18 +73,9 @@ spec:
               drop:
                 - ALL
             readOnlyRootFilesystem: true
-          volumeMounts:
-            - mountPath: /tmp/k8s-webhook-server/serving-certs
-              name: cert
-              readOnly: true
       securityContext:
         fsGroup: 2000
         runAsNonRoot: true
         runAsUser: 1000
       serviceAccountName: vm-victoria-metrics-operator
       terminationGracePeriodSeconds: 30
-      volumes:
-        - name: cert
-          secret:
-            defaultMode: 420
-            secretName: vm-victoria-metrics-operator-validation
