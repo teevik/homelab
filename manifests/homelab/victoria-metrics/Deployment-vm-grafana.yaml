@@ -189,6 +189,29 @@ spec:
             - mountPath: /etc/grafana/provisioning/datasources
               name: sc-datasources-volume
       enableServiceLinks: true
+      initContainers:
+        - command:
+            - chown
+            - -R
+            - 472:472
+            - /var/lib/grafana
+          image: docker.io/library/busybox:1.37.0
+          imagePullPolicy: IfNotPresent
+          name: init-chown-data
+          securityContext:
+            capabilities:
+              add:
+                - CHOWN
+              drop:
+                - ALL
+            readOnlyRootFilesystem: false
+            runAsNonRoot: false
+            runAsUser: 0
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /var/lib/grafana
+              name: storage
       securityContext:
         fsGroup: 472
         runAsGroup: 472
@@ -200,8 +223,9 @@ spec:
         - configMap:
             name: vm-grafana
           name: config
-        - emptyDir: {}
-          name: storage
+        - name: storage
+          persistentVolumeClaim:
+            claimName: vm-grafana
         - emptyDir: {}
           name: search
         - emptyDir: {}

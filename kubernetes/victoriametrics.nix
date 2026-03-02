@@ -32,6 +32,13 @@
         grafana."grafana.ini".dashboards.default_home_dashboard_path =
           "/var/lib/grafana/dashboards/default/homelab-overview.json";
 
+        # Persist Grafana's SQLite database so sessions and settings survive pod restarts
+        grafana.persistence = {
+          enabled = true;
+          storageClassName = "longhorn";
+          size = "1Gi";
+        };
+
         grafana.adminPassword = "admin";
       };
     };
