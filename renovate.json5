@@ -30,8 +30,8 @@
       "customType": "regex",
       "managerFilePatterns": ["/kubernetes/.*\\.nix$/"],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+)\\s+depName=(?<depName>[^\\s]+)\\n\\s+.*image\\.tag\\s*=\\s*\\n?\\s*\"(?<currentValue>[^@\"]+)@(?<currentDigest>sha256:[a-f0-9]+)\"",
-        "#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+)\\s+depName=(?<depName>[^\\s]+)\\n\\s+.*image\\.tag\\s*=\\s*\\n?\\s*\"(?<currentValue>[^@\"]+)\""
+        "#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+)\\s+depName=(?<depName>[^\\s]+)\\s+.*?image\\.tag\\s*=\\s*\\n?\\s*\"(?<currentValue>[^@\"]+)@(?<currentDigest>sha256:[a-f0-9]+)\"",
+        "#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+)\\s+depName=(?<depName>[^\\s]+)\\s+.*?image\\.tag\\s*=\\s*\\n?\\s*\"(?<currentValue>[^@\"]+)\""
       ]
     }
   ],
