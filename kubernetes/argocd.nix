@@ -14,6 +14,9 @@
 
         # TLS terminated by Tailscale, run insecure
         server.extraArgs = [ "--insecure" ];
+
+        # Set admin password to "admin"
+        configs.secret.argocdServerAdminPassword = "$2y$10$8NrH8ICB2uhtEYl9kSDvROCto1D9Ayyi4Ivt48uXvQqshN7548jXq";
       };
     };
 
