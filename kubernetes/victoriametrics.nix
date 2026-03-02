@@ -12,6 +12,26 @@
       chart = charts.victoriametrics.victoria-metrics-k8s-stack;
 
       values = {
+        # k3s bundles controller-manager, scheduler, and etcd into the main
+        # k3s process — there are no separate pods to scrape, so disable these
+        # to avoid KubeControllerManagerDown, KubeSchedulerDown,
+        # ScrapePoolHasNoTargets, and RecordingRulesNoData alerts.
+        kubeControllerManager.enabled = false;
+        kubeScheduler.enabled = false;
+        kubeEtcd.enabled = false;
+
+        # Give vmagent enough CPU headroom to avoid CPUThrottlingHigh alerts
+        vmagent.spec.resources = {
+          requests = {
+            cpu = "100m";
+            memory = "200Mi";
+          };
+          limits = {
+            cpu = "500m";
+            memory = "500Mi";
+          };
+        };
+
         # Single-node VMSingle with Longhorn storage
         vmsingle.spec = {
           retentionPeriod = "3";
