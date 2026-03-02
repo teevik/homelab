@@ -30,7 +30,7 @@
         grafana.plugins = [ "victoriametrics-metrics-datasource" ];
 
         grafana."grafana.ini".dashboards.default_home_dashboard_path =
-          "/tmp/dashboards/kubernetes-views-global.json";
+          "/var/lib/grafana/dashboards/default/kubernetes-views-global.json";
 
         grafana.adminPassword = "admin";
       };
