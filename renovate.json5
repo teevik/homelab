@@ -14,7 +14,7 @@
     {
       // Matches: image = "registry/name:tag@sha256:digest"; and image = "registry/name:tag";
       "customType": "regex",
-      "fileMatch": ["kubernetes/.*\\.nix$"],
+      "managerFilePatterns": ["/kubernetes/.*\\.nix$/"],
       "matchStrings": [
         "image\\s*=\\s*\"(?<depName>[^:\"]+):(?<currentValue>[^@\"]+)@(?<currentDigest>sha256:[a-f0-9]+)\"",
         "image\\s*=\\s*\"(?<depName>[^:\"]+):(?<currentValue>[^@\"]+)\""
@@ -28,7 +28,7 @@
       //   or
       //   *.image.tag = "v1.2.3@sha256:abcdef...";
       "customType": "regex",
-      "fileMatch": ["kubernetes/.*\\.nix$"],
+      "managerFilePatterns": ["/kubernetes/.*\\.nix$/"],
       "matchStrings": [
         "#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+)\\s+depName=(?<depName>[^\\s]+)\\n\\s+.*image\\.tag\\s*=\\s*\\n?\\s*\"(?<currentValue>[^@\"]+)@(?<currentDigest>sha256:[a-f0-9]+)\"",
         "#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+)\\s+depName=(?<depName>[^\\s]+)\\n\\s+.*image\\.tag\\s*=\\s*\\n?\\s*\"(?<currentValue>[^@\"]+)\""
@@ -39,7 +39,7 @@
   "packageRules": [
     {
       // Ignore kodekamp images -- user doesn't want updates
-      "matchPackagePatterns": ["teevik/kodekamp"],
+      "matchPackageNames": ["/teevik\\/kodekamp/"],
       "enabled": false
     },
     {
@@ -49,7 +49,7 @@
     },
     {
       // Group immich server + ML updates together (they share version numbers)
-      "matchPackagePatterns": ["immich"],
+      "matchPackageNames": ["/immich/"],
       "groupName": "immich"
     },
     {
