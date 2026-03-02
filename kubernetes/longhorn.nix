@@ -29,6 +29,9 @@
           # Reserve 15% disk space as safety margin
           storageMinimalAvailablePercentage = 15;
           storageReservedPercentageForDefaultDisk = 15;
+          # Auto-upgrade volume engines to the new default image (up to 3 at a time)
+          # so instance-manager hotfixes and upgrades take effect without manual restarts
+          concurrentAutomaticEngineUpgradePerNodeLimit = 3;
         };
 
         # S3 backup target (Hetzner Object Storage, hel1)

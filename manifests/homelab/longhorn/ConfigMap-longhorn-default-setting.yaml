@@ -6,6 +6,7 @@ data:
     default-replica-count: "1"
     priority-class: "longhorn-critical"
     disable-revision-counter: "{\"v1\":\"true\"}"
+    concurrent-automatic-engine-upgrade-per-node-limit: "3"
 kind: ConfigMap
 metadata:
   labels:
