@@ -4,6 +4,7 @@ metadata:
   labels:
     recurring-job-group.longhorn.io/backup: enabled
     recurring-job-group.longhorn.io/snapshot: enabled
+    recurring-job.longhorn.io/source: enabled
   name: immich-library
   namespace: immich
 spec:

@@ -95,6 +95,7 @@ in
       # PVC for the photo/video library
       persistentVolumeClaims.immich-library = {
         metadata.labels = {
+          "recurring-job.longhorn.io/source" = "enabled";
           "recurring-job-group.longhorn.io/snapshot" = "enabled";
           "recurring-job-group.longhorn.io/backup" = "enabled";
         };
@@ -108,6 +109,7 @@ in
       # PVC for PostgreSQL data
       persistentVolumeClaims.immich-postgresql-data = {
         metadata.labels = {
+          "recurring-job.longhorn.io/source" = "enabled";
           "recurring-job-group.longhorn.io/snapshot" = "enabled";
           "recurring-job-group.longhorn.io/backup" = "enabled";
         };
