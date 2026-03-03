@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless-db
+  namespace: paperless-ngx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: paperless-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: paperless-db
+    spec:
+      containers:
+        - env:
+            - name: POSTGRES_DB
+              value: paperless
+            - name: POSTGRES_PASSWORD
+              value: paperless
+            - name: POSTGRES_USER
+              value: paperless
+          image: postgres:17-alpine@sha256:6f30057d31f5861b66f3545d4821f987aacf1dd920765f0acadea0c58ff975b1
+          name: postgres
+          ports:
+            - containerPort: 5432
+              name: postgres
+          resources:
+            limits:
+              memory: 1Gi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: data
+              subPath: pgdata
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: paperless-db-data

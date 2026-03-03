@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless
+  namespace: paperless-ngx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: paperless
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: paperless
+    spec:
+      containers:
+        - env:
+            - name: PAPERLESS_ADMIN_PASSWORD
+              value: admin
+            - name: PAPERLESS_ADMIN_USER
+              value: admin
+            - name: PAPERLESS_DBHOST
+              value: paperless-db
+            - name: PAPERLESS_DBNAME
+              value: paperless
+            - name: PAPERLESS_DBPASS
+              value: paperless
+            - name: PAPERLESS_DBPORT
+              value: "5432"
+            - name: PAPERLESS_DBUSER
+              value: paperless
+            - name: PAPERLESS_OCR_LANGUAGE
+              value: eng+nor
+            - name: PAPERLESS_REDIS
+              value: redis://paperless-redis:6379
+            - name: PAPERLESS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: PAPERLESS_SECRET_KEY
+                  name: paperless-secrets
+            - name: PAPERLESS_TIKA_ENABLED
+              value: "1"
+            - name: PAPERLESS_TIKA_ENDPOINT
+              value: http://paperless-tika:9998
+            - name: PAPERLESS_TIKA_GOTENBERG_ENDPOINT
+              value: http://paperless-gotenberg:3000
+            - name: PAPERLESS_TIME_ZONE
+              value: Europe/Oslo
+            - name: PAPERLESS_URL
+              value: http://paperless
+          image: ghcr.io/paperless-ngx/paperless-ngx:2.20.9@sha256:1d99ede700ffdf7aa44899b5fee29c8c279f175769b6cb295e91e9f15772728e
+          name: paperless
+          ports:
+            - containerPort: 8000
+              name: http
+          resources:
+            limits:
+              memory: 4Gi
+            requests:
+              cpu: 200m
+              memory: 512Mi
+          volumeMounts:
+            - mountPath: /usr/src/paperless/consume
+              name: consume
+            - mountPath: /usr/src/paperless/data
+              name: data
+            - mountPath: /usr/src/paperless/export
+              name: export
+            - mountPath: /usr/src/paperless/media
+              name: media
+      volumes:
+        - name: consume
+          persistentVolumeClaim:
+            claimName: paperless-consume
+        - name: data
+          persistentVolumeClaim:
+            claimName: paperless-data
+        - name: export
+          persistentVolumeClaim:
+            claimName: paperless-export
+        - name: media
+          persistentVolumeClaim:
+            claimName: paperless-media

@@ -50,6 +50,13 @@ let
       };
     };
 
+    paperless-secrets = {
+      namespace = "paperless-ngx";
+      data = {
+        PAPERLESS_SECRET_KEY = "paperless_secret_key";
+      };
+    };
+
     argocd-repo-creds = {
       namespace = "argocd";
       data = {

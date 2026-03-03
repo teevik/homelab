@@ -60,6 +60,7 @@
           ./kubernetes/dawarich.nix
           ./kubernetes/cloudflare-tunnel.nix
           ./kubernetes/victoriametrics.nix
+          ./kubernetes/paperless-ngx.nix
         ];
       };
     };

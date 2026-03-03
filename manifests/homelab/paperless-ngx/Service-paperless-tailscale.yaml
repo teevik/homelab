@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    tailscale.com/hostname: paperless
+    tailscale.com/proxy-group: ingress
+  name: paperless-tailscale
+  namespace: paperless-ngx
+spec:
+  loadBalancerClass: tailscale
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+  selector:
+    app: paperless
+  type: LoadBalancer
