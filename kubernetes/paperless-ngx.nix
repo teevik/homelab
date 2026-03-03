@@ -20,8 +20,8 @@ let
       key = "PAPERLESS_SECRET_KEY";
     };
     PAPERLESS_TIME_ZONE.value = "Europe/Oslo";
-    PAPERLESS_OCR_LANGUAGES.value = "nob";
-    PAPERLESS_OCR_LANGUAGE.value = "eng+nob";
+    PAPERLESS_OCR_LANGUAGES.value = "nor";
+    PAPERLESS_OCR_LANGUAGE.value = "eng+nor";
     PAPERLESS_URL.value = "http://paperless";
     PAPERLESS_ADMIN_USER.value = "admin";
     PAPERLESS_ADMIN_PASSWORD.value = "admin";
