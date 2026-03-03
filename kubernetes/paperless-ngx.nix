@@ -284,7 +284,7 @@ in
         };
       };
 
-      services.paperless.spec = {
+      services.paperless-web.spec = {
         selector.app = "paperless";
         ports.http = {
           port = 8000;
