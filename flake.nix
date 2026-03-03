@@ -57,6 +57,7 @@
           ./kubernetes/glance-agent.nix
           ./kubernetes/immich.nix
           ./kubernetes/kodekamp.nix
+          ./kubernetes/dawarich.nix
           ./kubernetes/cloudflare-tunnel.nix
           ./kubernetes/victoriametrics.nix
         ];

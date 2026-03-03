@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dawarich-redis
+  namespace: dawarich
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dawarich-redis
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: dawarich-redis
+    spec:
+      containers:
+        - command:
+            - redis-server
+          image: redis:7.4-alpine@sha256:8b81dd37ff027bec4e516d41acfbe9fe2460070dc6d4a4570a2ac5b9d59df065
+          name: redis
+          ports:
+            - containerPort: 6379
+              name: redis
+          resources:
+            limits:
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+          volumeMounts:
+            - mountPath: /data
+              name: data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: dawarich-redis-data

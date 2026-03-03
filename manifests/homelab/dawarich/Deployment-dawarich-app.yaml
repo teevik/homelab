@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dawarich-app
+  namespace: dawarich
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dawarich-app
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: dawarich-app
+    spec:
+      containers:
+        - command:
+            - web-entrypoint.sh
+            - bin/rails
+            - server
+            - -p
+            - "3000"
+            - -b
+            - '::'
+          env:
+            - name: APPLICATION_HOSTS
+              value: dawarich,localhost,::1,127.0.0.1
+            - name: APPLICATION_PROTOCOL
+              value: http
+            - name: DATABASE_HOST
+              value: dawarich-db
+            - name: DATABASE_NAME
+              value: dawarich_production
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: DATABASE_PASSWORD
+                  name: dawarich-secrets
+            - name: DATABASE_PORT
+              value: "5432"
+            - name: DATABASE_USERNAME
+              value: postgres
+            - name: PROMETHEUS_EXPORTER_ENABLED
+              value: "false"
+            - name: RAILS_ENV
+              value: production
+            - name: RAILS_LOG_TO_STDOUT
+              value: "true"
+            - name: REDIS_URL
+              value: redis://dawarich-redis:6379
+            - name: SECRET_KEY_BASE
+              valueFrom:
+                secretKeyRef:
+                  key: SECRET_KEY_BASE
+                  name: dawarich-secrets
+            - name: SELF_HOSTED
+              value: "true"
+            - name: STORE_GEODATA
+              value: "true"
+            - name: TIME_ZONE
+              value: Europe/Oslo
+          image: freikin/dawarich:1.3.1@sha256:a3b000a5a85b2997ceb7117cb078f7b8851e5f958c87d5286bf098a6e1e26ea0
+          name: dawarich
+          ports:
+            - containerPort: 3000
+              name: http
+          resources:
+            limits:
+              memory: 4Gi
+            requests:
+              cpu: 200m
+              memory: 512Mi
+          volumeMounts:
+            - mountPath: /var/app/public
+              name: public
+            - mountPath: /var/app/storage
+              name: storage
+            - mountPath: /var/app/tmp/imports/watched
+              name: watched
+      volumes:
+        - name: public
+          persistentVolumeClaim:
+            claimName: dawarich-public
+        - name: storage
+          persistentVolumeClaim:
+            claimName: dawarich-storage
+        - name: watched
+          persistentVolumeClaim:
+            claimName: dawarich-watched

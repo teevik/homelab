@@ -50,6 +50,12 @@ let
                     check-url = "http://kodekamp-web.kodekamp.svc:3000";
                     icon = "si:codewars";
                   }
+                  {
+                    title = "Dawarich";
+                    url = "http://dawarich";
+                    check-url = "http://dawarich-tailscale.dawarich.svc";
+                    icon = "si:openstreetmap";
+                  }
                 ];
               }
 
