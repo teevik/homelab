@@ -26,7 +26,7 @@ spec:
             - '::'
           env:
             - name: APPLICATION_HOSTS
-              value: dawarich,localhost,::1,127.0.0.1
+              value: dawarich,dawarich-tailscale.dawarich.svc,localhost,::1,127.0.0.1
             - name: APPLICATION_PROTOCOL
               value: http
             - name: DATABASE_HOST

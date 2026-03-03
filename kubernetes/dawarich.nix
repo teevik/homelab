@@ -14,7 +14,7 @@ let
       key = "DATABASE_PASSWORD";
     };
     DATABASE_NAME.value = "dawarich_production";
-    APPLICATION_HOSTS.value = "dawarich,localhost,::1,127.0.0.1";
+    APPLICATION_HOSTS.value = "dawarich,dawarich-tailscale.dawarich.svc,localhost,::1,127.0.0.1";
     APPLICATION_PROTOCOL.value = "http";
     TIME_ZONE.value = "Europe/Oslo";
     SECRET_KEY_BASE.valueFrom.secretKeyRef = {
