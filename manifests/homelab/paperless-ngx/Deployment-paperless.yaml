@@ -32,7 +32,7 @@ spec:
             - name: PAPERLESS_DBUSER
               value: paperless
             - name: PAPERLESS_OCR_LANGUAGE
-              value: eng+nor
+              value: eng+nob
             - name: PAPERLESS_REDIS
               value: redis://paperless-redis:6379
             - name: PAPERLESS_SECRET_KEY
