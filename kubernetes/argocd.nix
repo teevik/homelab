@@ -29,6 +29,24 @@
       };
     };
 
+    # Enable orphaned resources monitoring on the default project
+    resources.appProjects.default.spec = {
+      sourceRepos = [ "*" ];
+      destinations = [
+        {
+          server = "*";
+          namespace = "*";
+        }
+      ];
+      clusterResourceWhitelist = [
+        {
+          group = "*";
+          kind = "*";
+        }
+      ];
+      orphanedResources.warn = true;
+    };
+
     # Tailscale LoadBalancer to expose ArgoCD UI
     resources.services.argocd-tailscale = {
       metadata.annotations = {
