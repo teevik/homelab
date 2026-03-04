@@ -42,14 +42,6 @@ let
       };
     };
 
-    dawarich-secrets = {
-      namespace = "dawarich";
-      data = {
-        DATABASE_PASSWORD = "dawarich_db_password";
-        SECRET_KEY_BASE = "dawarich_secret_key_base";
-      };
-    };
-
     paperless-secrets = {
       namespace = "paperless-ngx";
       data = {

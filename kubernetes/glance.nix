@@ -51,12 +51,6 @@ let
                     icon = "si:codewars";
                   }
                   {
-                    title = "Dawarich";
-                    url = "http://dawarich";
-                    check-url = "http://dawarich-tailscale.dawarich.svc";
-                    icon = "si:openstreetmap";
-                  }
-                  {
                     title = "Paperless-ngx";
                     url = "http://paperless";
                     check-url = "http://paperless-tailscale.paperless-ngx.svc";
