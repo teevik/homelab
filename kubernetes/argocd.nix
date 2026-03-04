@@ -26,6 +26,9 @@
         # Set admin password to "admin"
         configs.secret.argocdServerAdminPassword = "$2y$10$8NrH8ICB2uhtEYl9kSDvROCto1D9Ayyi4Ivt48uXvQqshN7548jXq";
         configs.secret.extra."server.secretkey" = "fku6ze1N0fxMjQXbpMfPR8A9g0xHDW1UOwUgWvz6634=";
+
+        # Grant admin user full permissions
+        configs.rbac."policy.csv" = "g, admin, role:admin";
       };
     };
 
