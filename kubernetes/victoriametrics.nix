@@ -14,7 +14,7 @@
       values = {
         # Pin VictoriaMetrics image version
         # renovate: datasource=docker depName=victoriametrics/victoria-metrics
-        vmsingle.spec.image.tag = "v1.136.0";
+        vmsingle.spec.image.tag = "v1.137.0";
         # renovate: datasource=docker depName=victoriametrics/vmagent
         vmagent.spec.image.tag = "v1.136.0";
         # renovate: datasource=docker depName=victoriametrics/vmalert
