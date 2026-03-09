@@ -18,7 +18,7 @@
         # renovate: datasource=docker depName=victoriametrics/vmagent
         vmagent.spec.image.tag = "v1.136.0";
         # renovate: datasource=docker depName=victoriametrics/vmalert
-        vmalert.spec.image.tag = "v1.136.0";
+        vmalert.spec.image.tag = "v1.137.0";
 
         # k3s bundles controller-manager, scheduler, and etcd into the main
         # k3s process — there are no separate pods to scrape, so disable these
