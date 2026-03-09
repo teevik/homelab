@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/instance: vm
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: victoria-metrics-k8s-stack
-    app.kubernetes.io/version: v1.136.0
+    app.kubernetes.io/version: v1.137.0
     helm.sh/chart: victoria-metrics-k8s-stack-0.72.2
   name: vm-victoria-metrics-k8s-stack
   namespace: victoria-metrics
@@ -22,7 +22,7 @@ spec:
     http.pathPrefix: /
     remoteWrite.disablePathAppend: "true"
   image:
-    tag: v1.136.0
+    tag: v1.137.0
   license: {}
   notifiers:
     - url: http://vmalertmanager-vm-victoria-metrics-k8s-stack-0.vmalertmanager-vm-victoria-metrics-k8s-stack.victoria-metrics.svc.cluster.local.:9093
