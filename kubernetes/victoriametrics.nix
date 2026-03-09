@@ -16,7 +16,7 @@
         # renovate: datasource=docker depName=victoriametrics/victoria-metrics
         vmsingle.spec.image.tag = "v1.136.0";
         # renovate: datasource=docker depName=victoriametrics/vmagent
-        vmagent.spec.image.tag = "v1.136.0";
+        vmagent.spec.image.tag = "v1.137.0";
         # renovate: datasource=docker depName=victoriametrics/vmalert
         vmalert.spec.image.tag = "v1.136.0";
 
