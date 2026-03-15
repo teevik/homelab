@@ -56,6 +56,12 @@ let
                     check-url = "http://paperless-tailscale.paperless-ngx.svc";
                     icon = "si:paperlessngx";
                   }
+                  {
+                    title = "BentoPDF";
+                    url = "http://bentopdf";
+                    check-url = "http://bentopdf.bentopdf.svc";
+                    icon = "si:files";
+                  }
                 ];
               }
 

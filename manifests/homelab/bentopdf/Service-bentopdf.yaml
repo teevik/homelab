@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    tailscale.com/hostname: bentopdf
+    tailscale.com/proxy-group: ingress
+  name: bentopdf
+  namespace: bentopdf
+spec:
+  loadBalancerClass: tailscale
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+  selector:
+    app: bentopdf
+  type: LoadBalancer
