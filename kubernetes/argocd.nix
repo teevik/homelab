@@ -14,7 +14,7 @@
       values = {
         # Pin ArgoCD image version
         # renovate: datasource=docker depName=quay.io/argoproj/argocd
-        global.image.tag = "v3.3.2";
+        global.image.tag = "v3.3.3";
 
         # Single-node homelab: minimal HA, disable unused components
         dex.enabled = false;
