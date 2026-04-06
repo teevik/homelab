@@ -217,7 +217,7 @@ in
           spec = {
             containers.tika = {
               # renovate: datasource=docker depName=apache/tika
-              image = "apache/tika:3.2.3.0@sha256:c0154cb95587cde64be74f35ada1a2bd7892219f3f0ac3c9dc6cab34046b3573";
+              image = "apache/tika:3.3.0.0@sha256:2a565f1ea1290bdcb74a7d35957d16a989ed44ef98790dcdcc28121d728fa583";
               ports.http.containerPort = 9998;
               resources = {
                 requests = {
