@@ -13,7 +13,7 @@ in
       values = {
         # Pin Immich image tag to stay current when chart lags app releases
         # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
-        controllers.main.containers.main.image.tag = "v2.5.6";
+        controllers.main.containers.main.image.tag = "v2.7.4";
 
         # Database connection (shared across components)
         controllers.main.containers.main.env = {
@@ -45,7 +45,7 @@ in
           controllers.main = {
             containers.main = {
               # renovate: datasource=docker depName=ghcr.io/immich-app/immich-machine-learning
-              image.tag = "v2.5.6-rocm";
+              image.tag = "v2.7.4-rocm";
               env.HSA_OVERRIDE_GFX_VERSION = "10.3.0";
               securityContext = {
                 privileged = true;
