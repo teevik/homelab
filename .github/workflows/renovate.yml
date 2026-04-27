@@ -21,3 +21,4 @@ jobs:
           configurationFile: renovate.json5
         env:
           RENOVATE_REPOSITORIES: ${{ github.repository }}
+          LOG_LEVEL: debug
