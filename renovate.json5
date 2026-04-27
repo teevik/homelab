@@ -9,6 +9,16 @@
   // Disable all default managers -- we only want our custom ones for .nix files
   "enabledManagers": ["custom.regex"],
 
+  // Single-PR mode: one always-up-to-date PR + a dashboard issue listing
+  // every detected dependency
+  "dependencyDashboard": true,
+  "prConcurrentLimit": 1,
+  "prHourlyLimit": 0,
+  "rebaseWhen": "behind-base-branch",
+  "separateMajorMinor": false,
+  "separateMinorPatch": false,
+  "recreateWhen": "always",
+
   // Custom managers for container image references in .nix files
   "customManagers": [
     {
@@ -61,6 +71,12 @@
       // Pin digests for all docker images
       "matchDatasources": ["docker"],
       "pinDigests": true
+    },
+    {
+      // Catch-all: fold every remaining update into a single PR
+      "matchPackageNames": ["*"],
+      "groupName": "all dependencies",
+      "groupSlug": "all"
     }
   ]
 }
