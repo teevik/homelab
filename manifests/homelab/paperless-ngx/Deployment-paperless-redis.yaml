@@ -18,7 +18,7 @@ spec:
       containers:
         - command:
             - redis-server
-          image: redis:7.4-alpine@sha256:8b81dd37ff027bec4e516d41acfbe9fe2460070dc6d4a4570a2ac5b9d59df065
+          image: redis:8.6-alpine@sha256:c5e375abb885e6b2021c0377879e4890bf76f9065b8922ffc113f2b226b9fc17
           name: redis
           ports:
             - containerPort: 6379

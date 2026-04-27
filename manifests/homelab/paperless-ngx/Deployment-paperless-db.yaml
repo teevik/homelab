@@ -23,7 +23,7 @@ spec:
               value: paperless
             - name: POSTGRES_USER
               value: paperless
-          image: postgres:17-alpine@sha256:6f30057d31f5861b66f3545d4821f987aacf1dd920765f0acadea0c58ff975b1
+          image: postgres:18-alpine@sha256:54451ecb8ab38c24c3ec123f2fd501303a3a1856a5c66e98cecf2460d5e1e9d7
           name: postgres
           ports:
             - containerPort: 5432
