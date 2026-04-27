@@ -8,15 +8,17 @@
   // Disable all default managers -- we only want our custom ones for .nix files
   "enabledManagers": ["custom.regex"],
 
-  // Single-PR mode: one always-up-to-date PR + a dashboard issue listing
-  // every detected dependency
+  // Grouping strategy:
+  //   - All non-major updates (minor, patch, digest, pin) get folded into
+  //     a single "all non-major dependencies" PR (see catch-all packageRule).
+  //   - Major bumps fork into their own PR per package, since they're
+  //     usually breaking changes that need individual review.
+  //   - The Dependency Dashboard issue tracks every detected dep + open PRs.
   "dependencyDashboard": true,
-  "prConcurrentLimit": 1,
+  "prConcurrentLimit": 0,
   "prHourlyLimit": 0,
   "rebaseWhen": "behind-base-branch",
-  "separateMajorMinor": false,
   "separateMinorPatch": false,
-  "recreateWhen": "always",
 
   // Custom managers for container image references in .nix files.
   // Each manager uses a SINGLE regex with an optional digest group so the
@@ -73,10 +75,13 @@
       "pinDigests": true
     },
     {
-      // Catch-all: fold every remaining update into a single PR
+      // Catch-all: fold every NON-MAJOR update into a single PR.
+      // Major bumps are intentionally excluded so they each get their own
+      // PR for individual review (databases, breaking-change-prone images).
       "matchPackageNames": ["*"],
-      "groupName": "all dependencies",
-      "groupSlug": "all"
+      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-non-major"
     }
   ]
 }
