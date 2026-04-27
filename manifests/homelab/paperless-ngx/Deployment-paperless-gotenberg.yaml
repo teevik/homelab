@@ -18,7 +18,7 @@ spec:
             - gotenberg
             - --chromium-disable-javascript=true
             - --chromium-allow-list=file:///tmp/.*
-          image: gotenberg/gotenberg:8.27@sha256:d71ab8c13b6bd47c7bc81195082005dfb17eaa75e8b1fadd347a64ee66ed98d5
+          image: gotenberg/gotenberg:8.31@sha256:f0d86e8a1dbc7b33a5a65cb251d02bb271a48ffa989da3feb5ed7d954fe4d4b3
           name: gotenberg
           ports:
             - containerPort: 3000
