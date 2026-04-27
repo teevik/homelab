@@ -19,29 +19,30 @@
   "separateMinorPatch": false,
   "recreateWhen": "always",
 
-  // Custom managers for container image references in .nix files
+  // Custom managers for container image references in .nix files.
+  // Each manager uses a SINGLE regex with an optional digest group so the
+  // same line is never matched twice (which produces upgrade-collision
+  // warnings and prevents Renovate from creating a branch).
   "customManagers": [
     {
-      // Matches: image = "registry/name:tag@sha256:digest"; and image = "registry/name:tag";
+      // Matches: image = "registry/name:tag@sha256:digest"; or image = "registry/name:tag";
+      // The (?:@(?<currentDigest>...))? group is optional.
       "customType": "regex",
       "managerFilePatterns": ["/kubernetes/.*\\.nix$/"],
       "matchStrings": [
-        "image\\s*=\\s*\"(?<depName>[^:\"]+):(?<currentValue>[^@\"]+)@(?<currentDigest>sha256:[a-f0-9]+)\"",
-        "image\\s*=\\s*\"(?<depName>[^:\"]+):(?<currentValue>[^@\"]+)\""
+        "image\\s*=\\s*\"(?<depName>[^:\"]+):(?<currentValue>[^@\"]+?)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\""
       ],
       "datasourceTemplate": "docker"
     },
     {
       // Matches comment-annotated Helm image.tag values:
       //   # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
-      //   image.tag = "v1.2.3";
-      //   or
-      //   *.image.tag = "v1.2.3@sha256:abcdef...";
+      //   image.tag = "v1.2.3";              (digest optional)
+      //   image.tag = "v1.2.3@sha256:abc..."; (digest captured)
       "customType": "regex",
       "managerFilePatterns": ["/kubernetes/.*\\.nix$/"],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+)\\s+depName=(?<depName>[^\\s]+)\\s+.*?image\\.tag\\s*=\\s*\\n?\\s*\"(?<currentValue>[^@\"]+)@(?<currentDigest>sha256:[a-f0-9]+)\"",
-        "#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+)\\s+depName=(?<depName>[^\\s]+)\\s+.*?image\\.tag\\s*=\\s*\\n?\\s*\"(?<currentValue>[^@\"]+)\""
+        "#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+)\\s+depName=(?<depName>[^\\s]+)\\s+.*?image\\.tag\\s*=\\s*\\n?\\s*\"(?<currentValue>[^@\"]+?)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\""
       ]
     }
   ],
