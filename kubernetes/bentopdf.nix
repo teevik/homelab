@@ -12,7 +12,7 @@
           metadata.labels.app = "bentopdf";
           spec.containers.bentopdf = {
             # renovate: datasource=docker depName=ghcr.io/alam00000/bentopdf
-            image = "ghcr.io/alam00000/bentopdf:v2.5.0@sha256:c3729000f885059680cee9d49df50b21410cf80896be06f7e070de8f85a37816";
+            image = "ghcr.io/alam00000/bentopdf:2.8.4@sha256:f54b9ed9c56b767e0098b525468206689b666323c2b500b9686c3cf41cdfa348";
             ports.http.containerPort = 8080;
           };
         };
