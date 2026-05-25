@@ -31,12 +31,10 @@ let
       };
     };
 
-    gtnh-secrets = {
-      namespace = "gtnh";
+    crafty-secrets = {
+      namespace = "crafty";
       data = {
         CLOUDFLARE_API_TOKEN = "cloudflare_api_token";
-        RCON_PASSWORD = "gtnh_rcon_password";
-        RCON_WEB_PASSWORD = "gtnh_rcon_web_password";
       };
     };
 

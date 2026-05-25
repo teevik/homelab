@@ -5,8 +5,8 @@ metadata:
     recurring-job-group.longhorn.io/backup: enabled
     recurring-job-group.longhorn.io/snapshot: enabled
     recurring-job.longhorn.io/source: enabled
-  name: gtnh-data
-  namespace: gtnh
+  name: crafty-backups
+  namespace: crafty
 spec:
   accessModes:
     - ReadWriteOnce

@@ -61,7 +61,7 @@
           ./kubernetes/victoriametrics.nix
           ./kubernetes/paperless-ngx.nix
           ./kubernetes/bentopdf.nix
-          ./kubernetes/gtnh.nix
+          ./kubernetes/crafty.nix
         ];
       };
     };

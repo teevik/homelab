@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crafty
+  namespace: crafty
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crafty
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: crafty
+    spec:
+      containers:
+        - image: registry.gitlab.com/crafty-controller/crafty-4:4.10.4@sha256:d2f61fcabb4756a63bc8538fb4f5e35ffddca3f1916a733c95a31c705c697742
+          name: crafty
+          ports:
+            - containerPort: 8000
+              name: http
+            - containerPort: 8443
+              name: https
+            - containerPort: 25565
+              name: minecraft
+          resources:
+            limits:
+              memory: 14Gi
+            requests:
+              cpu: "2"
+              memory: 10Gi
+          volumeMounts:
+            - mountPath: /crafty/app/config
+              name: config
+            - mountPath: /crafty/backups
+              name: backups
+            - mountPath: /crafty/import
+              name: import
+            - mountPath: /crafty/logs
+              name: logs
+            - mountPath: /crafty/servers
+              name: servers
+      volumes:
+        - name: backups
+          persistentVolumeClaim:
+            claimName: crafty-backups
+        - name: config
+          persistentVolumeClaim:
+            claimName: crafty-config
+        - name: import
+          persistentVolumeClaim:
+            claimName: crafty-import
+        - name: logs
+          persistentVolumeClaim:
+            claimName: crafty-logs
+        - name: servers
+          persistentVolumeClaim:
+            claimName: crafty-servers

@@ -1,17 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gtnh-cloudflare-ddns
-  namespace: gtnh
+  name: crafty-cloudflare-ddns
+  namespace: crafty
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: gtnh-cloudflare-ddns
+      app: crafty-cloudflare-ddns
   template:
     metadata:
       labels:
-        app: gtnh-cloudflare-ddns
+        app: crafty-cloudflare-ddns
     spec:
       containers:
         - env:
@@ -19,7 +19,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   key: CLOUDFLARE_API_TOKEN
-                  name: gtnh-secrets
+                  name: crafty-secrets
             - name: IP4_DOMAINS
               value: gtnh.teevik.no
             - name: IP6_PROVIDER

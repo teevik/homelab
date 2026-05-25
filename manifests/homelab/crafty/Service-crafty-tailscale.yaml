@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    tailscale.com/hostname: crafty
+    tailscale.com/proxy-group: ingress
+  name: crafty-tailscale
+  namespace: crafty
+spec:
+  loadBalancerClass: tailscale
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8000
+    - name: https
+      port: 443
+      protocol: TCP
+      targetPort: 8443
+  selector:
+    app: crafty
+  type: LoadBalancer
