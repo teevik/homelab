@@ -42,6 +42,9 @@ spec:
               name: logs
             - mountPath: /crafty/servers
               name: servers
+      securityContext:
+        fsGroup: 0
+        fsGroupChangePolicy: OnRootMismatch
       volumes:
         - name: backups
           persistentVolumeClaim:

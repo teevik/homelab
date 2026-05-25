@@ -41,6 +41,10 @@ in
         template = {
           metadata.labels.app = "crafty";
           spec = {
+            securityContext = {
+              fsGroup = 0;
+              fsGroupChangePolicy = "OnRootMismatch";
+            };
             containers.crafty = {
               image = craftyImage;
               ports = {
