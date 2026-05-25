@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gtnh-rcon
+  namespace: gtnh
+spec:
+  ports:
+    - name: http
+      port: 4326
+      targetPort: 4326
+    - name: websocket
+      port: 4327
+      targetPort: 4327
+  selector:
+    app: gtnh-rcon

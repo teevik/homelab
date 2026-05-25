@@ -31,6 +31,15 @@ let
       };
     };
 
+    gtnh-secrets = {
+      namespace = "gtnh";
+      data = {
+        CLOUDFLARE_API_TOKEN = "cloudflare_api_token";
+        RCON_PASSWORD = "gtnh_rcon_password";
+        RCON_WEB_PASSWORD = "gtnh_rcon_web_password";
+      };
+    };
+
     longhorn-backup-secret = {
       namespace = "longhorn-system";
       data = {
@@ -174,6 +183,10 @@ in
     networking.firewall.trustedInterfaces = [
       "cni+"
       "flannel.+"
+    ];
+
+    networking.firewall.allowedTCPPorts = [
+      30565
     ];
   };
 }

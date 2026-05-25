@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gtnh
+  namespace: gtnh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gtnh
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: gtnh
+    spec:
+      containers:
+        - env:
+            - name: ENABLE_RCON
+              value: "true"
+            - name: ENABLE_WHITELIST
+              value: "TRUE"
+            - name: EULA
+              value: "TRUE"
+            - name: GTNH_PACK_VERSION
+              value: 2.8.4
+            - name: MEMORY
+              value: 8G
+            - name: RCON_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: RCON_PASSWORD
+                  name: gtnh-secrets
+            - name: RCON_PORT
+              value: "25575"
+            - name: TYPE
+              value: GTNH
+          image: itzg/minecraft-server:java25@sha256:bb1cf73b342bdf6fa03b9d689b699bd1f8c6989f81ea07d520985eb2f18e6f30
+          name: gtnh
+          ports:
+            - containerPort: 25565
+              name: minecraft
+            - containerPort: 25575
+              name: rcon
+          resources:
+            limits:
+              memory: 12Gi
+            requests:
+              cpu: "2"
+              memory: 10Gi
+          stdin: true
+          tty: true
+          volumeMounts:
+            - mountPath: /data
+              name: data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: gtnh-data

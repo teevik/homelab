@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gtnh-rcon
+  namespace: gtnh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gtnh-rcon
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: gtnh-rcon
+    spec:
+      containers:
+        - env:
+            - name: RWA_ADMIN
+              value: "TRUE"
+            - name: RWA_GAME
+              value: minecraft
+            - name: RWA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: RCON_WEB_PASSWORD
+                  name: gtnh-secrets
+            - name: RWA_RCON_HOST
+              value: gtnh
+            - name: RWA_RCON_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: RCON_PASSWORD
+                  name: gtnh-secrets
+            - name: RWA_RCON_PORT
+              value: "25575"
+            - name: RWA_SERVER_NAME
+              value: gtnh
+            - name: RWA_USERNAME
+              value: admin
+            - name: RWA_WEBSOCKET_URL
+              value: ws://gtnh-rcon:4327
+            - name: RWA_WEBSOCKET_URL_SSL
+              value: wss://gtnh-rcon:4327
+          image: itzg/rcon:latest@sha256:c9521f333bf9eaedf2db0acd750e67be88eaaa9c5e9026385bd875dc18a49110
+          name: rcon
+          ports:
+            - containerPort: 4326
+              name: http
+            - containerPort: 4327
+              name: websocket
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              cpu: 50m
+              memory: 128Mi
+          volumeMounts:
+            - mountPath: /opt/rcon-web-admin/db
+              name: data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: gtnh-rcon-data

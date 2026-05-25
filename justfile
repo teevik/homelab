@@ -24,3 +24,9 @@ bootstrap:
 check-images:
     nixidy build .#homelab
     python3 ./scripts/check-images.py ./result
+
+reboot NODE="homelab" HOST="homelab":
+    nu scripts/reboot.nu {{ NODE }} --host {{ HOST }}
+
+reboot-dry-run NODE="homelab" HOST="homelab":
+    nu scripts/reboot.nu {{ NODE }} --host {{ HOST }} --dry-run

@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gtnh-cloudflare-ddns
+  namespace: gtnh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gtnh-cloudflare-ddns
+  template:
+    metadata:
+      labels:
+        app: gtnh-cloudflare-ddns
+    spec:
+      containers:
+        - env:
+            - name: CLOUDFLARE_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  key: CLOUDFLARE_API_TOKEN
+                  name: gtnh-secrets
+            - name: IP4_DOMAINS
+              value: gtnh.teevik.no
+            - name: IP6_PROVIDER
+              value: none
+            - name: PROXIED
+              value: "false"
+          image: favonia/cloudflare-ddns:1.16.2@sha256:bc53b40b13c8b2a84e9b93c21f65fcd7d574b741014fb93912eb9efd93015aa2
+          name: ddns
+          resources:
+            limits:
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
