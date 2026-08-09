@@ -48,12 +48,6 @@ in
                 GROUP_ID.value = "568";
                 TZ.value = "Europe/Oslo";
               };
-              securityContext = {
-                runAsNonRoot = true;
-                runAsUser = 568;
-                runAsGroup = 568;
-                allowPrivilegeEscalation = false;
-              };
               volumeMounts = {
                 "/config".name = "config";
                 "/cache".name = "cache";

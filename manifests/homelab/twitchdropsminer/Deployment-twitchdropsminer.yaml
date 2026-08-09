@@ -30,11 +30,6 @@ spec:
           ports:
             - containerPort: 5800
               name: http
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsGroup: 568
-            runAsNonRoot: true
-            runAsUser: 568
           volumeMounts:
             - mountPath: /cache
               name: cache
