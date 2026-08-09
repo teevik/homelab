@@ -62,6 +62,7 @@
           ./kubernetes/paperless-ngx.nix
           ./kubernetes/bentopdf.nix
           ./kubernetes/crafty.nix
+          ./kubernetes/twitchdropsminer.nix
         ];
       };
     };

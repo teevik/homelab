@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: twitchdropsminer
+  namespace: argocd
+spec:
+  destination:
+    namespace: twitchdropsminer
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: ./manifests/homelab/twitchdropsminer
+    repoURL: git@github.com:teevik/homelab.git
+    targetRevision: main
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

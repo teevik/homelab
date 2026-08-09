@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: twitchdropsminer
+  namespace: twitchdropsminer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: twitchdropsminer
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: twitchdropsminer
+    spec:
+      containers:
+        - env:
+            - name: DARK_MODE
+              value: "1"
+            - name: GROUP_ID
+              value: "568"
+            - name: TZ
+              value: Europe/Oslo
+            - name: USER_ID
+              value: "568"
+          image: docker.io/nokodo/twitchdropsminer:latest@sha256:f10f0e97fe65c43cae842b33fa0557449b9b41c2a1bdfb37a7be52856fe45a9e
+          name: twitchdropsminer
+          ports:
+            - containerPort: 5800
+              name: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsGroup: 568
+            runAsNonRoot: true
+            runAsUser: 568
+          volumeMounts:
+            - mountPath: /cache
+              name: cache
+            - mountPath: /config
+              name: config
+      securityContext:
+        fsGroup: 568
+        fsGroupChangePolicy: OnRootMismatch
+      volumes:
+        - name: cache
+          persistentVolumeClaim:
+            claimName: twitchdropsminer-cache
+        - name: config
+          persistentVolumeClaim:
+            claimName: twitchdropsminer-config
