@@ -39,18 +39,22 @@ in
               fsGroupChangePolicy = "OnRootMismatch";
             };
             containers.twitchdropsminer = {
-              # renovate: datasource=docker depName=nokodo/twitchdropsminer
-              image = "docker.io/nokodo/twitchdropsminer:latest@sha256:f10f0e97fe65c43cae842b33fa0557449b9b41c2a1bdfb37a7be52856fe45a9e";
+              # renovate: datasource=docker depName=dungfu/twitch-drops-miner
+              image = "docker.io/dungfu/twitch-drops-miner:latest@sha256:044280f00887ae2a8df594d5f5be0b9d0e65383044969f9774fc8ae97ad1e9f4";
               ports.http.containerPort = 5800;
               env = {
                 DARK_MODE.value = "1";
-                USER_ID.value = "568";
-                GROUP_ID.value = "568";
                 TZ.value = "Europe/Oslo";
               };
+              securityContext = {
+                runAsNonRoot = true;
+                runAsUser = 568;
+                runAsGroup = 568;
+                allowPrivilegeEscalation = false;
+              };
               volumeMounts = {
-                "/config".name = "config";
-                "/cache".name = "cache";
+                "/TwitchDropsMiner/config".name = "config";
+                "/TwitchDropsMiner/cache".name = "cache";
               };
             };
             volumes = {

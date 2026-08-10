@@ -19,21 +19,22 @@ spec:
         - env:
             - name: DARK_MODE
               value: "1"
-            - name: GROUP_ID
-              value: "568"
             - name: TZ
               value: Europe/Oslo
-            - name: USER_ID
-              value: "568"
-          image: docker.io/nokodo/twitchdropsminer:latest@sha256:f10f0e97fe65c43cae842b33fa0557449b9b41c2a1bdfb37a7be52856fe45a9e
+          image: docker.io/dungfu/twitch-drops-miner:latest@sha256:044280f00887ae2a8df594d5f5be0b9d0e65383044969f9774fc8ae97ad1e9f4
           name: twitchdropsminer
           ports:
             - containerPort: 5800
               name: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsGroup: 568
+            runAsNonRoot: true
+            runAsUser: 568
           volumeMounts:
-            - mountPath: /cache
+            - mountPath: /TwitchDropsMiner/cache
               name: cache
-            - mountPath: /config
+            - mountPath: /TwitchDropsMiner/config
               name: config
       securityContext:
         fsGroup: 568
