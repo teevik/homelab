@@ -62,6 +62,19 @@ let
                     check-url = "http://bentopdf.bentopdf.svc";
                     icon = "si:files";
                   }
+                  {
+                    title = "Crafty Controller";
+                    url = "https://crafty";
+                    check-url = "https://crafty.crafty.svc:8443";
+                    allow-insecure = true;
+                    icon = "di:crafty-controller";
+                  }
+                  {
+                    title = "TwitchDropsMiner";
+                    url = "http://twitchdropsminer";
+                    check-url = "http://twitchdropsminer.twitchdropsminer.svc:5800";
+                    icon = "si:twitch";
+                  }
                 ];
               }
 
