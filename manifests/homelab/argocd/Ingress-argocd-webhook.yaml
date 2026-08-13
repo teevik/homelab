@@ -3,7 +3,6 @@ kind: Ingress
 metadata:
   annotations:
     tailscale.com/funnel: "true"
-    tailscale.com/proxy-group: ingress
   name: argocd-webhook
   namespace: argocd
 spec:

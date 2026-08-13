@@ -164,7 +164,6 @@ in
       ingresses.immich-funnel = {
         metadata.annotations = {
           "tailscale.com/funnel" = "true";
-          "tailscale.com/proxy-group" = "ingress";
         };
         spec = {
           ingressClassName = "tailscale";
