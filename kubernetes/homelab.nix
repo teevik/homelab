@@ -22,7 +22,9 @@
       values = {
         operatorConfig = {
           hostname = "tailscale-operator-homelab";
+          image.tag = "v1.102.2";
         };
+        proxyConfig.image.tag = "v1.102.2";
         apiServerProxyConfig = {
           mode = "true";
         };
