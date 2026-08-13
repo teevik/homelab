@@ -22,7 +22,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/cm: 9fd8f77a15997647ca9057e09c75a9145c5d4bc27b84d857c2df11715ed797da
+        checksum/cm: b96e849e7003983cff1fd0df07069b1a4d4739b1939d8920819267e8e1c1b191
         checksum/cmd-params: 68dc0567eb7706f2c428318fc2e949d625d91083c95f7422138cac93d669cdf7
       labels:
         app.kubernetes.io/component: application-controller

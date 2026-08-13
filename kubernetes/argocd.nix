@@ -28,6 +28,12 @@
         configs.secret.argocdServerAdminPasswordMtime = "2026-01-01T00:00:00Z";
         configs.secret.extra."server.secretkey" = "fku6ze1N0fxMjQXbpMfPR8A9g0xHDW1UOwUgWvz6634=";
 
+        # Verify GitHub webhook signatures using the separately provisioned secret.
+        configs.secret.extra."webhook.github.secret" = "$argocd-webhook-secret:githubSecret";
+
+        # GitHub push payloads are small; constrain the unauthenticated public endpoint.
+        configs.cm."webhook.maxPayloadSizeMB" = "1";
+
         # Grant admin user full permissions
         configs.rbac."policy.csv" = "g, admin, role:admin";
       };
@@ -49,6 +55,36 @@
         }
       ];
       orphanedResources.warn = true;
+    };
+
+    # Expose only the webhook route publicly; keep the Argo CD UI tailnet-private.
+    resources.ingresses.argocd-webhook = {
+      metadata.annotations = {
+        "tailscale.com/funnel" = "true";
+        "tailscale.com/proxy-group" = "ingress";
+      };
+      spec = {
+        ingressClassName = "tailscale";
+        rules = [
+          {
+            http.paths = [
+              {
+                path = "/api/webhook";
+                pathType = "Prefix";
+                backend.service = {
+                  name = "argocd-server";
+                  port.number = 80;
+                };
+              }
+            ];
+          }
+        ];
+        tls = [
+          {
+            hosts = [ "argocd-webhook" ];
+          }
+        ];
+      };
     };
 
     # Tailscale LoadBalancer to expose ArgoCD UI

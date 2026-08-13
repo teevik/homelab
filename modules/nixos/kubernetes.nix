@@ -56,6 +56,16 @@ let
       };
     };
 
+    argocd-webhook-secret = {
+      namespace = "argocd";
+      data = {
+        githubSecret = "argocd_github_webhook_secret";
+      };
+      labels = {
+        "app.kubernetes.io/part-of" = "argocd";
+      };
+    };
+
     argocd-repo-creds = {
       namespace = "argocd";
       data = {
