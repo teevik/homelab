@@ -159,6 +159,27 @@ in
         };
       };
 
+      # Public HTTPS endpoint for Immich share links via Tailscale Funnel.
+      # Immich's random /share/<token> URL remains the bearer secret.
+      ingresses.immich-funnel = {
+        metadata.annotations = {
+          "tailscale.com/funnel" = "true";
+          "tailscale.com/proxy-group" = "ingress";
+        };
+        spec = {
+          ingressClassName = "tailscale";
+          defaultBackend.service = {
+            name = "immich-server";
+            port.number = 2283;
+          };
+          tls = [
+            {
+              hosts = [ "immich-share" ];
+            }
+          ];
+        };
+      };
+
       # Tailscale LoadBalancer to expose Immich externally
       services.immich-tailscale = {
         metadata.annotations = {
