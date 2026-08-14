@@ -223,7 +223,7 @@ in
           };
           spec = {
             containers.glance = {
-              image = "glanceapp/glance:v0.8.4@sha256:6df86a7e8868d1eda21f35205134b1962c422957e42a0c44d4717c8e8f741b1a";
+              image = "glanceapp/glance:v0.8.5@sha256:32ab73d80f2b8b5fb0735b0431deb36b93fbb6b2fb43592449b0178c8b83e350";
               ports.http.containerPort = 8080;
               volumeMounts."/app/config/glance.yml" = {
                 name = "config";
