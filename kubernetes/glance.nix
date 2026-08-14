@@ -72,7 +72,7 @@ let
                   {
                     title = "TwitchDropsMiner";
                     url = "http://twitchdropsminer";
-                    check-url = "http://twitchdropsminer.twitchdropsminer.svc:5800";
+                    check-url = "http://twitchdropsminer.twitchdropsminer.svc";
                     icon = "si:twitch";
                   }
                 ];
