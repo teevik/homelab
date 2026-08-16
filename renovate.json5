@@ -18,6 +18,10 @@
   "prConcurrentLimit": 0,
   "prHourlyLimit": 0,
   "rebaseWhen": "behind-base-branch",
+
+  // Generated manifests are committed by this workflow bot. Ignore that
+  // author so Renovate can recreate its branch, then let the workflow rerun.
+  "gitIgnoredAuthors": ["github-actions[bot]@users.noreply.github.com"],
   "separateMinorPatch": false,
 
   // Custom managers for container image references in .nix files.
