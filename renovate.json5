@@ -25,9 +25,8 @@
   "separateMinorPatch": false,
 
   // Custom managers for container image references in .nix files.
-  // Each manager uses a SINGLE regex with an optional digest group so the
-  // same line is never matched twice (which produces upgrade-collision
-  // warnings and prevents Renovate from creating a branch).
+  // Each manager matches a dependency once and defines how to add an
+  // initially missing digest without losing the surrounding Nix syntax.
   "customManagers": [
     {
       // Matches: image = "registry/name:tag@sha256:digest"; or image = "registry/name:tag";
@@ -37,18 +36,21 @@
       "matchStrings": [
         "image\\s*=\\s*\"(?<depName>[^:\"]+):(?<currentValue>[^@\"]+?)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\""
       ],
+      "autoReplaceStringTemplate": "image = \"{{{depName}}}:{{{newValue}}}{{#if newDigest}}@{{{newDigest}}}{{/if}}\"",
       "datasourceTemplate": "docker"
     },
     {
-      // Matches comment-annotated Helm image.tag values:
-      //   # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
-      //   image.tag = "v1.2.3";              (digest optional)
-      //   image.tag = "v1.2.3@sha256:abc..."; (digest captured)
+      // Matches comment-annotated Helm image.tag values. Recursive matching
+      // extracts the annotation first, then replaces only the quoted value so
+      // pinDigests can add a digest without reconstructing the Nix attribute.
       "customType": "regex",
       "managerFilePatterns": ["/kubernetes/.*\\.nix$/"],
+      "matchStringsStrategy": "recursive",
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+)\\s+depName=(?<depName>[^\\s]+)\\s+.*?image\\.tag\\s*=\\s*\\n?\\s*\"(?<currentValue>[^@\"]+?)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\""
-      ]
+        "#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+)\\s+depName=(?<depName>[^\\s]+)\\s+.*?image\\.tag\\s*=\\s*\\n?\\s*\"[^\"]+\"",
+        "\"(?<currentValue>[^@\"]+?)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\""
+      ],
+      "autoReplaceStringTemplate": "\"{{{newValue}}}{{#if newDigest}}@{{{newDigest}}}{{/if}}\""
     }
   ],
 
