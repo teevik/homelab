@@ -47,6 +47,8 @@ in
               # renovate: datasource=docker depName=ghcr.io/immich-app/immich-machine-learning
               image.tag = "v3.1.0-rocm";
               env.HSA_OVERRIDE_GFX_VERSION = "10.3.0";
+              # MIGraphX model compilation blocks /ping for several minutes on gfx1032.
+              probes.liveness.spec.failureThreshold = 60;
               securityContext = {
                 privileged = true;
                 allowPrivilegeEscalation = true;

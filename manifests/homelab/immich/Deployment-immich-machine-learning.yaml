@@ -53,7 +53,7 @@ spec:
           image: ghcr.io/immich-app/immich-machine-learning:v3.1.0-rocm
           imagePullPolicy: IfNotPresent
           livenessProbe:
-            failureThreshold: 3
+            failureThreshold: 60
             httpGet:
               path: /ping
               port: http
