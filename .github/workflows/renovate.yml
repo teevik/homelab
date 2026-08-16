@@ -12,12 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.1.0
 
+      # renovate.json5 is discovered as repository config. Passing it through
+      # configurationFile would load every custom manager twice.
       - name: Run Renovate
-        uses: renovatebot/github-action@v42.0.2
+        uses: renovatebot/github-action@v46.2.2
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}
-          configurationFile: renovate.json5
         env:
           RENOVATE_REPOSITORIES: ${{ github.repository }}
