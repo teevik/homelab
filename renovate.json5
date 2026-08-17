@@ -15,7 +15,7 @@
   // Grouping strategy:
   //   - Docker minor, patch, digest, and pin updates share one PR.
   //   - Docker majors and every Helm chart get independent PRs.
-  //   - Helm majors and every update to a 0.x chart require explicit approval.
+  //   - Major updates and every update to a 0.x chart are labeled for review.
   //   - The Dependency Dashboard tracks every detected dependency and PR.
   "dependencyDashboard": true,
   "prConcurrentLimit": 0,
@@ -100,19 +100,16 @@
       "pinDigests": true
     },
     {
-      // Chart majors may change CRDs, defaults, or storage behavior. Block
-      // them on explicit human approval even when release notes are incomplete.
-      "matchDatasources": ["helm"],
+      // Create major-update PRs immediately, but mark them for careful review
+      // regardless of whether they come from Docker, Helm, or another manager.
       "matchUpdateTypes": ["major"],
-      "dependencyDashboardApproval": true,
       "addLabels": ["ready-for-human"]
     },
     {
-      // SemVer permits breaking minor and patch releases before 1.0. Treat
-      // every update to a 0.x chart as requiring the same human approval.
+      // SemVer permits breaking minor and patch releases before 1.0. Mark
+      // every update to a 0.x chart for the same careful review.
       "matchDatasources": ["helm"],
       "matchCurrentVersion": "/^0\\./",
-      "dependencyDashboardApproval": true,
       "addLabels": ["ready-for-human"]
     },
     {
