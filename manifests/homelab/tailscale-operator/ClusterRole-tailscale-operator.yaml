@@ -83,6 +83,36 @@ rules:
   - apiGroups:
       - tailscale.com
     resources:
+      - tailnets
+      - tailnets/status
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+  - apiGroups:
+      - tailscale.com
+    resources:
+      - peerrelays
+      - peerrelays/status
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+  - apiGroups:
+      - tailscale.com
+    resources:
+      - proxygrouppolicies
+      - proxygrouppolicies/status
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+  - apiGroups:
+      - tailscale.com
+    resources:
       - recorders
       - recorders/status
     verbs:
@@ -99,4 +129,16 @@ rules:
     verbs:
       - get
       - list
+      - watch
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingadmissionpolicies
+      - validatingadmissionpolicybindings
+    verbs:
+      - list
+      - create
+      - delete
+      - update
+      - get
       - watch
