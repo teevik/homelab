@@ -8,9 +8,8 @@
       chart = charts.longhorn.longhorn;
 
       values = {
-        # Hotfix for instance-manager memory leak in v1.11.0
-        # https://github.com/longhorn/longhorn/issues/12573
-        image.longhorn.instanceManager.tag = "v1.11.0-hotfix-1";
+        # Longhorn's pre-upgrade Helm job is unsupported under Argo CD.
+        preUpgradeChecker.jobEnabled = false;
 
         # Network policy type for k3s
         networkPolicies.type = "k3s";
