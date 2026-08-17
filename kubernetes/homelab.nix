@@ -5,6 +5,9 @@
   nixidy.target.branch = "main";
   nixidy.target.rootPath = "./manifests/homelab";
 
+  # Local, versioned Helm charts are exposed to every application as `charts`.
+  nixidy.chartsDir = ../charts;
+
   # ArgoCD auto-sync defaults: all applications auto-sync, prune, and self-heal
   nixidy.defaults.syncPolicy.autoSync = {
     enable = true;

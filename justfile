@@ -21,6 +21,9 @@ switch:
 bootstrap:
     nixidy bootstrap .#homelab | kubectl apply -f -
 
+update-charts:
+    nix run .#updateCharts
+
 check-images:
     nixidy build .#homelab
     python3 ./scripts/check-images.py ./result

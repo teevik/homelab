@@ -6,6 +6,7 @@ on:
       - "renovate/**"
     paths:
       - "kubernetes/**"
+      - "charts/**"
       - "flake.nix"
       - "flake.lock"
 
@@ -24,9 +25,9 @@ jobs:
       - name: Cache Nix store
         uses: DeterminateSystems/magic-nix-cache-action@main
 
-      - name: Update isolated Argo CD chart lock
-        if: contains(github.event.head_commit.modified, 'flake.nix')
-        run: nix flake update nixhelm-argocd
+      - name: Refresh pinned Helm chart hashes
+        if: contains(join(github.event.head_commit.modified, ','), 'charts/')
+        run: nix develop --command python3 scripts/update-chart-hashes.py charts
 
       - name: Regenerate manifests
         run: nix develop --command nixidy switch .#homelab
@@ -35,7 +36,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add flake.lock manifests/
+          git add charts/ manifests/
           if git diff --cached --quiet; then
             echo "No manifest changes to commit"
           else

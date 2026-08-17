@@ -5,14 +5,13 @@
   ],
   "timezone": "Europe/Oslo",
 
-  // Custom regex managers update Docker images and the isolated Argo CD chart.
+  // Custom regex managers update Docker images and locally pinned Helm charts.
   "enabledManagers": ["custom.regex"],
 
   // Grouping strategy:
   //   - Docker minor, patch, digest, and pin updates share one PR.
-  //   - Docker major updates and the Argo CD chart get separate PRs.
-  //   - The Argo CD chart has its own Nix input so its manifests and default
-  //     image move together without updating the other chart catalog.
+  //   - Docker majors and every Helm chart get independent PRs.
+  //   - Helm majors and every update to a 0.x chart require explicit approval.
   //   - The Dependency Dashboard tracks every detected dependency and PR.
   "dependencyDashboard": true,
   "prConcurrentLimit": 0,
@@ -24,8 +23,8 @@
   "gitIgnoredAuthors": ["github-actions[bot]@users.noreply.github.com"],
   "separateMinorPatch": false,
 
-  // Custom managers for container images and the isolated Argo CD chart.
-  // Image managers preserve Nix syntax while adding or updating digests.
+  // Custom managers preserve Nix syntax while updating container images and
+  // the version field in each immutable local Helm chart record.
   "customManagers": [
     {
       // Matches: image = "registry/name:tag@sha256:digest"; or image = "registry/name:tag";
@@ -52,16 +51,15 @@
       "autoReplaceStringTemplate": "\"{{{newValue}}}{{#if newDigest}}@{{{newDigest}}}{{/if}}\""
     },
     {
-      // The chart version is an evaluated invariant in flake.nix. The
-      // regeneration workflow advances its isolated nixhelm lock input.
+      // Local chart records keep the repository, chart, version, and Nix hash
+      // together. CI refreshes the hash for the exact Renovate-selected version.
       "customType": "regex",
-      "managerFilePatterns": ["/^flake\\.nix$/"],
+      "managerFilePatterns": ["/^charts\\/.+\\/default\\.nix$/"],
       "matchStrings": [
-        "argoCdChartVersion\\s*=\\s*\"(?<currentValue>[^\"]+)\";"
+        "repo\\s*=\\s*\"(?<registryUrl>[^\"]+)\";\\s*chart\\s*=\\s*\"(?<depName>[^\"]+)\";\\s*version\\s*=\\s*\"(?<currentValue>[^\"]+)\";"
       ],
-      "datasourceTemplate": "helm",
-      "depNameTemplate": "argo-cd",
-      "registryUrlTemplate": "https://argoproj.github.io/argo-helm"
+      "autoReplaceStringTemplate": "repo = \"{{{registryUrl}}}\";\n  chart = \"{{{depName}}}\";\n  version = \"{{{newValue}}}\";",
+      "datasourceTemplate": "helm"
     }
   ],
 
@@ -92,8 +90,24 @@
       "pinDigests": true
     },
     {
-      // Fold every non-major Docker image update into one PR. Major images
-      // and the Helm-sourced Argo CD chart remain separate.
+      // Chart majors may change CRDs, defaults, or storage behavior. Block
+      // them on explicit human approval even when release notes are incomplete.
+      "matchDatasources": ["helm"],
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
+      "addLabels": ["ready-for-human"]
+    },
+    {
+      // SemVer permits breaking minor and patch releases before 1.0. Treat
+      // every update to a 0.x chart as requiring the same human approval.
+      "matchDatasources": ["helm"],
+      "matchCurrentVersion": "/^0\\./",
+      "dependencyDashboardApproval": true,
+      "addLabels": ["ready-for-human"]
+    },
+    {
+      // Fold every non-major Docker image update into one PR. Docker majors
+      // and all Helm charts remain independent.
       "matchDatasources": ["docker"],
       "matchPackageNames": ["*"],
       "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
