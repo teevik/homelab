@@ -100,7 +100,7 @@ in
           spec = {
             containers.postgres = {
               # renovate: datasource=docker depName=postgres
-              image = "postgres:17-alpine@sha256:c7526c0f6c3f30260a563d7bcf8ad778effac59a44f8ffa86678c35418338609";
+              image = "postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73";
               ports.postgres.containerPort = 5432;
               env = {
                 POSTGRES_USER.value = "paperless";
@@ -143,7 +143,7 @@ in
           spec = {
             containers.redis = {
               # renovate: datasource=docker depName=redis
-              image = "redis:8.6-alpine@sha256:c5e375abb885e6b2021c0377879e4890bf76f9065b8922ffc113f2b226b9fc17";
+              image = "redis:8.10-alpine@sha256:978f0e01593e65eed801f2402944efcd936d43b5027e4908a7897baf88ed6241";
               command = [ "redis-server" ];
               ports.redis.containerPort = 6379;
               volumeMounts."/data" = {
@@ -180,7 +180,7 @@ in
           spec = {
             containers.gotenberg = {
               # renovate: datasource=docker depName=gotenberg/gotenberg
-              image = "gotenberg/gotenberg:8.31@sha256:f0d86e8a1dbc7b33a5a65cb251d02bb271a48ffa989da3feb5ed7d954fe4d4b3";
+              image = "gotenberg/gotenberg:8.36@sha256:87c16b9f364279d321bc9772d31fa58aa6abe036423c270698bd636c3a8e9466";
               command = [
                 "gotenberg"
                 "--chromium-disable-javascript=true"
@@ -217,7 +217,7 @@ in
           spec = {
             containers.tika = {
               # renovate: datasource=docker depName=apache/tika
-              image = "apache/tika:3.3.0.0@sha256:2a565f1ea1290bdcb74a7d35957d16a989ed44ef98790dcdcc28121d728fa583";
+              image = "apache/tika:3.3.1.0@sha256:90b7fa1dc018434075fce9e1d9b88b1e3d0ea6979d0cf86e116c79a8073ae973";
               ports.http.containerPort = 9998;
               resources = {
                 requests = {

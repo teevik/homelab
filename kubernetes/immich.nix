@@ -13,7 +13,7 @@ in
       values = {
         # Pin Immich image tag to stay current when chart lags app releases
         # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
-        controllers.main.containers.main.image.tag = "v3.1.0";
+        controllers.main.containers.main.image.tag = "v3.1.0@sha256:b434cb9287eea1471c9974845914d4dd328c9c2d652e446ed4930f99944f0ceb";
 
         # Database connection (shared across components)
         controllers.main.containers.main.env = {
@@ -28,7 +28,7 @@ in
           enabled = true;
           # renovate: datasource=docker depName=docker.io/valkey/valkey
           controllers.main.containers.main.image.tag =
-            "9.0.3-alpine@sha256:e1095c6c76ee982cb2d1e07edbb7fb2a53606630a1d810d5a47c9f646b708bf5";
+            "9.1.1-alpine@sha256:ee91f7a174ac4d6a6b0685b3a60e321f0a9dbbb691f9b0e285be2ba1d1be8328";
           persistence.data = {
             enabled = true;
             type = "persistentVolumeClaim";
@@ -45,7 +45,7 @@ in
           controllers.main = {
             containers.main = {
               # renovate: datasource=docker depName=ghcr.io/immich-app/immich-machine-learning
-              image.tag = "v3.1.0-rocm";
+              image.tag = "v3.1.0-rocm@sha256:dd0984a9d61172d45ab4cc3508e3e9861d5262b50ede18200bb5fa56b3addb49";
               env.HSA_OVERRIDE_GFX_VERSION = "10.3.0";
               # MIGraphX model compilation blocks /ping for several minutes on gfx1032.
               probes.liveness.spec.failureThreshold = 60;
