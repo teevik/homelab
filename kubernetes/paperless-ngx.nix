@@ -2,9 +2,6 @@
 let
   dbPassword = "paperless";
 
-  # renovate: datasource=docker depName=ghcr.io/paperless-ngx/paperless-ngx
-  paperlessImage = "ghcr.io/paperless-ngx/paperless-ngx:2.20.9@sha256:1d99ede700ffdf7aa44899b5fee29c8c279f175769b6cb295e91e9f15772728e";
-
   paperlessEnv = {
     PAPERLESS_REDIS.value = "redis://paperless-redis:6379";
     PAPERLESS_DBHOST.value = "paperless-db";
@@ -249,7 +246,7 @@ in
           metadata.labels.app = "paperless";
           spec = {
             containers.paperless = {
-              image = paperlessImage;
+              image = "ghcr.io/paperless-ngx/paperless-ngx:3.0.5@sha256:65a4cabf0169ea7fbd90ab7bb28ba3f8b5909613635acda1a03ad606f34b456b";
               ports.http.containerPort = 8000;
               env = paperlessEnv;
               volumeMounts = {

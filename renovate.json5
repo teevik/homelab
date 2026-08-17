@@ -5,8 +5,12 @@
   ],
   "timezone": "Europe/Oslo",
 
-  // Custom regex managers update Docker images and locally pinned Helm charts.
-  "enabledManagers": ["custom.regex"],
+  // Regex managers handle Nix-embedded images and local Helm charts. Native
+  // managers update workflow actions and flake inputs.
+  "enabledManagers": ["custom.regex", "github-actions", "nix"],
+  "nix": {
+    "enabled": true
+  },
 
   // Grouping strategy:
   //   - Docker minor, patch, digest, and pin updates share one PR.
@@ -83,6 +87,12 @@
       // Immich ML uses -rocm suffix tags; only match tags like v1.2.3-rocm
       "matchPackageNames": ["ghcr.io/immich-app/immich-machine-learning"],
       "allowedVersions": "/-rocm$/"
+    },
+    {
+      // Preserve the PostgreSQL compatibility prefix while comparing the
+      // VectorChord release embedded in tags such as pg16-v1.1.1.
+      "matchPackageNames": ["docker.io/tensorchord/vchord-postgres"],
+      "versioning": "regex:^pg(?<compatibility>\\d+)-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
     },
     {
       // Pin digests for all docker images

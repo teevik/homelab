@@ -1,11 +1,5 @@
 { ... }:
 let
-  # renovate: datasource=docker depName=registry.gitlab.com/crafty-controller/crafty-4
-  craftyImage = "registry.gitlab.com/crafty-controller/crafty-4:4.10.4@sha256:d2f61fcabb4756a63bc8538fb4f5e35ffddca3f1916a733c95a31c705c697742";
-
-  # renovate: datasource=docker depName=favonia/cloudflare-ddns
-  cloudflareDdnsImage = "favonia/cloudflare-ddns:1.16.2@sha256:bc53b40b13c8b2a84e9b93c21f65fcd7d574b741014fb93912eb9efd93015aa2";
-
   backupLabels = {
     "recurring-job.longhorn.io/source" = "enabled";
     "recurring-job-group.longhorn.io/backup" = "enabled";
@@ -46,7 +40,7 @@ in
               fsGroupChangePolicy = "OnRootMismatch";
             };
             containers.crafty = {
-              image = craftyImage;
+              image = "registry.gitlab.com/crafty-controller/crafty-4:4.10.8@sha256:166a06f73d8c831fe594550885655fc051546f042fc5ff79f373542fed4f644f";
               ports = {
                 http.containerPort = 8000;
                 https.containerPort = 8443;
@@ -150,7 +144,7 @@ in
         template = {
           metadata.labels.app = "crafty-cloudflare-ddns";
           spec.containers.ddns = {
-            image = cloudflareDdnsImage;
+            image = "favonia/cloudflare-ddns:1.17.0@sha256:61013368c8f95981c0bb8bf56d962078d8b4e95724a554fa2dabb20d6e478097";
             env = {
               CLOUDFLARE_API_TOKEN.valueFrom.secretKeyRef = {
                 name = "crafty-secrets";

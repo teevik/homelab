@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.1.0
+        uses: actions/checkout@v7.0.1
 
       # renovate.json5 is discovered as repository config. Passing it through
       # configurationFile would load every custom manager twice.
