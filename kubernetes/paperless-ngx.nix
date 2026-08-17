@@ -100,7 +100,7 @@ in
           spec = {
             containers.postgres = {
               # renovate: datasource=docker depName=postgres
-              image = "postgres:17-alpine@sha256:c7526c0f6c3f30260a563d7bcf8ad778effac59a44f8ffa86678c35418338609";
+              image = "postgres:18-alpine@sha256:d3e1620b530c944afa6e887d22eb899824da68e19c52024bf98f5220c88a65b2";
               ports.postgres.containerPort = 5432;
               env = {
                 POSTGRES_USER.value = "paperless";
