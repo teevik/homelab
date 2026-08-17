@@ -4,8 +4,8 @@ metadata:
   labels:
     app.kubernetes.io/instance: vm
     app.kubernetes.io/name: grafana
-    app.kubernetes.io/version: 12.3.3
-    helm.sh/chart: grafana-11.1.8
+    app.kubernetes.io/version: 13.1.1
+    helm.sh/chart: grafana-12.7.3
   name: vm-grafana
   namespace: victoria-metrics
 spec:
@@ -27,8 +27,8 @@ spec:
       labels:
         app.kubernetes.io/instance: vm
         app.kubernetes.io/name: grafana
-        app.kubernetes.io/version: 12.3.3
-        helm.sh/chart: grafana-11.1.8
+        app.kubernetes.io/version: 13.1.1
+        helm.sh/chart: grafana-12.7.3
     spec:
       automountServiceAccountToken: true
       containers:
@@ -57,7 +57,7 @@ spec:
               value: http://localhost:3000/api/admin/provisioning/dashboards/reload
             - name: REQ_METHOD
               value: POST
-          image: quay.io/kiwigrid/k8s-sidecar:2.5.0
+          image: quay.io/kiwigrid/k8s-sidecar:2.8.1
           imagePullPolicy: IfNotPresent
           name: grafana-sc-dashboard
           securityContext:
@@ -95,7 +95,7 @@ spec:
               value: http://localhost:3000/api/admin/provisioning/datasources/reload
             - name: REQ_METHOD
               value: POST
-          image: quay.io/kiwigrid/k8s-sidecar:2.5.0
+          image: quay.io/kiwigrid/k8s-sidecar:2.8.1
           imagePullPolicy: IfNotPresent
           name: grafana-sc-datasources
           securityContext:
@@ -138,7 +138,7 @@ spec:
               value: /etc/grafana/provisioning
             - name: GF_UNIFIED_STORAGE_INDEX_PATH
               value: /var/lib/grafana-search/bleve
-          image: docker.io/grafana/grafana:12.3.3
+          image: docker.io/grafana/grafana:13.1.1
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 10
@@ -195,13 +195,14 @@ spec:
             - -R
             - 472:472
             - /var/lib/grafana
-          image: docker.io/library/busybox:1.37.0
+          image: docker.io/library/busybox:1.38.0
           imagePullPolicy: IfNotPresent
           name: init-chown-data
           securityContext:
             capabilities:
               add:
                 - CHOWN
+                - DAC_OVERRIDE
               drop:
                 - ALL
             readOnlyRootFilesystem: false

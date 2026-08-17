@@ -2,12 +2,12 @@ apiVersion: operator.victoriametrics.com/v1beta1
 kind: VMAlert
 metadata:
   labels:
-    app.kubernetes.io/component: victoria-metrics-k8s-stack-vmalert
+    app.kubernetes.io/component: vmalert
     app.kubernetes.io/instance: vm
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: victoria-metrics-k8s-stack
     app.kubernetes.io/version: v1.150.0
-    helm.sh/chart: victoria-metrics-k8s-stack-0.72.2
+    helm.sh/chart: victoria-metrics-k8s-stack-0.91.0
   name: vm-victoria-metrics-k8s-stack
   namespace: victoria-metrics
 spec:
@@ -18,12 +18,11 @@ spec:
   externalLabels: {}
   extraArgs:
     external.alert.source: explore?left={"datasource":"VictoriaMetrics","queries":[{"expr":{{ .Expr|jsonEscape|queryEscape }},"refId":"A"}],"range":{"from":"{{ .ActiveAt.UnixMilli }}","to":"now"}}
-    external.url: http://grafana.domain.com
+    external.url: http://
     http.pathPrefix: /
     remoteWrite.disablePathAppend: "true"
   image:
     tag: v1.150.0@sha256:c6e6c1ef6e43c09510dd0aff264bf0ea319c1bdfced1ccc79dad1545950a7989
-  license: {}
   notifiers:
     - url: http://vmalertmanager-vm-victoria-metrics-k8s-stack-0.vmalertmanager-vm-victoria-metrics-k8s-stack.victoria-metrics.svc.cluster.local.:9093
   port: "8080"
