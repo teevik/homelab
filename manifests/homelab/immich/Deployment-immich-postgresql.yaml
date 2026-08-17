@@ -25,7 +25,7 @@ spec:
               value: immich
             - name: POSTGRES_USER
               value: immich
-          image: docker.io/tensorchord/vchord-postgres:pg16-v1.1.0@sha256:6cd96c0fbe03aea7280d2ef21ea08508bf035c545e66a61e044be64e99b24fb7
+          image: docker.io/tensorchord/vchord-postgres:pg16-v1.1.1@sha256:d12a579a95c5ea7bb0294181eddf091ab790eebd37f40c49b6de221e2fb756ed
           name: postgresql
           ports:
             - containerPort: 5432

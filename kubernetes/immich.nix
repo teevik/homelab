@@ -13,7 +13,8 @@ in
       values = {
         # Pin Immich image tag to stay current when chart lags app releases
         # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
-        controllers.main.containers.main.image.tag = "v3.1.0@sha256:b434cb9287eea1471c9974845914d4dd328c9c2d652e446ed4930f99944f0ceb";
+        controllers.main.containers.main.image.tag =
+          "v3.1.0@sha256:b434cb9287eea1471c9974845914d4dd328c9c2d652e446ed4930f99944f0ceb";
 
         # Database connection (shared across components)
         controllers.main.containers.main.env = {
@@ -130,7 +131,7 @@ in
           metadata.labels.app = "immich-postgresql";
           spec = {
             containers.postgresql = {
-              image = "docker.io/tensorchord/vchord-postgres:pg16-v1.1.0@sha256:6cd96c0fbe03aea7280d2ef21ea08508bf035c545e66a61e044be64e99b24fb7";
+              image = "docker.io/tensorchord/vchord-postgres:pg16-v1.1.1@sha256:d12a579a95c5ea7bb0294181eddf091ab790eebd37f40c49b6de221e2fb756ed";
               args = [
                 "postgres"
                 "-c"
