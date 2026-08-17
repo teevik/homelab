@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: vmusers.operator.victoriametrics.com
 spec:
   group: operator.victoriametrics.com
@@ -35,6 +35,16 @@ spec:
               type: object
             spec:
               properties:
+                access_log:
+                  properties:
+                    filters:
+                      properties:
+                        skip_status_codes:
+                          items:
+                            type: integer
+                          type: array
+                      type: object
+                  type: object
                 bearerToken:
                   type: string
                 default_url:
@@ -65,6 +75,72 @@ spec:
                       items:
                         type: string
                       type: array
+                  type: object
+                jwt:
+                  properties:
+                    defaultVMAccessClaim:
+                      properties:
+                        logsAccountID:
+                          format: int32
+                          type: integer
+                        logsExtraFilters:
+                          items:
+                            type: string
+                          type: array
+                        logsExtraStreamFilters:
+                          items:
+                            type: string
+                          type: array
+                        logsProjectID:
+                          format: int32
+                          type: integer
+                        metricsAccountID:
+                          format: int32
+                          type: integer
+                        metricsExtraFilters:
+                          items:
+                            type: string
+                          type: array
+                        metricsExtraLabels:
+                          items:
+                            type: string
+                          type: array
+                        metricsProjectID:
+                          format: int32
+                          type: integer
+                      type: object
+                    matchClaims:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    oidc:
+                      properties:
+                        issuer:
+                          type: string
+                      required:
+                        - issuer
+                      type: object
+                    publicKeyRefs:
+                      items:
+                        properties:
+                          key:
+                            type: string
+                          name:
+                            default: ""
+                            type: string
+                          optional:
+                            type: boolean
+                        required:
+                          - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      type: array
+                    publicKeys:
+                      items:
+                        type: string
+                      type: array
+                    skipVerify:
+                      type: boolean
                   type: object
                 load_balancing_policy:
                   enum:
@@ -138,11 +214,28 @@ spec:
                               - VTCluster/vtselect
                               - VTCluster/vtstorage
                               - VTSingle
+                              - VMAnomaly
                             type: string
                           name:
                             type: string
                           namespace:
                             type: string
+                          objects:
+                            items:
+                              properties:
+                                name:
+                                  type: string
+                                namespace:
+                                  type: string
+                                useExtraService:
+                                  type: boolean
+                              required:
+                                - name
+                                - namespace
+                              type: object
+                            type: array
+                          useExtraService:
+                            type: boolean
                         required:
                           - kind
                           - name
@@ -164,6 +257,8 @@ spec:
                         enum:
                           - least_loaded
                           - first_available
+                        type: string
+                      name:
                         type: string
                       paths:
                         items:
@@ -341,6 +436,8 @@ spec:
                     - key
                   type: object
                   x-kubernetes-map-type: atomic
+                useLegacyNaming:
+                  type: boolean
                 username:
                   type: string
               required:
