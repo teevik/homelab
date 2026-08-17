@@ -26,7 +26,6 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@main
 
       - name: Refresh pinned Helm chart hashes
-        if: contains(join(github.event.head_commit.modified, ','), 'charts/')
         run: nix develop --command python3 scripts/update-chart-hashes.py charts
 
       - name: Regenerate manifests
