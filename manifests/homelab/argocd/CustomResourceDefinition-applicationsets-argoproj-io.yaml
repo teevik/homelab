@@ -2,6 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    argocd.argoproj.io/sync-options: ServerSideApply=true
     helm.sh/resource-policy: keep
   labels:
     app.kubernetes.io/name: applicationsets.argoproj.io
@@ -381,6 +382,8 @@ spec:
                                         type: string
                                       repoURL:
                                         type: string
+                                      tagPrefix:
+                                        type: string
                                       targetRevision:
                                         type: string
                                     required:
@@ -636,6 +639,8 @@ spec:
                                             minLength: 1
                                             pattern: ^.{2,}|[^./]$
                                             type: string
+                                          repoURL:
+                                            type: string
                                           targetBranch:
                                             type: string
                                         required:
@@ -880,6 +885,8 @@ spec:
                                         ref:
                                           type: string
                                         repoURL:
+                                          type: string
+                                        tagPrefix:
                                           type: string
                                         targetRevision:
                                           type: string
@@ -1289,6 +1296,8 @@ spec:
                                         type: string
                                       repoURL:
                                         type: string
+                                      tagPrefix:
+                                        type: string
                                       targetRevision:
                                         type: string
                                     required:
@@ -1544,6 +1553,8 @@ spec:
                                             minLength: 1
                                             pattern: ^.{2,}|[^./]$
                                             type: string
+                                          repoURL:
+                                            type: string
                                           targetBranch:
                                             type: string
                                         required:
@@ -1788,6 +1799,8 @@ spec:
                                         ref:
                                           type: string
                                         repoURL:
+                                          type: string
+                                        tagPrefix:
                                           type: string
                                         targetRevision:
                                           type: string
@@ -2198,6 +2211,8 @@ spec:
                                         type: string
                                       repoURL:
                                         type: string
+                                      tagPrefix:
+                                        type: string
                                       targetRevision:
                                         type: string
                                     required:
@@ -2453,6 +2468,8 @@ spec:
                                             minLength: 1
                                             pattern: ^.{2,}|[^./]$
                                             type: string
+                                          repoURL:
+                                            type: string
                                           targetBranch:
                                             type: string
                                         required:
@@ -2697,6 +2714,8 @@ spec:
                                         ref:
                                           type: string
                                         repoURL:
+                                          type: string
+                                        tagPrefix:
                                           type: string
                                         targetRevision:
                                           type: string
@@ -3085,6 +3104,8 @@ spec:
                                         type: string
                                       repoURL:
                                         type: string
+                                      tagPrefix:
+                                        type: string
                                       targetRevision:
                                         type: string
                                     required:
@@ -3340,6 +3361,8 @@ spec:
                                             minLength: 1
                                             pattern: ^.{2,}|[^./]$
                                             type: string
+                                          repoURL:
+                                            type: string
                                           targetBranch:
                                             type: string
                                         required:
@@ -3584,6 +3607,8 @@ spec:
                                         ref:
                                           type: string
                                         repoURL:
+                                          type: string
+                                        tagPrefix:
                                           type: string
                                         targetRevision:
                                           type: string
@@ -3997,6 +4022,8 @@ spec:
                                                   type: string
                                                 repoURL:
                                                   type: string
+                                                tagPrefix:
+                                                  type: string
                                                 targetRevision:
                                                   type: string
                                               required:
@@ -4252,6 +4279,8 @@ spec:
                                                       minLength: 1
                                                       pattern: ^.{2,}|[^./]$
                                                       type: string
+                                                    repoURL:
+                                                      type: string
                                                     targetBranch:
                                                       type: string
                                                   required:
@@ -4496,6 +4525,8 @@ spec:
                                                   ref:
                                                     type: string
                                                   repoURL:
+                                                    type: string
+                                                  tagPrefix:
                                                     type: string
                                                   targetRevision:
                                                     type: string
@@ -4905,6 +4936,8 @@ spec:
                                                   type: string
                                                 repoURL:
                                                   type: string
+                                                tagPrefix:
+                                                  type: string
                                                 targetRevision:
                                                   type: string
                                               required:
@@ -5160,6 +5193,8 @@ spec:
                                                       minLength: 1
                                                       pattern: ^.{2,}|[^./]$
                                                       type: string
+                                                    repoURL:
+                                                      type: string
                                                     targetBranch:
                                                       type: string
                                                   required:
@@ -5404,6 +5439,8 @@ spec:
                                                   ref:
                                                     type: string
                                                   repoURL:
+                                                    type: string
+                                                  tagPrefix:
                                                     type: string
                                                   targetRevision:
                                                     type: string
@@ -5814,6 +5851,8 @@ spec:
                                                   type: string
                                                 repoURL:
                                                   type: string
+                                                tagPrefix:
+                                                  type: string
                                                 targetRevision:
                                                   type: string
                                               required:
@@ -6069,6 +6108,8 @@ spec:
                                                       minLength: 1
                                                       pattern: ^.{2,}|[^./]$
                                                       type: string
+                                                    repoURL:
+                                                      type: string
                                                     targetBranch:
                                                       type: string
                                                   required:
@@ -6313,6 +6354,8 @@ spec:
                                                   ref:
                                                     type: string
                                                   repoURL:
+                                                    type: string
+                                                  tagPrefix:
                                                     type: string
                                                   targetRevision:
                                                     type: string
@@ -6701,6 +6744,8 @@ spec:
                                                   type: string
                                                 repoURL:
                                                   type: string
+                                                tagPrefix:
+                                                  type: string
                                                 targetRevision:
                                                   type: string
                                               required:
@@ -6956,6 +7001,8 @@ spec:
                                                       minLength: 1
                                                       pattern: ^.{2,}|[^./]$
                                                       type: string
+                                                    repoURL:
+                                                      type: string
                                                     targetBranch:
                                                       type: string
                                                   required:
@@ -7200,6 +7247,8 @@ spec:
                                                   ref:
                                                     type: string
                                                   repoURL:
+                                                    type: string
+                                                  tagPrefix:
                                                     type: string
                                                   targetRevision:
                                                     type: string
@@ -7596,6 +7645,8 @@ spec:
                                                   type: string
                                                 repoURL:
                                                   type: string
+                                                tagPrefix:
+                                                  type: string
                                                 targetRevision:
                                                   type: string
                                               required:
@@ -7851,6 +7902,8 @@ spec:
                                                       minLength: 1
                                                       pattern: ^.{2,}|[^./]$
                                                       type: string
+                                                    repoURL:
+                                                      type: string
                                                     targetBranch:
                                                       type: string
                                                   required:
@@ -8095,6 +8148,8 @@ spec:
                                                   ref:
                                                     type: string
                                                   repoURL:
+                                                    type: string
+                                                  tagPrefix:
                                                     type: string
                                                   targetRevision:
                                                     type: string
@@ -8718,6 +8773,8 @@ spec:
                                                   type: string
                                                 repoURL:
                                                   type: string
+                                                tagPrefix:
+                                                  type: string
                                                 targetRevision:
                                                   type: string
                                               required:
@@ -8973,6 +9030,8 @@ spec:
                                                       minLength: 1
                                                       pattern: ^.{2,}|[^./]$
                                                       type: string
+                                                    repoURL:
+                                                      type: string
                                                     targetBranch:
                                                       type: string
                                                   required:
@@ -9218,6 +9277,8 @@ spec:
                                                     type: string
                                                   repoURL:
                                                     type: string
+                                                  tagPrefix:
+                                                    type: string
                                                   targetRevision:
                                                     type: string
                                                 required:
@@ -9438,6 +9499,8 @@ spec:
                                           type: boolean
                                         api:
                                           type: string
+                                        excludeArchivedRepos:
+                                          type: boolean
                                         insecure:
                                           type: boolean
                                         owner:
@@ -9464,6 +9527,8 @@ spec:
                                           type: string
                                         appSecretName:
                                           type: string
+                                        excludeArchivedRepos:
+                                          type: boolean
                                         organization:
                                           type: string
                                         tokenRef:
@@ -9497,6 +9562,8 @@ spec:
                                           type: object
                                         group:
                                           type: string
+                                        includeArchivedRepos:
+                                          type: boolean
                                         includeSharedProjects:
                                           type: boolean
                                         includeSubgroups:
@@ -9831,6 +9898,8 @@ spec:
                                                   type: string
                                                 repoURL:
                                                   type: string
+                                                tagPrefix:
+                                                  type: string
                                                 targetRevision:
                                                   type: string
                                               required:
@@ -10086,6 +10155,8 @@ spec:
                                                       minLength: 1
                                                       pattern: ^.{2,}|[^./]$
                                                       type: string
+                                                    repoURL:
+                                                      type: string
                                                     targetBranch:
                                                       type: string
                                                   required:
@@ -10330,6 +10401,8 @@ spec:
                                                   ref:
                                                     type: string
                                                   repoURL:
+                                                    type: string
+                                                  tagPrefix:
                                                     type: string
                                                   targetRevision:
                                                     type: string
@@ -10735,6 +10808,8 @@ spec:
                                         type: string
                                       repoURL:
                                         type: string
+                                      tagPrefix:
+                                        type: string
                                       targetRevision:
                                         type: string
                                     required:
@@ -10990,6 +11065,8 @@ spec:
                                             minLength: 1
                                             pattern: ^.{2,}|[^./]$
                                             type: string
+                                          repoURL:
+                                            type: string
                                           targetBranch:
                                             type: string
                                         required:
@@ -11234,6 +11311,8 @@ spec:
                                         ref:
                                           type: string
                                         repoURL:
+                                          type: string
+                                        tagPrefix:
                                           type: string
                                         targetRevision:
                                           type: string
@@ -11649,6 +11728,8 @@ spec:
                                                   type: string
                                                 repoURL:
                                                   type: string
+                                                tagPrefix:
+                                                  type: string
                                                 targetRevision:
                                                   type: string
                                               required:
@@ -11904,6 +11985,8 @@ spec:
                                                       minLength: 1
                                                       pattern: ^.{2,}|[^./]$
                                                       type: string
+                                                    repoURL:
+                                                      type: string
                                                     targetBranch:
                                                       type: string
                                                   required:
@@ -12148,6 +12231,8 @@ spec:
                                                   ref:
                                                     type: string
                                                   repoURL:
+                                                    type: string
+                                                  tagPrefix:
                                                     type: string
                                                   targetRevision:
                                                     type: string
@@ -12557,6 +12642,8 @@ spec:
                                                   type: string
                                                 repoURL:
                                                   type: string
+                                                tagPrefix:
+                                                  type: string
                                                 targetRevision:
                                                   type: string
                                               required:
@@ -12812,6 +12899,8 @@ spec:
                                                       minLength: 1
                                                       pattern: ^.{2,}|[^./]$
                                                       type: string
+                                                    repoURL:
+                                                      type: string
                                                     targetBranch:
                                                       type: string
                                                   required:
@@ -13056,6 +13145,8 @@ spec:
                                                   ref:
                                                     type: string
                                                   repoURL:
+                                                    type: string
+                                                  tagPrefix:
                                                     type: string
                                                   targetRevision:
                                                     type: string
@@ -13466,6 +13557,8 @@ spec:
                                                   type: string
                                                 repoURL:
                                                   type: string
+                                                tagPrefix:
+                                                  type: string
                                                 targetRevision:
                                                   type: string
                                               required:
@@ -13721,6 +13814,8 @@ spec:
                                                       minLength: 1
                                                       pattern: ^.{2,}|[^./]$
                                                       type: string
+                                                    repoURL:
+                                                      type: string
                                                     targetBranch:
                                                       type: string
                                                   required:
@@ -13965,6 +14060,8 @@ spec:
                                                   ref:
                                                     type: string
                                                   repoURL:
+                                                    type: string
+                                                  tagPrefix:
                                                     type: string
                                                   targetRevision:
                                                     type: string
@@ -14353,6 +14450,8 @@ spec:
                                                   type: string
                                                 repoURL:
                                                   type: string
+                                                tagPrefix:
+                                                  type: string
                                                 targetRevision:
                                                   type: string
                                               required:
@@ -14608,6 +14707,8 @@ spec:
                                                       minLength: 1
                                                       pattern: ^.{2,}|[^./]$
                                                       type: string
+                                                    repoURL:
+                                                      type: string
                                                     targetBranch:
                                                       type: string
                                                   required:
@@ -14852,6 +14953,8 @@ spec:
                                                   ref:
                                                     type: string
                                                   repoURL:
+                                                    type: string
+                                                  tagPrefix:
                                                     type: string
                                                   targetRevision:
                                                     type: string
@@ -15248,6 +15351,8 @@ spec:
                                                   type: string
                                                 repoURL:
                                                   type: string
+                                                tagPrefix:
+                                                  type: string
                                                 targetRevision:
                                                   type: string
                                               required:
@@ -15503,6 +15608,8 @@ spec:
                                                       minLength: 1
                                                       pattern: ^.{2,}|[^./]$
                                                       type: string
+                                                    repoURL:
+                                                      type: string
                                                     targetBranch:
                                                       type: string
                                                   required:
@@ -15747,6 +15854,8 @@ spec:
                                                   ref:
                                                     type: string
                                                   repoURL:
+                                                    type: string
+                                                  tagPrefix:
                                                     type: string
                                                   targetRevision:
                                                     type: string
@@ -16370,6 +16479,8 @@ spec:
                                                   type: string
                                                 repoURL:
                                                   type: string
+                                                tagPrefix:
+                                                  type: string
                                                 targetRevision:
                                                   type: string
                                               required:
@@ -16625,6 +16736,8 @@ spec:
                                                       minLength: 1
                                                       pattern: ^.{2,}|[^./]$
                                                       type: string
+                                                    repoURL:
+                                                      type: string
                                                     targetBranch:
                                                       type: string
                                                   required:
@@ -16870,6 +16983,8 @@ spec:
                                                     type: string
                                                   repoURL:
                                                     type: string
+                                                  tagPrefix:
+                                                    type: string
                                                   targetRevision:
                                                     type: string
                                                 required:
@@ -17090,6 +17205,8 @@ spec:
                                           type: boolean
                                         api:
                                           type: string
+                                        excludeArchivedRepos:
+                                          type: boolean
                                         insecure:
                                           type: boolean
                                         owner:
@@ -17116,6 +17233,8 @@ spec:
                                           type: string
                                         appSecretName:
                                           type: string
+                                        excludeArchivedRepos:
+                                          type: boolean
                                         organization:
                                           type: string
                                         tokenRef:
@@ -17149,6 +17268,8 @@ spec:
                                           type: object
                                         group:
                                           type: string
+                                        includeArchivedRepos:
+                                          type: boolean
                                         includeSharedProjects:
                                           type: boolean
                                         includeSubgroups:
@@ -17483,6 +17604,8 @@ spec:
                                                   type: string
                                                 repoURL:
                                                   type: string
+                                                tagPrefix:
+                                                  type: string
                                                 targetRevision:
                                                   type: string
                                               required:
@@ -17738,6 +17861,8 @@ spec:
                                                       minLength: 1
                                                       pattern: ^.{2,}|[^./]$
                                                       type: string
+                                                    repoURL:
+                                                      type: string
                                                     targetBranch:
                                                       type: string
                                                   required:
@@ -17982,6 +18107,8 @@ spec:
                                                   ref:
                                                     type: string
                                                   repoURL:
+                                                    type: string
+                                                  tagPrefix:
                                                     type: string
                                                   targetRevision:
                                                     type: string
@@ -18391,6 +18518,8 @@ spec:
                                         type: string
                                       repoURL:
                                         type: string
+                                      tagPrefix:
+                                        type: string
                                       targetRevision:
                                         type: string
                                     required:
@@ -18646,6 +18775,8 @@ spec:
                                             minLength: 1
                                             pattern: ^.{2,}|[^./]$
                                             type: string
+                                          repoURL:
+                                            type: string
                                           targetBranch:
                                             type: string
                                         required:
@@ -18890,6 +19021,8 @@ spec:
                                         ref:
                                           type: string
                                         repoURL:
+                                          type: string
+                                        tagPrefix:
                                           type: string
                                         targetRevision:
                                           type: string
@@ -19285,6 +19418,8 @@ spec:
                                         type: string
                                       repoURL:
                                         type: string
+                                      tagPrefix:
+                                        type: string
                                       targetRevision:
                                         type: string
                                     required:
@@ -19540,6 +19675,8 @@ spec:
                                             minLength: 1
                                             pattern: ^.{2,}|[^./]$
                                             type: string
+                                          repoURL:
+                                            type: string
                                           targetBranch:
                                             type: string
                                         required:
@@ -19784,6 +19921,8 @@ spec:
                                         ref:
                                           type: string
                                         repoURL:
+                                          type: string
+                                        tagPrefix:
                                           type: string
                                         targetRevision:
                                           type: string
@@ -20407,6 +20546,8 @@ spec:
                                         type: string
                                       repoURL:
                                         type: string
+                                      tagPrefix:
+                                        type: string
                                       targetRevision:
                                         type: string
                                     required:
@@ -20662,6 +20803,8 @@ spec:
                                             minLength: 1
                                             pattern: ^.{2,}|[^./]$
                                             type: string
+                                          repoURL:
+                                            type: string
                                           targetBranch:
                                             type: string
                                         required:
@@ -20907,6 +21050,8 @@ spec:
                                           type: string
                                         repoURL:
                                           type: string
+                                        tagPrefix:
+                                          type: string
                                         targetRevision:
                                           type: string
                                       required:
@@ -21127,6 +21272,8 @@ spec:
                                 type: boolean
                               api:
                                 type: string
+                              excludeArchivedRepos:
+                                type: boolean
                               insecure:
                                 type: boolean
                               owner:
@@ -21153,6 +21300,8 @@ spec:
                                 type: string
                               appSecretName:
                                 type: string
+                              excludeArchivedRepos:
+                                type: boolean
                               organization:
                                 type: string
                               tokenRef:
@@ -21186,6 +21335,8 @@ spec:
                                 type: object
                               group:
                                 type: string
+                              includeArchivedRepos:
+                                type: boolean
                               includeSharedProjects:
                                 type: boolean
                               includeSubgroups:
@@ -21520,6 +21671,8 @@ spec:
                                         type: string
                                       repoURL:
                                         type: string
+                                      tagPrefix:
+                                        type: string
                                       targetRevision:
                                         type: string
                                     required:
@@ -21775,6 +21928,8 @@ spec:
                                             minLength: 1
                                             pattern: ^.{2,}|[^./]$
                                             type: string
+                                          repoURL:
+                                            type: string
                                           targetBranch:
                                             type: string
                                         required:
@@ -22019,6 +22174,8 @@ spec:
                                         ref:
                                           type: string
                                         repoURL:
+                                          type: string
+                                        tagPrefix:
                                           type: string
                                         targetRevision:
                                           type: string
@@ -22501,6 +22658,8 @@ spec:
                               type: string
                             repoURL:
                               type: string
+                            tagPrefix:
+                              type: string
                             targetRevision:
                               type: string
                           required:
@@ -22756,6 +22915,8 @@ spec:
                                   minLength: 1
                                   pattern: ^.{2,}|[^./]$
                                   type: string
+                                repoURL:
+                                  type: string
                                 targetBranch:
                                   type: string
                               required:
@@ -23001,6 +23162,8 @@ spec:
                                 type: string
                               repoURL:
                                 type: string
+                              tagPrefix:
+                                type: string
                               targetRevision:
                                 type: string
                             required:
@@ -23117,6 +23280,16 @@ spec:
                       - type
                     type: object
                   type: array
+                health:
+                  properties:
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    status:
+                      type: string
+                  type: object
                 resources:
                   items:
                     properties:

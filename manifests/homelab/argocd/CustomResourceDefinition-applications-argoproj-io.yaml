@@ -2,6 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    argocd.argoproj.io/sync-options: ServerSideApply=true
     helm.sh/resource-policy: keep
   labels:
     app.kubernetes.io/name: applications.argoproj.io
@@ -353,10 +354,10 @@ spec:
                               description: LabelWithoutSelector specifies whether to apply common labels to resource selectors or not
                               type: boolean
                             namePrefix:
-                              description: NamePrefix is a prefix appended to resources for Kustomize apps
+                              description: NamePrefix overrides the namePrefix in the kustomization.yaml for Kustomize apps
                               type: string
                             nameSuffix:
-                              description: NameSuffix is a suffix appended to resources for Kustomize apps
+                              description: NameSuffix overrides the nameSuffix in the kustomization.yaml for Kustomize apps
                               type: string
                             namespace:
                               description: Namespace sets the namespace that Kustomize adds to all resources
@@ -468,6 +469,13 @@ spec:
                           type: string
                         repoURL:
                           description: RepoURL is the URL to the repository (Git or Helm) that contains the application manifests
+                          type: string
+                        tagPrefix:
+                          description: |-
+                            TagPrefix filters git tags to only those with this prefix before evaluating targetRevision as a semver constraint.
+                            The prefix is stripped from tag names before comparison and re-added to the resolved version.
+                            For example, with tagPrefix "component-b/" and targetRevision "1.0.*", tags like "component-b/1.0.0" and
+                            "component-b/1.0.1" are candidates, and the constraint resolves to "component-b/1.0.1".
                           type: string
                         targetRevision:
                           description: |-
@@ -678,10 +686,10 @@ spec:
                                 description: LabelWithoutSelector specifies whether to apply common labels to resource selectors or not
                                 type: boolean
                               namePrefix:
-                                description: NamePrefix is a prefix appended to resources for Kustomize apps
+                                description: NamePrefix overrides the namePrefix in the kustomization.yaml for Kustomize apps
                                 type: string
                               nameSuffix:
-                                description: NameSuffix is a suffix appended to resources for Kustomize apps
+                                description: NameSuffix overrides the nameSuffix in the kustomization.yaml for Kustomize apps
                                 type: string
                               namespace:
                                 description: Namespace sets the namespace that Kustomize adds to all resources
@@ -793,6 +801,13 @@ spec:
                             type: string
                           repoURL:
                             description: RepoURL is the URL to the repository (Git or Helm) that contains the application manifests
+                            type: string
+                          tagPrefix:
+                            description: |-
+                              TagPrefix filters git tags to only those with this prefix before evaluating targetRevision as a semver constraint.
+                              The prefix is stripped from tag names before comparison and re-added to the resolved version.
+                              For example, with tagPrefix "component-b/" and targetRevision "1.0.*", tags like "component-b/1.0.0" and
+                              "component-b/1.0.1" are candidates, and the constraint resolves to "component-b/1.0.1".
                             type: string
                           targetRevision:
                             description: |-
@@ -1108,10 +1123,10 @@ spec:
                           description: LabelWithoutSelector specifies whether to apply common labels to resource selectors or not
                           type: boolean
                         namePrefix:
-                          description: NamePrefix is a prefix appended to resources for Kustomize apps
+                          description: NamePrefix overrides the namePrefix in the kustomization.yaml for Kustomize apps
                           type: string
                         nameSuffix:
-                          description: NameSuffix is a suffix appended to resources for Kustomize apps
+                          description: NameSuffix overrides the nameSuffix in the kustomization.yaml for Kustomize apps
                           type: string
                         namespace:
                           description: Namespace sets the namespace that Kustomize adds to all resources
@@ -1223,6 +1238,13 @@ spec:
                       type: string
                     repoURL:
                       description: RepoURL is the URL to the repository (Git or Helm) that contains the application manifests
+                      type: string
+                    tagPrefix:
+                      description: |-
+                        TagPrefix filters git tags to only those with this prefix before evaluating targetRevision as a semver constraint.
+                        The prefix is stripped from tag names before comparison and re-added to the resolved version.
+                        For example, with tagPrefix "component-b/" and targetRevision "1.0.*", tags like "component-b/1.0.0" and
+                        "component-b/1.0.1" are candidates, and the constraint resolves to "component-b/1.0.1".
                       type: string
                     targetRevision:
                       description: |-
@@ -1429,10 +1451,10 @@ spec:
                               description: LabelWithoutSelector specifies whether to apply common labels to resource selectors or not
                               type: boolean
                             namePrefix:
-                              description: NamePrefix is a prefix appended to resources for Kustomize apps
+                              description: NamePrefix overrides the namePrefix in the kustomization.yaml for Kustomize apps
                               type: string
                             nameSuffix:
-                              description: NameSuffix is a suffix appended to resources for Kustomize apps
+                              description: NameSuffix overrides the nameSuffix in the kustomization.yaml for Kustomize apps
                               type: string
                             namespace:
                               description: Namespace sets the namespace that Kustomize adds to all resources
@@ -1568,6 +1590,11 @@ spec:
                             hydrated manifests will be synced.
                           minLength: 1
                           pattern: ^.{2,}|[^./]$
+                          type: string
+                        repoURL:
+                          description: |-
+                            RepoURL is the URL to the git repository that contains the hydrated manifests. If not set, defaults to
+                            the DrySource.RepoURL.
                           type: string
                         targetBranch:
                           description: |-
@@ -1780,10 +1807,10 @@ spec:
                             description: LabelWithoutSelector specifies whether to apply common labels to resource selectors or not
                             type: boolean
                           namePrefix:
-                            description: NamePrefix is a prefix appended to resources for Kustomize apps
+                            description: NamePrefix overrides the namePrefix in the kustomization.yaml for Kustomize apps
                             type: string
                           nameSuffix:
-                            description: NameSuffix is a suffix appended to resources for Kustomize apps
+                            description: NameSuffix overrides the nameSuffix in the kustomization.yaml for Kustomize apps
                             type: string
                           namespace:
                             description: Namespace sets the namespace that Kustomize adds to all resources
@@ -1895,6 +1922,13 @@ spec:
                         type: string
                       repoURL:
                         description: RepoURL is the URL to the repository (Git or Helm) that contains the application manifests
+                        type: string
+                      tagPrefix:
+                        description: |-
+                          TagPrefix filters git tags to only those with this prefix before evaluating targetRevision as a semver constraint.
+                          The prefix is stripped from tag names before comparison and re-added to the resolved version.
+                          For example, with tagPrefix "component-b/" and targetRevision "1.0.*", tags like "component-b/1.0.0" and
+                          "component-b/1.0.1" are candidates, and the constraint resolves to "component-b/1.0.1".
                         type: string
                       targetRevision:
                         description: |-
@@ -2246,10 +2280,10 @@ spec:
                                 description: LabelWithoutSelector specifies whether to apply common labels to resource selectors or not
                                 type: boolean
                               namePrefix:
-                                description: NamePrefix is a prefix appended to resources for Kustomize apps
+                                description: NamePrefix overrides the namePrefix in the kustomization.yaml for Kustomize apps
                                 type: string
                               nameSuffix:
-                                description: NameSuffix is a suffix appended to resources for Kustomize apps
+                                description: NameSuffix overrides the nameSuffix in the kustomization.yaml for Kustomize apps
                                 type: string
                               namespace:
                                 description: Namespace sets the namespace that Kustomize adds to all resources
@@ -2361,6 +2395,13 @@ spec:
                             type: string
                           repoURL:
                             description: RepoURL is the URL to the repository (Git or Helm) that contains the application manifests
+                            type: string
+                          tagPrefix:
+                            description: |-
+                              TagPrefix filters git tags to only those with this prefix before evaluating targetRevision as a semver constraint.
+                              The prefix is stripped from tag names before comparison and re-added to the resolved version.
+                              For example, with tagPrefix "component-b/" and targetRevision "1.0.*", tags like "component-b/1.0.0" and
+                              "component-b/1.0.1" are candidates, and the constraint resolves to "component-b/1.0.1".
                             type: string
                           targetRevision:
                             description: |-
@@ -2569,10 +2610,10 @@ spec:
                                   description: LabelWithoutSelector specifies whether to apply common labels to resource selectors or not
                                   type: boolean
                                 namePrefix:
-                                  description: NamePrefix is a prefix appended to resources for Kustomize apps
+                                  description: NamePrefix overrides the namePrefix in the kustomization.yaml for Kustomize apps
                                   type: string
                                 nameSuffix:
-                                  description: NameSuffix is a suffix appended to resources for Kustomize apps
+                                  description: NameSuffix overrides the nameSuffix in the kustomization.yaml for Kustomize apps
                                   type: string
                                 namespace:
                                   description: Namespace sets the namespace that Kustomize adds to all resources
@@ -2685,6 +2726,13 @@ spec:
                             repoURL:
                               description: RepoURL is the URL to the repository (Git or Helm) that contains the application manifests
                               type: string
+                            tagPrefix:
+                              description: |-
+                                TagPrefix filters git tags to only those with this prefix before evaluating targetRevision as a semver constraint.
+                                The prefix is stripped from tag names before comparison and re-added to the resolved version.
+                                For example, with tagPrefix "component-b/" and targetRevision "1.0.*", tags like "component-b/1.0.0" and
+                                "component-b/1.0.1" are candidates, and the constraint resolves to "component-b/1.0.1".
+                              type: string
                             targetRevision:
                               description: |-
                                 TargetRevision defines the revision of the source to sync the application to.
@@ -2703,6 +2751,7 @@ spec:
                 observedAt:
                   description: |-
                     ObservedAt indicates when the application state was updated without querying latest git state
+
                     Deprecated: controller no longer updates ObservedAt field
                   format: date-time
                   type: string
@@ -3013,10 +3062,10 @@ spec:
                                       description: LabelWithoutSelector specifies whether to apply common labels to resource selectors or not
                                       type: boolean
                                     namePrefix:
-                                      description: NamePrefix is a prefix appended to resources for Kustomize apps
+                                      description: NamePrefix overrides the namePrefix in the kustomization.yaml for Kustomize apps
                                       type: string
                                     nameSuffix:
-                                      description: NameSuffix is a suffix appended to resources for Kustomize apps
+                                      description: NameSuffix overrides the nameSuffix in the kustomization.yaml for Kustomize apps
                                       type: string
                                     namespace:
                                       description: Namespace sets the namespace that Kustomize adds to all resources
@@ -3128,6 +3177,13 @@ spec:
                                   type: string
                                 repoURL:
                                   description: RepoURL is the URL to the repository (Git or Helm) that contains the application manifests
+                                  type: string
+                                tagPrefix:
+                                  description: |-
+                                    TagPrefix filters git tags to only those with this prefix before evaluating targetRevision as a semver constraint.
+                                    The prefix is stripped from tag names before comparison and re-added to the resolved version.
+                                    For example, with tagPrefix "component-b/" and targetRevision "1.0.*", tags like "component-b/1.0.0" and
+                                    "component-b/1.0.1" are candidates, and the constraint resolves to "component-b/1.0.1".
                                   type: string
                                 targetRevision:
                                   description: |-
@@ -3338,10 +3394,10 @@ spec:
                                         description: LabelWithoutSelector specifies whether to apply common labels to resource selectors or not
                                         type: boolean
                                       namePrefix:
-                                        description: NamePrefix is a prefix appended to resources for Kustomize apps
+                                        description: NamePrefix overrides the namePrefix in the kustomization.yaml for Kustomize apps
                                         type: string
                                       nameSuffix:
-                                        description: NameSuffix is a suffix appended to resources for Kustomize apps
+                                        description: NameSuffix overrides the nameSuffix in the kustomization.yaml for Kustomize apps
                                         type: string
                                       namespace:
                                         description: Namespace sets the namespace that Kustomize adds to all resources
@@ -3453,6 +3509,13 @@ spec:
                                     type: string
                                   repoURL:
                                     description: RepoURL is the URL to the repository (Git or Helm) that contains the application manifests
+                                    type: string
+                                  tagPrefix:
+                                    description: |-
+                                      TagPrefix filters git tags to only those with this prefix before evaluating targetRevision as a semver constraint.
+                                      The prefix is stripped from tag names before comparison and re-added to the resolved version.
+                                      For example, with tagPrefix "component-b/" and targetRevision "1.0.*", tags like "component-b/1.0.0" and
+                                      "component-b/1.0.1" are candidates, and the constraint resolves to "component-b/1.0.1".
                                     type: string
                                   targetRevision:
                                     description: |-
@@ -3775,10 +3838,10 @@ spec:
                                   description: LabelWithoutSelector specifies whether to apply common labels to resource selectors or not
                                   type: boolean
                                 namePrefix:
-                                  description: NamePrefix is a prefix appended to resources for Kustomize apps
+                                  description: NamePrefix overrides the namePrefix in the kustomization.yaml for Kustomize apps
                                   type: string
                                 nameSuffix:
-                                  description: NameSuffix is a suffix appended to resources for Kustomize apps
+                                  description: NameSuffix overrides the nameSuffix in the kustomization.yaml for Kustomize apps
                                   type: string
                                 namespace:
                                   description: Namespace sets the namespace that Kustomize adds to all resources
@@ -3890,6 +3953,13 @@ spec:
                               type: string
                             repoURL:
                               description: RepoURL is the URL to the repository (Git or Helm) that contains the application manifests
+                              type: string
+                            tagPrefix:
+                              description: |-
+                                TagPrefix filters git tags to only those with this prefix before evaluating targetRevision as a semver constraint.
+                                The prefix is stripped from tag names before comparison and re-added to the resolved version.
+                                For example, with tagPrefix "component-b/" and targetRevision "1.0.*", tags like "component-b/1.0.0" and
+                                "component-b/1.0.1" are candidates, and the constraint resolves to "component-b/1.0.1".
                               type: string
                             targetRevision:
                               description: |-
@@ -4098,10 +4168,10 @@ spec:
                                     description: LabelWithoutSelector specifies whether to apply common labels to resource selectors or not
                                     type: boolean
                                   namePrefix:
-                                    description: NamePrefix is a prefix appended to resources for Kustomize apps
+                                    description: NamePrefix overrides the namePrefix in the kustomization.yaml for Kustomize apps
                                     type: string
                                   nameSuffix:
-                                    description: NameSuffix is a suffix appended to resources for Kustomize apps
+                                    description: NameSuffix overrides the nameSuffix in the kustomization.yaml for Kustomize apps
                                     type: string
                                   namespace:
                                     description: Namespace sets the namespace that Kustomize adds to all resources
@@ -4213,6 +4283,13 @@ spec:
                                 type: string
                               repoURL:
                                 description: RepoURL is the URL to the repository (Git or Helm) that contains the application manifests
+                                type: string
+                              tagPrefix:
+                                description: |-
+                                  TagPrefix filters git tags to only those with this prefix before evaluating targetRevision as a semver constraint.
+                                  The prefix is stripped from tag names before comparison and re-added to the resolved version.
+                                  For example, with tagPrefix "component-b/" and targetRevision "1.0.*", tags like "component-b/1.0.0" and
+                                  "component-b/1.0.1" are candidates, and the constraint resolves to "component-b/1.0.1".
                                 type: string
                               targetRevision:
                                 description: |-
@@ -4518,10 +4595,10 @@ spec:
                                       description: LabelWithoutSelector specifies whether to apply common labels to resource selectors or not
                                       type: boolean
                                     namePrefix:
-                                      description: NamePrefix is a prefix appended to resources for Kustomize apps
+                                      description: NamePrefix overrides the namePrefix in the kustomization.yaml for Kustomize apps
                                       type: string
                                     nameSuffix:
-                                      description: NameSuffix is a suffix appended to resources for Kustomize apps
+                                      description: NameSuffix overrides the nameSuffix in the kustomization.yaml for Kustomize apps
                                       type: string
                                     namespace:
                                       description: Namespace sets the namespace that Kustomize adds to all resources
@@ -4658,6 +4735,11 @@ spec:
                                   minLength: 1
                                   pattern: ^.{2,}|[^./]$
                                   type: string
+                                repoURL:
+                                  description: |-
+                                    RepoURL is the URL to the git repository that contains the hydrated manifests. If not set, defaults to
+                                    the DrySource.RepoURL.
+                                  type: string
                                 targetBranch:
                                   description: |-
                                     TargetBranch is the branch from which hydrated manifests will be synced.
@@ -4679,6 +4761,11 @@ spec:
                         - message
                         - phase
                       type: object
+                    lastComparedDryRevision:
+                      description: |-
+                        LastComparedDryRevision holds the resolved revision from the most recent dry source comparison.
+                        This is updated on every evaluation, even when hydration is skipped due to no changes.
+                      type: string
                     lastSuccessfulOperation:
                       description: LastSuccessfulOperation holds info about the most recent successful hydration
                       properties:
@@ -4884,10 +4971,10 @@ spec:
                                       description: LabelWithoutSelector specifies whether to apply common labels to resource selectors or not
                                       type: boolean
                                     namePrefix:
-                                      description: NamePrefix is a prefix appended to resources for Kustomize apps
+                                      description: NamePrefix overrides the namePrefix in the kustomization.yaml for Kustomize apps
                                       type: string
                                     nameSuffix:
-                                      description: NameSuffix is a suffix appended to resources for Kustomize apps
+                                      description: NameSuffix overrides the nameSuffix in the kustomization.yaml for Kustomize apps
                                       type: string
                                     namespace:
                                       description: Namespace sets the namespace that Kustomize adds to all resources
@@ -5024,6 +5111,11 @@ spec:
                                   minLength: 1
                                   pattern: ^.{2,}|[^./]$
                                   type: string
+                                repoURL:
+                                  description: |-
+                                    RepoURL is the URL to the git repository that contains the hydrated manifests. If not set, defaults to
+                                    the DrySource.RepoURL.
+                                  type: string
                                 targetBranch:
                                   description: |-
                                     TargetBranch is the branch from which hydrated manifests will be synced.
@@ -5061,6 +5153,9 @@ spec:
                       items:
                         type: string
                       type: array
+                    isAppOfApps:
+                      description: IsAppOfApps holds true if the application has any application for child resource.
+                      type: boolean
                   type: object
                 sync:
                   description: Sync contains information about the application's current sync status
@@ -5311,10 +5406,10 @@ spec:
                                   description: LabelWithoutSelector specifies whether to apply common labels to resource selectors or not
                                   type: boolean
                                 namePrefix:
-                                  description: NamePrefix is a prefix appended to resources for Kustomize apps
+                                  description: NamePrefix overrides the namePrefix in the kustomization.yaml for Kustomize apps
                                   type: string
                                 nameSuffix:
-                                  description: NameSuffix is a suffix appended to resources for Kustomize apps
+                                  description: NameSuffix overrides the nameSuffix in the kustomization.yaml for Kustomize apps
                                   type: string
                                 namespace:
                                   description: Namespace sets the namespace that Kustomize adds to all resources
@@ -5426,6 +5521,13 @@ spec:
                               type: string
                             repoURL:
                               description: RepoURL is the URL to the repository (Git or Helm) that contains the application manifests
+                              type: string
+                            tagPrefix:
+                              description: |-
+                                TagPrefix filters git tags to only those with this prefix before evaluating targetRevision as a semver constraint.
+                                The prefix is stripped from tag names before comparison and re-added to the resolved version.
+                                For example, with tagPrefix "component-b/" and targetRevision "1.0.*", tags like "component-b/1.0.0" and
+                                "component-b/1.0.1" are candidates, and the constraint resolves to "component-b/1.0.1".
                               type: string
                             targetRevision:
                               description: |-
@@ -5634,10 +5736,10 @@ spec:
                                     description: LabelWithoutSelector specifies whether to apply common labels to resource selectors or not
                                     type: boolean
                                   namePrefix:
-                                    description: NamePrefix is a prefix appended to resources for Kustomize apps
+                                    description: NamePrefix overrides the namePrefix in the kustomization.yaml for Kustomize apps
                                     type: string
                                   nameSuffix:
-                                    description: NameSuffix is a suffix appended to resources for Kustomize apps
+                                    description: NameSuffix overrides the nameSuffix in the kustomization.yaml for Kustomize apps
                                     type: string
                                   namespace:
                                     description: Namespace sets the namespace that Kustomize adds to all resources
@@ -5749,6 +5851,13 @@ spec:
                                 type: string
                               repoURL:
                                 description: RepoURL is the URL to the repository (Git or Helm) that contains the application manifests
+                                type: string
+                              tagPrefix:
+                                description: |-
+                                  TagPrefix filters git tags to only those with this prefix before evaluating targetRevision as a semver constraint.
+                                  The prefix is stripped from tag names before comparison and re-added to the resolved version.
+                                  For example, with tagPrefix "component-b/" and targetRevision "1.0.*", tags like "component-b/1.0.0" and
+                                  "component-b/1.0.1" are candidates, and the constraint resolves to "component-b/1.0.1".
                                 type: string
                               targetRevision:
                                 description: |-

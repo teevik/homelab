@@ -5,15 +5,15 @@
   ],
   "timezone": "Europe/Oslo",
 
-  // Disable all default managers -- we only want our custom ones for .nix files
+  // Custom regex managers update Docker images and the isolated Argo CD chart.
   "enabledManagers": ["custom.regex"],
 
   // Grouping strategy:
-  //   - All non-major updates (minor, patch, digest, pin) get folded into
-  //     a single "all non-major dependencies" PR (see catch-all packageRule).
-  //   - Major bumps fork into their own PR per package, since they're
-  //     usually breaking changes that need individual review.
-  //   - The Dependency Dashboard issue tracks every detected dep + open PRs.
+  //   - Docker minor, patch, digest, and pin updates share one PR.
+  //   - Docker major updates and the Argo CD chart get separate PRs.
+  //   - The Argo CD chart has its own Nix input so its manifests and default
+  //     image move together without updating the other chart catalog.
+  //   - The Dependency Dashboard tracks every detected dependency and PR.
   "dependencyDashboard": true,
   "prConcurrentLimit": 0,
   "prHourlyLimit": 0,
@@ -24,9 +24,8 @@
   "gitIgnoredAuthors": ["github-actions[bot]@users.noreply.github.com"],
   "separateMinorPatch": false,
 
-  // Custom managers for container image references in .nix files.
-  // Each manager matches a dependency once and defines how to add an
-  // initially missing digest without losing the surrounding Nix syntax.
+  // Custom managers for container images and the isolated Argo CD chart.
+  // Image managers preserve Nix syntax while adding or updating digests.
   "customManagers": [
     {
       // Matches: image = "registry/name:tag@sha256:digest"; or image = "registry/name:tag";
@@ -51,6 +50,18 @@
         "\"(?<currentValue>[^@\"]+?)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\""
       ],
       "autoReplaceStringTemplate": "\"{{{newValue}}}{{#if newDigest}}@{{{newDigest}}}{{/if}}\""
+    },
+    {
+      // The chart version is an evaluated invariant in flake.nix. The
+      // regeneration workflow advances its isolated nixhelm lock input.
+      "customType": "regex",
+      "managerFilePatterns": ["/^flake\\.nix$/"],
+      "matchStrings": [
+        "argoCdChartVersion\\s*=\\s*\"(?<currentValue>[^\"]+)\";"
+      ],
+      "datasourceTemplate": "helm",
+      "depNameTemplate": "argo-cd",
+      "registryUrlTemplate": "https://argoproj.github.io/argo-helm"
     }
   ],
 
@@ -81,9 +92,9 @@
       "pinDigests": true
     },
     {
-      // Catch-all: fold every NON-MAJOR update into a single PR.
-      // Major bumps are intentionally excluded so they each get their own
-      // PR for individual review (databases, breaking-change-prone images).
+      // Fold every non-major Docker image update into one PR. Major images
+      // and the Helm-sourced Argo CD chart remain separate.
+      "matchDatasources": ["docker"],
       "matchPackageNames": ["*"],
       "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
       "groupName": "all non-major dependencies",
