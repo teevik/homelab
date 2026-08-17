@@ -28,6 +28,14 @@
         kubeScheduler.enabled = false;
         kubeEtcd.enabled = false;
 
+        # The sync job manages rules independently of scrape components.
+        # Keep rules for absent k3s control-plane targets disabled as well.
+        defaultRules.groups = {
+          "kube-scheduler.rules".enabled = false;
+          "kubernetes-system-controller-manager".enabled = false;
+          "kubernetes-system-scheduler".enabled = false;
+        };
+
         # Give vmagent enough CPU headroom to avoid CPUThrottlingHigh alerts
         vmagent.spec.resources = {
           requests = {
