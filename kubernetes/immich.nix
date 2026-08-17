@@ -122,7 +122,7 @@ in
         };
       };
 
-      # PostgreSQL with pgvecto.rs extension (required by Immich)
+      # PostgreSQL with VectorChord extension (required by Immich)
       deployments.immich-postgresql.spec = {
         replicas = 1;
         selector.matchLabels.app = "immich-postgresql";
