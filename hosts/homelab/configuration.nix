@@ -1,4 +1,5 @@
 {
+  config,
   flake,
   inputs,
   ...
@@ -19,6 +20,16 @@
 
   # Networking
   networking.hostName = "homelab";
+
+  sops.secrets.tailscale_key = { };
+  services.tailscale = {
+    enable = true;
+    authKeyFile = config.sops.secrets.tailscale_key.path;
+    extraUpFlags = [
+      "--reset"
+      "--hostname=homelab"
+    ];
+  };
 
   # Ignore lid close so the laptop doesn't sleep
   services.logind.settings.Login.HandleLidSwitch = "ignore";

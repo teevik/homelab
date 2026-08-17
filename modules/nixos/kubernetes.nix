@@ -178,6 +178,9 @@ in
       clusterInit = true;
       tokenFile = config.sops.secrets.k3s_token.path;
       extraFlags = toString [
+        # Pin this dual-NIC node to its embedded-etcd peer address.
+        "--node-ip=192.168.1.225"
+        "--advertise-address=192.168.1.225"
         "--write-kubeconfig-mode=0644"
         "--disable=traefik" # Use Tailscale ingress instead
         "--disable=servicelb" # Not needed with Tailscale

@@ -44,6 +44,47 @@ def remote_boot_id [host: string] {
 
   $result.stdout | str trim
 }
+def remote_k3s_node_ip [host: string] {
+  let result = (ssh_complete $host [
+    "sudo"
+    "systemctl"
+    "show"
+    "k3s"
+    "--property=ExecStart"
+    "--value"
+  ])
+
+  if $result.exit_code != 0 {
+    return null
+  }
+
+  let matches = ($result.stdout | parse -r '--node-ip(?:=|\s+)(?P<ip>[0-9.]+)')
+  if ($matches | is-empty) {
+    return null
+  }
+
+  $matches.0.ip
+}
+
+def remote_ipv4_addresses [host: string] {
+  let result = (ssh_complete $host ["ip" "-j" "address" "show"])
+  if $result.exit_code != 0 {
+    return []
+  }
+
+  try {
+    $result.stdout
+    | from json
+    | each {|interface|
+        $interface.addr_info
+        | where family == "inet"
+        | get local
+      }
+    | flatten
+  } catch {
+    []
+  }
+}
 
 def remote_kubectl_command [host: string, kubeconfig: string, args: list<string>] {
   [
@@ -283,6 +324,23 @@ def preflight [host: string, kubeconfig: string, node: string] {
   }
 
   let node_info = (remote_kubectl_json $host $kubeconfig [get node $node])
+  let configured_node_ip = (remote_k3s_node_ip $host)
+  if $configured_node_ip == null {
+    error make {msg: "K3s has no explicit --node-ip; refusing to reboot a dual-NIC etcd node"}
+  }
+  let internal_addresses = ($node_info.status.addresses | where type == "InternalIP")
+  if ($internal_addresses | is-empty) {
+    error make {msg: $"Kubernetes node ($node) has no InternalIP"}
+  }
+  let node_internal_ip = $internal_addresses.0.address
+  if $node_internal_ip != $configured_node_ip {
+    error make {msg: $"Kubernetes InternalIP ($node_internal_ip) does not match configured K3s node IP ($configured_node_ip)"}
+  }
+  let host_addresses = (remote_ipv4_addresses $host)
+  if $configured_node_ip not-in $host_addresses {
+    error make {msg: $"Configured K3s node IP ($configured_node_ip) is not assigned to ($host)"}
+  }
+
   if ($node_info.spec.unschedulable? | default false) {
     error make {msg: $"Kubernetes node ($node) is already cordoned; refusing to take ownership of its state"}
   }
