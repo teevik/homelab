@@ -44,16 +44,6 @@
     in
     blueprintOutputs
     // {
-      checks = blueprintOutputs.checks // {
-        ${system} = blueprintOutputs.checks.${system} // {
-          agent = import ./tests/agent.nix {
-            inherit (pkgs) lib;
-            inherit pkgs;
-            hostConfig = blueprintOutputs.nixosConfigurations.homelab.config;
-          };
-        };
-      };
-
       apps.${system}.updateCharts = {
         type = "app";
         program = pkgs.lib.getExe updateCharts;

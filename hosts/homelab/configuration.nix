@@ -11,7 +11,6 @@
     inputs.disko.nixosModules.disko
     inputs.sops-nix.nixosModules.sops
     flake.nixosModules.standard
-    flake.nixosModules.agent
     flake.nixosModules.kubernetes
     flake.nixosModules.anime-matrix
   ];
@@ -21,8 +20,6 @@
 
   # Networking
   networking.hostName = "homelab";
-
-  homelab.agent.enable = true;
 
   sops.secrets.tailscale_key = { };
   services.tailscale = {
