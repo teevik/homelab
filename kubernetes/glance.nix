@@ -75,6 +75,12 @@ let
                     check-url = "http://twitchdropsminer.twitchdropsminer.svc";
                     icon = "si:twitch";
                   }
+                  {
+                    title = "Kavita";
+                    url = "http://kavita";
+                    check-url = "http://kavita.kavita.svc";
+                    icon = "di:kavita";
+                  }
                 ];
               }
 
