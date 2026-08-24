@@ -17,7 +17,7 @@ jobs:
       # renovate.json5 is discovered as repository config. Passing it through
       # configurationFile would load every custom manager twice.
       - name: Run Renovate
-        uses: renovatebot/github-action@v46.2.2
+        uses: renovatebot/github-action@v46.2.4
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}
         env:
