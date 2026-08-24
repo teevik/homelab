@@ -10,6 +10,6 @@ metadata:
     app.kubernetes.io/name: victoria-metrics-k8s-stack
     app.kubernetes.io/version: v1.150.0
     grafana_datasource: "1"
-    helm.sh/chart: victoria-metrics-k8s-stack-0.91.0
+    helm.sh/chart: victoria-metrics-k8s-stack-0.91.2
   name: vm-victoria-metrics-k8s-stack-grafana-ds
   namespace: victoria-metrics
