@@ -36,6 +36,12 @@
           "kubernetes-system-scheduler".enabled = false;
         };
 
+        # RecordingRulesNoData flags any recording rule with no output for 30m.
+        # count:up0 (count of *down* targets) and the bare/Node/Job-owned
+        # pod_owner rules are legitimately empty on a healthy single-node
+        # cluster, so the alert is a permanent false positive here.
+        defaultRules.rules.RecordingRulesNoData.enabled = false;
+
         # Give vmagent enough CPU headroom to avoid CPUThrottlingHigh alerts
         vmagent.spec.resources = {
           requests = {
@@ -165,14 +171,12 @@
         # instead of the chart's default blackhole receiver. Silenced:
         #   - Watchdog: always-firing heartbeat
         #   - InfoInhibitor: kube-prometheus's info-severity inhibitor, always firing
-        #   - RecordingRulesNoData: false positive here (count:up0 and the bare/Node/Job
-        #     pod_owner recording rules are legitimately empty on this cluster)
         alertmanager.config = {
           route = {
             receiver = "ntfy";
             routes = [
               {
-                matchers = [ ''alertname=~"Watchdog|InfoInhibitor|RecordingRulesNoData"'' ];
+                matchers = [ ''alertname=~"Watchdog|InfoInhibitor"'' ];
                 receiver = "blackhole";
               }
             ];
