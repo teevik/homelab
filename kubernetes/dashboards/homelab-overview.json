@@ -1727,7 +1727,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 76
+        "y": 93
       },
       "panels": []
     },
@@ -1744,7 +1744,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 77
+        "y": 94
       },
       "targets": [
         {
@@ -1803,7 +1803,7 @@
         "h": 14,
         "w": 24,
         "x": 0,
-        "y": 84
+        "y": 101
       },
       "targets": [
         {
@@ -1925,6 +1925,443 @@
         "minVizWidth": 8,
         "minVizHeight": 16,
         "maxVizHeight": 300
+      }
+    },
+    {
+      "id": 33,
+      "type": "row",
+      "title": "Apps",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 76
+      },
+      "panels": []
+    },
+    {
+      "id": 34,
+      "type": "timeseries",
+      "title": "Immich operations/s",
+      "description": "Repository calls per second by subsystem (Immich exposes no HTTP request metrics)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 77
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "Database",
+          "expr": "sum(rate({job=\"immich-server\",__name__=~\"immich_database_repository_.*_duration_count\"}[$__rate_interval]))"
+        },
+        {
+          "refId": "B",
+          "legendFormat": "Machine learning",
+          "expr": "sum(rate({job=\"immich-server\",__name__=~\"immich_machine_learning_repository_.*_duration_count\"}[$__rate_interval]))"
+        },
+        {
+          "refId": "C",
+          "legendFormat": "Storage",
+          "expr": "sum(rate({job=\"immich-server\",__name__=~\"immich_storage_repository_.*_duration_count\"}[$__rate_interval]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "decimals": 1,
+          "min": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisSoftMin": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 35,
+      "type": "timeseries",
+      "title": "Immich DB p95 latency",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 77
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "p95",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate({job=\"immich-server\",__name__=~\"immich_database_repository_.*_duration_bucket\"}[$__rate_interval])))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "decimals": 1,
+          "min": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisSoftMin": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 36,
+      "type": "timeseries",
+      "title": "ntfy requests/min by status",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 77
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "{{http_code}}",
+          "expr": "sum by (http_code) (rate(ntfy_http_requests_total[$__rate_interval])) * 60"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqpm",
+          "decimals": 1,
+          "min": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisSoftMin": 0
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/^2/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/^4/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "yellow"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/^5/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 37,
+      "type": "timeseries",
+      "title": "Tailscale throughput per proxy",
+      "description": "Inbound + outbound bytes/s per operator-managed proxy pod",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 85
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "{{pod}}",
+          "expr": "sum by (pod) (rate(tailscaled_inbound_bytes_total[$__rate_interval]) + rate(tailscaled_outbound_bytes_total[$__rate_interval]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "decimals": 1,
+          "min": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisSoftMin": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 38,
+      "type": "timeseries",
+      "title": "Tailscale traffic by path",
+      "description": "direct_* is peer-to-peer; derp is relayed through Tailscale's servers",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 85
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "{{path}}",
+          "expr": "sum by (path) (rate(tailscaled_inbound_bytes_total[$__rate_interval]) + rate(tailscaled_outbound_bytes_total[$__rate_interval])) > 0"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "decimals": 1,
+          "min": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 40,
+            "gradientMode": "none",
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "axisSoftMin": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 39,
+      "type": "stat",
+      "title": "ntfy",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 85
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "instant": true,
+          "legendFormat": "Published (24h)",
+          "expr": "sum(increase(ntfy_messages_published_success[24h])) or vector(0)"
+        },
+        {
+          "refId": "B",
+          "instant": true,
+          "legendFormat": "Publish failures (24h)",
+          "expr": "sum(increase(ntfy_messages_published_failure[24h])) or vector(0)"
+        },
+        {
+          "refId": "C",
+          "instant": true,
+          "legendFormat": "Subscribers",
+          "expr": "sum(ntfy_subscribers_total)"
+        },
+        {
+          "refId": "D",
+          "instant": true,
+          "legendFormat": "Topics",
+          "expr": "sum(ntfy_topics_total)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Publish failures (24h)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "wideLayout": true
       }
     }
   ]
