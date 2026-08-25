@@ -1443,143 +1443,206 @@
     {
       "id": 21,
       "type": "timeseries",
-      "title": "Error log lines \u00b7 per 5 min",
-      "gridPos": {
-        "x": 0,
-        "y": 33,
-        "w": 12,
-        "h": 7
-      },
+      "title": "CPU busy",
       "datasource": {
-        "type": "victoriametrics-logs-datasource",
-        "uid": "VictoriaLogs"
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 33
       },
       "targets": [
         {
-          "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "VictoriaLogs"
-          },
-          "expr": "(error OR fatal OR panic) | stats by (kubernetes.pod_namespace) count() errors",
           "refId": "A",
-          "queryType": "statsRange",
-          "legendFormat": "{{kubernetes.pod_namespace}}",
-          "step": "5m"
+          "legendFormat": "CPU busy",
+          "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{job=\"node-exporter\",mode=\"idle\"}[$__rate_interval])))"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
-          "custom": {
-            "drawStyle": "bars",
-            "lineWidth": 2,
-            "fillOpacity": 80,
-            "gradientMode": "none",
-            "showPoints": "never",
-            "pointSize": 6,
-            "spanNulls": false,
-            "axisPlacement": "auto",
-            "axisLabel": "",
-            "axisBorderShow": false,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "stacking": {
-              "mode": "normal",
-              "group": "A"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            },
-            "lineInterpolation": "linear",
-            "barAlignment": 0,
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            }
-          },
+          "unit": "percent",
+          "decimals": 0,
+          "min": 0,
+          "max": 100,
           "color": {
-            "mode": "palette-classic"
+            "mode": "fixed",
+            "fixedColor": "blue"
           },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "min": 0
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisSoftMin": 0
+          }
         },
         "overrides": []
       },
       "options": {
         "legend": {
-          "displayMode": "list",
-          "placement": "hidden",
           "showLegend": false,
-          "calcs": []
+          "displayMode": "list",
+          "placement": "bottom"
         },
         "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+          "mode": "single",
+          "sort": "none"
         }
-      },
-      "description": "Lines matching error, fatal, or panic, by namespace. Hover for the breakdown; the Logs row has the lines."
+      }
     },
     {
       "id": 22,
-      "type": "alertlist",
-      "title": "Active alerts",
-      "gridPos": {
-        "x": 12,
-        "y": 33,
-        "w": 12,
-        "h": 7
-      },
+      "type": "timeseries",
+      "title": "Memory used",
       "datasource": {
-        "type": "datasource",
-        "uid": "grafana"
+        "type": "prometheus",
+        "uid": "${datasource}"
       },
-      "targets": [],
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 33
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "Memory used",
+          "expr": "100 * (1 - node_memory_MemAvailable_bytes{job=\"node-exporter\"} / node_memory_MemTotal_bytes{job=\"node-exporter\"})"
+        }
+      ],
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "unit": "percent",
+          "decimals": 0,
+          "min": 0,
+          "max": 100,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisSoftMin": 0
+          }
+        },
         "overrides": []
       },
       "options": {
-        "alertName": "",
-        "dashboardAlerts": false,
-        "groupBy": [],
-        "groupMode": "default",
-        "maxItems": 20,
-        "sortOrder": 1,
-        "stateFilter": {
-          "error": true,
-          "firing": true,
-          "noData": false,
-          "normal": false,
-          "pending": true,
-          "recovering": true
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom"
         },
-        "viewMode": "list",
-        "datasource": "Alertmanager",
-        "alertInstanceLabelFilter": "{alertname!~\"Watchdog|InfoInhibitor\"}"
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       }
     },
     {
       "id": 23,
-      "type": "row",
-      "title": "Workloads",
-      "collapsed": false,
-      "gridPos": {
-        "x": 0,
-        "y": 40,
-        "w": 24,
-        "h": 7
+      "type": "table",
+      "title": "Pods restarted in the last 24h",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
       },
-      "panels": []
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "instant": true,
+          "format": "table",
+          "expr": "round(sum by (namespace, pod) (increase(kube_pod_container_status_restarts_total[24h]))) > 0"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {
+              "namespace": 0,
+              "pod": 1,
+              "Value": 2
+            },
+            "renameByName": {
+              "namespace": "Namespace",
+              "pod": "Pod",
+              "Value": "Restarts (24h)"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Restarts (24h)",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Restarts (24h)"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 160
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false,
+          "reducer": [
+            "sum"
+          ],
+          "fields": ""
+        }
+      }
     },
     {
       "id": 24,
@@ -2584,666 +2647,16 @@
     {
       "id": 34,
       "type": "table",
-      "title": "Storage ledger",
-      "gridPos": {
-        "x": 0,
-        "y": 82,
-        "w": 12,
-        "h": 9
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "longhorn_volume_capacity_bytes",
-          "legendFormat": "__auto",
-          "refId": "A",
-          "range": false,
-          "instant": true,
-          "format": "table"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "longhorn_volume_actual_size_bytes",
-          "legendFormat": "__auto",
-          "refId": "B",
-          "range": false,
-          "instant": true,
-          "format": "table"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "sum by (volume) (longhorn_snapshot_actual_size_bytes)",
-          "legendFormat": "__auto",
-          "refId": "C",
-          "range": false,
-          "instant": true,
-          "format": "table"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "max by (volume) (label_replace((100 * kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) * on (namespace, persistentvolumeclaim) group_left (volumename) kube_persistentvolumeclaim_info, \"volume\", \"$1\", \"volumename\", \"(.*)\"))",
-          "legendFormat": "__auto",
-          "refId": "D",
-          "range": false,
-          "instant": true,
-          "format": "table"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "(time() - longhorn_volume_last_backup_at) and (longhorn_volume_last_backup_at > 0)",
-          "legendFormat": "__auto",
-          "refId": "E",
-          "range": false,
-          "instant": true,
-          "format": "table"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "label_replace(kube_persistentvolumeclaim_labels{label_recurring_job_group_longhorn_io_backup=\"enabled\"}, \"volume\", \"$1\", \"volumename\", \"(.*)\")",
-          "legendFormat": "__auto",
-          "refId": "F",
-          "range": false,
-          "instant": true,
-          "format": "table"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false,
-            "filterable": false
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "text",
-                "value": null
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Provisioned"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "bytes"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "On disk"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "bytes"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Snapshots"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "bytes"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Filled"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "percent"
-              },
-              {
-                "id": "decimals",
-                "value": 0
-              },
-              {
-                "id": "min",
-                "value": 0
-              },
-              {
-                "id": "max",
-                "value": 100
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "gauge",
-                  "mode": "basic",
-                  "valueDisplayMode": "text"
-                }
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "blue"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Last backup"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "s"
-              },
-              {
-                "id": "decimals",
-                "value": 0
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-text"
-                }
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "text",
-                      "value": null
-                    },
-                    {
-                      "color": "yellow",
-                      "value": 129600
-                    },
-                    {
-                      "color": "red",
-                      "value": 259200
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "noValue",
-                "value": "never"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Backups"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "1": {
-                        "text": "daily",
-                        "index": 0
-                      }
-                    }
-                  },
-                  {
-                    "type": "special",
-                    "options": {
-                      "match": "null",
-                      "result": {
-                        "text": "not opted in",
-                        "index": 1
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "custom.width",
-                "value": 110
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm",
-        "footer": {
-          "show": false,
-          "reducer": [
-            "sum"
-          ],
-          "fields": ""
-        },
-        "sortBy": [
-          {
-            "displayName": "On disk",
-            "desc": true
-          }
-        ]
-      },
-      "transformations": [
-        {
-          "id": "joinByField",
-          "options": {
-            "byField": "volume",
-            "mode": "outer"
-          }
-        },
-        {
-          "id": "organize",
-          "options": {
-            "includeByName": {
-              "pvc_namespace 1": true,
-              "pvc 1": true,
-              "Value #A": true,
-              "Value #B": true,
-              "Value #D": true,
-              "Value #C": true,
-              "Value #E": true,
-              "Value #F": true
-            },
-            "indexByName": {
-              "pvc_namespace 1": 0,
-              "pvc 1": 1,
-              "Value #A": 2,
-              "Value #B": 3,
-              "Value #D": 4,
-              "Value #C": 5,
-              "Value #F": 6,
-              "Value #E": 7
-            },
-            "renameByName": {
-              "pvc_namespace 1": "Namespace",
-              "pvc 1": "Volume",
-              "Value #A": "Provisioned",
-              "Value #B": "On disk",
-              "Value #C": "Snapshots",
-              "Value #D": "Filled",
-              "Value #E": "Last backup",
-              "Value #F": "Backups"
-            }
-          }
-        }
-      ],
-      "description": "Every Longhorn volume: what was asked for, what it really occupies, how much of that is snapshot history, how full the filesystem inside is, whether it is opted in to the daily backup, and when it was last backed up."
-    },
-    {
-      "id": 35,
-      "type": "timeseries",
-      "title": "Longhorn pool \u00b7 7 days",
-      "gridPos": {
-        "x": 12,
-        "y": 82,
-        "w": 12,
-        "h": 9
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "sum(longhorn_node_storage_usage_bytes)",
-          "legendFormat": "used",
-          "refId": "A",
-          "range": true,
-          "instant": false
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "sum(longhorn_node_storage_capacity_bytes - longhorn_node_storage_reservation_bytes)",
-          "legendFormat": "usable capacity",
-          "refId": "B",
-          "range": true,
-          "instant": false
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes",
-          "custom": {
-            "drawStyle": "line",
-            "lineWidth": 2,
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "showPoints": "never",
-            "pointSize": 6,
-            "spanNulls": false,
-            "axisPlacement": "auto",
-            "axisLabel": "",
-            "axisBorderShow": false,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            },
-            "lineInterpolation": "linear",
-            "barAlignment": 0,
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            }
-          },
-          "color": {
-            "mode": "palette-classic"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "min": 0
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "usable capacity"
-            },
-            "properties": [
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "dash",
-                  "dash": [
-                    10,
-                    10
-                  ]
-                }
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 0
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "text"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true,
-          "calcs": []
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "timeFrom": "7d"
-    },
-    {
-      "id": 36,
-      "type": "stat",
-      "title": "Metrics disk \u00b7 runway",
-      "gridPos": {
-        "x": 0,
-        "y": 91,
-        "w": 6,
-        "h": 8
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "clamp_max(vm_free_disk_space_bytes / clamp_min(-deriv(vm_free_disk_space_bytes[7d]), 1) / 86400, 3650)",
-          "legendFormat": "__auto",
-          "refId": "A",
-          "range": false,
-          "instant": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "d",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 14
-              },
-              {
-                "color": "text",
-                "value": 60
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "type": "range",
-              "options": {
-                "from": 3650,
-                "to": 1000000000000.0,
-                "result": {
-                  "text": "not shrinking",
-                  "index": 0
-                }
-              }
-            }
-          ],
-          "noValue": "0",
-          "decimals": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "textMode": "auto",
-        "wideLayout": true,
-        "showPercentChange": false
-      },
-      "description": "How long until full at the 7-day growth rate."
-    },
-    {
-      "id": 37,
-      "type": "stat",
-      "title": "Logs disk \u00b7 runway",
-      "gridPos": {
-        "x": 6,
-        "y": 91,
-        "w": 18,
-        "h": 8
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "clamp_max(vl_free_disk_space_bytes / clamp_min(-deriv(vl_free_disk_space_bytes[7d]), 1) / 86400, 3650)",
-          "legendFormat": "__auto",
-          "refId": "A",
-          "range": false,
-          "instant": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "d",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 14
-              },
-              {
-                "color": "text",
-                "value": 60
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "type": "range",
-              "options": {
-                "from": 3650,
-                "to": 1000000000000.0,
-                "result": {
-                  "text": "not shrinking",
-                  "index": 0
-                }
-              }
-            }
-          ],
-          "noValue": "0",
-          "decimals": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "textMode": "auto",
-        "wideLayout": true,
-        "showPercentChange": false
-      },
-      "description": "How long until full at the 7-day growth rate."
-    },
-    {
-      "id": 38,
-      "type": "row",
-      "title": "Apps",
-      "collapsed": false,
-      "gridPos": {
-        "x": 0,
-        "y": 100,
-        "w": 24,
-        "h": 1
-      },
-      "panels": []
-    },
-    {
-      "id": 39,
-      "type": "table",
       "title": "Argo CD applications",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
+        "h": 9,
+        "w": 12,
         "x": 0,
-        "y": 101
+        "y": 82
       },
       "targets": [
         {
@@ -3405,7 +2818,7 @@
       }
     },
     {
-      "id": 40,
+      "id": 35,
       "type": "timeseries",
       "title": "Argo CD sync results",
       "description": "Sync operations per hour by outcome",
@@ -3414,10 +2827,10 @@
         "uid": "${datasource}"
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 8,
-        "y": 101
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 82
       },
       "targets": [
         {
@@ -3523,7 +2936,7 @@
       }
     },
     {
-      "id": 41,
+      "id": 36,
       "type": "stat",
       "title": "Time since last deploy",
       "description": "Age of the most recent successful Argo CD sync of any app",
@@ -3533,9 +2946,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 101
+        "w": 6,
+        "x": 0,
+        "y": 91
       },
       "targets": [
         {
@@ -3572,7 +2985,7 @@
       }
     },
     {
-      "id": 42,
+      "id": 37,
       "type": "bargauge",
       "title": "Time since last successful sync per app",
       "description": "How stale each app's deployment is relative to its last successful Argo CD sync (30-day lookback)",
@@ -3582,9 +2995,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 0,
-        "y": 109
+        "w": 18,
+        "x": 6,
+        "y": 91
       },
       "targets": [
         {
@@ -3626,20 +3039,20 @@
       }
     },
     {
-      "id": 43,
+      "id": 38,
       "type": "row",
       "title": "Apps",
       "collapsed": false,
       "gridPos": {
-        "x": 8,
-        "y": 109,
-        "w": 8,
-        "h": 8
+        "x": 0,
+        "y": 100,
+        "w": 24,
+        "h": 1
       },
       "panels": []
     },
     {
-      "id": 44,
+      "id": 39,
       "type": "timeseries",
       "title": "Immich operations/s",
       "description": "Repository calls per second by subsystem (Immich exposes no HTTP request metrics)",
@@ -3650,8 +3063,8 @@
       "gridPos": {
         "h": 8,
         "w": 8,
-        "x": 16,
-        "y": 109
+        "x": 0,
+        "y": 101
       },
       "targets": [
         {
@@ -3702,6 +3115,367 @@
       }
     },
     {
+      "id": 40,
+      "type": "timeseries",
+      "title": "Immich DB p95 latency",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 101
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "p95",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate({job=\"immich-server\",__name__=~\"immich_database_repository_.*_duration_bucket\"}[$__rate_interval])))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "decimals": 1,
+          "min": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisSoftMin": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 41,
+      "type": "timeseries",
+      "title": "ntfy requests/min by status",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 101
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "{{http_code}}",
+          "expr": "sum by (http_code) (rate(ntfy_http_requests_total[$__rate_interval])) * 60"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqpm",
+          "decimals": 1,
+          "min": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisSoftMin": 0
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/^2/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/^4/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "yellow"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/^5/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 42,
+      "type": "timeseries",
+      "title": "Tailscale throughput per proxy",
+      "description": "Inbound + outbound bytes/s per operator-managed proxy pod",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 109
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "{{pod}}",
+          "expr": "sum by (pod) (rate(tailscaled_inbound_bytes_total[$__rate_interval]) + rate(tailscaled_outbound_bytes_total[$__rate_interval]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "decimals": 1,
+          "min": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisSoftMin": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 43,
+      "type": "timeseries",
+      "title": "Tailscale traffic by path",
+      "description": "direct_* is peer-to-peer; derp is relayed through Tailscale's servers",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 109
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "{{path}}",
+          "expr": "sum by (path) (rate(tailscaled_inbound_bytes_total[$__rate_interval]) + rate(tailscaled_outbound_bytes_total[$__rate_interval])) > 0"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "decimals": 1,
+          "min": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 40,
+            "gradientMode": "none",
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "axisSoftMin": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 44,
+      "type": "stat",
+      "title": "ntfy",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 109
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "instant": true,
+          "legendFormat": "Published (24h)",
+          "expr": "sum(increase(ntfy_messages_published_success[24h])) or vector(0)"
+        },
+        {
+          "refId": "B",
+          "instant": true,
+          "legendFormat": "Publish failures (24h)",
+          "expr": "sum(increase(ntfy_messages_published_failure[24h])) or vector(0)"
+        },
+        {
+          "refId": "C",
+          "instant": true,
+          "legendFormat": "Subscribers",
+          "expr": "sum(ntfy_subscribers_total)"
+        },
+        {
+          "refId": "D",
+          "instant": true,
+          "legendFormat": "Topics",
+          "expr": "sum(ntfy_topics_total)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Publish failures (24h)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "wideLayout": true
+      }
+    },
+    {
       "id": 45,
       "type": "row",
       "title": "Logs",
@@ -3716,89 +3490,37 @@
     },
     {
       "id": 46,
-      "type": "stat",
-      "title": "Longhorn \u00b7 runway",
-      "gridPos": {
-        "x": 0,
-        "y": 118,
-        "w": 24,
-        "h": 14
-      },
+      "type": "logs",
+      "title": "Recent error lines",
+      "description": "Newest 100 lines matching error, fatal or panic in the dashboard time range",
       "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
+        "type": "victoriametrics-logs-datasource",
+        "uid": "VictoriaLogs"
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 118
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "clamp_max(sum(longhorn_node_storage_capacity_bytes - longhorn_node_storage_reservation_bytes - longhorn_node_storage_usage_bytes) / clamp_min(deriv(sum(longhorn_node_storage_usage_bytes)[7d:5m]), 1) / 86400, 3650)",
-          "legendFormat": "__auto",
           "refId": "A",
-          "range": false,
-          "instant": true
+          "queryType": "instant",
+          "maxLines": 100,
+          "expr": "error OR fatal OR panic"
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "d",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 14
-              },
-              {
-                "color": "text",
-                "value": 60
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "type": "range",
-              "options": {
-                "from": 3650,
-                "to": 1000000000000.0,
-                "result": {
-                  "text": "not shrinking",
-                  "index": 0
-                }
-              }
-            }
-          ],
-          "noValue": "0",
-          "decimals": 0
-        },
-        "overrides": []
-      },
       "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "textMode": "auto",
-        "wideLayout": true,
-        "showPercentChange": false
-      },
-      "description": "How long until full at the 7-day growth rate."
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
     }
   ]
 }
