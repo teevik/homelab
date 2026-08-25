@@ -20,6 +20,8 @@ spec:
         - args:
             - serve
           env:
+            - name: NTFY_ATTACHMENT_CACHE_DIR
+              value: /var/cache/ntfy/attachments
             - name: NTFY_BASE_URL
               value: http://ntfy.tail84b6c.ts.net
             - name: NTFY_BEHIND_PROXY

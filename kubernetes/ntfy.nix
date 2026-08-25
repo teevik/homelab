@@ -41,6 +41,9 @@
                 # connection to a self-hosted server).
                 NTFY_UPSTREAM_BASE_URL.value = "https://ntfy.sh";
                 NTFY_CACHE_FILE.value = "/var/cache/ntfy/cache.db";
+                # Needed for attachments; Apprise turns large changedetection
+                # notifications (>8 KB, e.g. big diffs) into .txt attachments.
+                NTFY_ATTACHMENT_CACHE_DIR.value = "/var/cache/ntfy/attachments";
               };
               volumeMounts."/var/cache/ntfy".name = "cache";
               securityContext = {
