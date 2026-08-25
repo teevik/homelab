@@ -1,0 +1,11 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: ntfy
+  namespace: ntfy
+spec:
+  endpoints:
+    - port: metrics
+  selector:
+    matchLabels:
+      app: ntfy

@@ -1,0 +1,12 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMPodScrape
+metadata:
+  name: tailscale-proxies
+  namespace: tailscale
+spec:
+  podMetricsEndpoints:
+    - path: /metrics
+      portNumber: 9002
+  selector:
+    matchLabels:
+      tailscale.com/managed: "true"

@@ -48,6 +48,8 @@ spec:
               value: "true"
             - name: PROXY_FIREWALL_MODE
               value: auto
+            - name: PROXY_DEFAULT_CLASS
+              value: metrics
             - name: POD_NAME
               valueFrom:
                 fieldRef:

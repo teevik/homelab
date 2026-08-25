@@ -1730,7 +1730,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 68
+            "y": 76
           },
           "panels": []
         },
@@ -1747,7 +1747,7 @@ data:
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 69
+            "y": 77
           },
           "targets": [
             {
@@ -1806,7 +1806,7 @@ data:
             "h": 14,
             "w": 24,
             "x": 0,
-            "y": 76
+            "y": 84
           },
           "targets": [
             {
@@ -1825,6 +1825,109 @@ data:
             "enableLogDetails": true,
             "dedupStrategy": "none",
             "sortOrder": "Descending"
+          }
+        },
+        {
+          "id": 31,
+          "type": "stat",
+          "title": "Time since last deploy",
+          "description": "Age of the most recent successful Argo CD sync of any app",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 0,
+            "y": 68
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "instant": true,
+              "expr": "time() - max(tlast_change_over_time(argocd_app_sync_total{phase=\"Succeeded\"}[30d]))"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "dtdurations",
+              "decimals": 1,
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "text"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "none",
+            "graphMode": "none",
+            "textMode": "value",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "wideLayout": true
+          }
+        },
+        {
+          "id": 32,
+          "type": "bargauge",
+          "title": "Time since last successful sync per app",
+          "description": "How stale each app's deployment is relative to its last successful Argo CD sync (30-day lookback)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 18,
+            "x": 6,
+            "y": 68
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "instant": true,
+              "legendFormat": "{{name}}",
+              "expr": "sort_desc(time() - max by (name) (tlast_change_over_time(argocd_app_sync_total{phase=\"Succeeded\"}[30d])))"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "dtdurations",
+              "decimals": 1,
+              "min": 0,
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "blue"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "horizontal",
+            "displayMode": "basic",
+            "valueMode": "color",
+            "namePlacement": "auto",
+            "showUnfilled": true,
+            "sizing": "auto",
+            "minVizWidth": 8,
+            "minVizHeight": 16,
+            "maxVizHeight": 300
           }
         }
       ]

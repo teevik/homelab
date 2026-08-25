@@ -78,8 +78,49 @@
 
         # Photo library storage using a pre-created PVC
         immich.persistence.library.existingClaim = "immich-library";
+
+        # Prometheus metrics. Not via `immich.metrics.enabled`: that also
+        # renders a ServiceMonitor (CRD not installed) and its hard-coded
+        # `true` wins the chart's value merge, so wire the pieces directly.
+        # Immich serves API metrics on 8081 and job/microservice metrics on
+        # 8082 once telemetry is on.
+        server = {
+          controllers.main.containers.main.env.IMMICH_TELEMETRY_INCLUDE = "all";
+          service.main.ports = {
+            metrics-api = {
+              enabled = true;
+              port = 8081;
+              targetPort = 8081;
+              protocol = "HTTP";
+            };
+            metrics-ms = {
+              enabled = true;
+              port = 8082;
+              targetPort = 8082;
+              protocol = "HTTP";
+            };
+          };
+        };
       };
     };
+
+    # Scraped by vmagent (see docs/agents/adding-a-service.md)
+    yamls = [
+      ''
+        apiVersion: operator.victoriametrics.com/v1beta1
+        kind: VMServiceScrape
+        metadata:
+          name: immich-server
+          namespace: immich
+        spec:
+          selector:
+            matchLabels:
+              app.kubernetes.io/service: immich-server
+          endpoints:
+            - port: metrics-api
+            - port: metrics-ms
+      ''
+    ];
 
     resources = {
       # PVC for the photo/video library

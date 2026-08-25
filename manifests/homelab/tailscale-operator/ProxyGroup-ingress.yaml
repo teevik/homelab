@@ -3,5 +3,6 @@ kind: ProxyGroup
 metadata:
   name: ingress
 spec:
+  proxyClass: metrics
   replicas: 1
   type: ingress

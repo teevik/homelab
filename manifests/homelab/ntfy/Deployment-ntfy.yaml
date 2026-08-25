@@ -28,8 +28,12 @@ spec:
               value: "true"
             - name: NTFY_CACHE_FILE
               value: /var/cache/ntfy/cache.db
+            - name: NTFY_ENABLE_METRICS
+              value: "true"
             - name: NTFY_LISTEN_HTTP
               value: :8080
+            - name: NTFY_METRICS_LISTEN_HTTP
+              value: :9090
             - name: NTFY_UPSTREAM_BASE_URL
               value: https://ntfy.sh
           image: docker.io/binwiederhier/ntfy:v2.27.0@sha256:f2419f405127afa868f10985c1a41449e673477cee1eb19994339a5ae8b592e7
@@ -37,6 +41,8 @@ spec:
           ports:
             - containerPort: 8080
               name: http
+            - containerPort: 9090
+              name: metrics
           resources:
             limits:
               memory: 256Mi

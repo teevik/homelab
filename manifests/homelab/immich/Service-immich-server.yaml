@@ -17,6 +17,14 @@ spec:
       port: 2283
       protocol: TCP
       targetPort: http
+    - name: metrics-api
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    - name: metrics-ms
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
   selector:
     app.kubernetes.io/controller: main
     app.kubernetes.io/instance: immich
