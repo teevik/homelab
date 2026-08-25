@@ -35,7 +35,10 @@ spec:
             - name: DB_HOSTNAME
               value: immich-postgresql
             - name: DB_PASSWORD
-              value: immich
+              valueFrom:
+                secretKeyRef:
+                  key: DB_PASSWORD
+                  name: immich-secrets
             - name: DB_USERNAME
               value: immich
             - name: IMMICH_MACHINE_LEARNING_URL

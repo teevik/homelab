@@ -1,13 +1,14 @@
 { ... }:
 let
-  dbPassword = "paperless";
-
   paperlessEnv = {
     PAPERLESS_REDIS.value = "redis://paperless-redis:6379";
     PAPERLESS_DBHOST.value = "paperless-db";
     PAPERLESS_DBPORT.value = "5432";
     PAPERLESS_DBUSER.value = "paperless";
-    PAPERLESS_DBPASS.value = dbPassword;
+    PAPERLESS_DBPASS.valueFrom.secretKeyRef = {
+      name = "paperless-secrets";
+      key = "PAPERLESS_DBPASS";
+    };
     PAPERLESS_DBNAME.value = "paperless";
     PAPERLESS_TIKA_ENABLED.value = "1";
     PAPERLESS_TIKA_GOTENBERG_ENDPOINT.value = "http://paperless-gotenberg:3000";
@@ -21,7 +22,10 @@ let
     PAPERLESS_OCR_LANGUAGE.value = "eng+nor";
     PAPERLESS_URL.value = "http://paperless";
     PAPERLESS_ADMIN_USER.value = "admin";
-    PAPERLESS_ADMIN_PASSWORD.value = "admin";
+    PAPERLESS_ADMIN_PASSWORD.valueFrom.secretKeyRef = {
+      name = "paperless-secrets";
+      key = "PAPERLESS_ADMIN_PASSWORD";
+    };
   };
 in
 {
@@ -101,7 +105,10 @@ in
               ports.postgres.containerPort = 5432;
               env = {
                 POSTGRES_USER.value = "paperless";
-                POSTGRES_PASSWORD.value = dbPassword;
+                POSTGRES_PASSWORD.valueFrom.secretKeyRef = {
+                  name = "paperless-secrets";
+                  key = "PAPERLESS_DBPASS";
+                };
                 POSTGRES_DB.value = "paperless";
               };
               volumeMounts."/var/lib/postgresql/data" = {

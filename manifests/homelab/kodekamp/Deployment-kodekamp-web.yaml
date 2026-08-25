@@ -13,6 +13,7 @@ spec:
       labels:
         app: kodekamp-web
     spec:
+      automountServiceAccountToken: false
       containers:
         - env:
             - name: CODE_RUNNER_URL

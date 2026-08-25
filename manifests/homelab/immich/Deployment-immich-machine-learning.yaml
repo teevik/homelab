@@ -35,7 +35,10 @@ spec:
             - name: DB_HOSTNAME
               value: immich-postgresql
             - name: DB_PASSWORD
-              value: immich
+              valueFrom:
+                secretKeyRef:
+                  key: DB_PASSWORD
+                  name: immich-secrets
             - name: DB_USERNAME
               value: immich
             - name: HF_XET_CACHE
@@ -73,14 +76,16 @@ spec:
             initialDelaySeconds: 0
             periodSeconds: 10
             timeoutSeconds: 1
+          resources:
+            limits:
+              amd.com/gpu: 1
           securityContext:
-            allowPrivilegeEscalation: true
+            allowPrivilegeEscalation: false
             capabilities:
-              add:
-                - SYS_PTRACE
-            privileged: true
+              drop:
+                - ALL
             seccompProfile:
-              type: Unconfined
+              type: RuntimeDefault
           startupProbe:
             failureThreshold: 60
             httpGet:
@@ -92,10 +97,6 @@ spec:
           volumeMounts:
             - mountPath: /cache
               name: cache
-            - mountPath: /dev/dri
-              name: dev-dri
-            - mountPath: /dev/kfd
-              name: dev-kfd
       dnsPolicy: ClusterFirst
       enableServiceLinks: false
       hostIPC: false
@@ -110,11 +111,3 @@ spec:
         - name: cache
           persistentVolumeClaim:
             claimName: immich-machine-learning
-        - hostPath:
-            path: /dev/dri
-            type: Directory
-          name: dev-dri
-        - hostPath:
-            path: /dev/kfd
-            type: CharDevice
-          name: dev-kfd

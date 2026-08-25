@@ -75,7 +75,105 @@
           size = "1Gi";
         };
 
-        grafana.adminPassword = "admin";
+        # Admin credentials come from the sops-provisioned grafana-admin secret
+        # (modules/nixos/kubernetes.nix) instead of a value in git.
+        grafana.admin = {
+          existingSecret = "grafana-admin";
+          userKey = "admin-user";
+          passwordKey = "admin-password";
+        };
+
+        # Route alerts to ntfy (via the alertmanager-ntfy forwarder below)
+        # instead of the chart's default blackhole receiver. Watchdog is the
+        # always-firing heartbeat alert and stays silenced.
+        alertmanager.config = {
+          route = {
+            receiver = "ntfy";
+            routes = [
+              {
+                matchers = [ ''alertname="Watchdog"'' ];
+                receiver = "blackhole";
+              }
+            ];
+          };
+          receivers = [
+            {
+              name = "ntfy";
+              webhook_configs = [
+                {
+                  url = "http://alertmanager-ntfy:8000/hook";
+                  send_resolved = true;
+                }
+              ];
+            }
+            { name = "blackhole"; }
+          ];
+        };
+      };
+    };
+
+    # Forwards Alertmanager webhook payloads to ntfy as readable notifications
+    resources.configMaps.alertmanager-ntfy.data."config.yml" = ''
+      ntfy:
+        baseurl: http://ntfy.ntfy.svc.cluster.local
+        notification:
+          topic: alerts
+          priority: |
+            status == "firing" ? "high" : "default"
+          tags:
+            - tag: rotating_light
+              condition: status == "firing"
+            - tag: white_check_mark
+              condition: status == "resolved"
+          templates:
+            title: |
+              {{ if eq .Status "resolved" }}Resolved: {{ end }}{{ index .Annotations "summary" }}
+            description: |
+              {{ index .Annotations "description" }}
+    '';
+
+    resources.deployments.alertmanager-ntfy.spec = {
+      replicas = 1;
+      selector.matchLabels.app = "alertmanager-ntfy";
+      template = {
+        metadata.labels.app = "alertmanager-ntfy";
+        spec = {
+          automountServiceAccountToken = false;
+          containers.alertmanager-ntfy = {
+            # renovate: datasource=docker depName=ghcr.io/alexbakker/alertmanager-ntfy
+            image = "ghcr.io/alexbakker/alertmanager-ntfy:1.2.1@sha256:2a862f23c8fb67f777824979487c06a417b2f9bbbc2eb45a974a1fb45b9bbff3";
+            args = [
+              "--configs"
+              "/etc/alertmanager-ntfy/config.yml"
+            ];
+            ports.http.containerPort = 8000;
+            volumeMounts."/etc/alertmanager-ntfy".name = "config";
+            securityContext = {
+              runAsUser = 1000;
+              runAsGroup = 1000;
+              runAsNonRoot = true;
+              allowPrivilegeEscalation = false;
+              capabilities.drop = [ "ALL" ];
+              seccompProfile.type = "RuntimeDefault";
+            };
+            resources = {
+              requests = {
+                cpu = "10m";
+                memory = "32Mi";
+              };
+              limits.memory = "128Mi";
+            };
+          };
+          volumes.config.configMap.name = "alertmanager-ntfy";
+        };
+      };
+    };
+
+    resources.services.alertmanager-ntfy.spec = {
+      selector.app = "alertmanager-ntfy";
+      ports.http = {
+        port = 8000;
+        targetPort = 8000;
       };
     };
 

@@ -20,13 +20,10 @@
         # TLS terminated by Tailscale, run insecure
         server.extraArgs = [ "--insecure" ];
 
-        # Set admin password to "admin"
-        configs.secret.argocdServerAdminPassword = "$2y$10$8NrH8ICB2uhtEYl9kSDvROCto1D9Ayyi4Ivt48uXvQqshN7548jXq";
-        configs.secret.argocdServerAdminPasswordMtime = "2026-01-01T00:00:00Z";
-        configs.secret.extra."server.secretkey" = "fku6ze1N0fxMjQXbpMfPR8A9g0xHDW1UOwUgWvz6634=";
-
-        # Verify GitHub webhook signatures using the separately provisioned secret.
-        configs.secret.extra."webhook.github.secret" = "$argocd-webhook-secret:githubSecret";
+        # argocd-secret (admin password, server.secretkey, webhook secret) is
+        # provisioned from sops on the host (modules/nixos/kubernetes.nix)
+        # instead of being rendered into the git-tracked manifests.
+        configs.secret.createSecret = false;
 
         # GitHub push payloads are small; constrain the unauthenticated public endpoint.
         configs.cm."webhook.maxPayloadSizeMB" = "1";

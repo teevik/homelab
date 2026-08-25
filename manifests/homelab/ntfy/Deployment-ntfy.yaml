@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ntfy
+  namespace: ntfy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ntfy
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: ntfy
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - args:
+            - serve
+          env:
+            - name: NTFY_BASE_URL
+              value: http://ntfy.tail84b6c.ts.net
+            - name: NTFY_BEHIND_PROXY
+              value: "true"
+            - name: NTFY_CACHE_FILE
+              value: /var/cache/ntfy/cache.db
+            - name: NTFY_LISTEN_HTTP
+              value: :8080
+          image: docker.io/binwiederhier/ntfy:v2.27.0@sha256:f2419f405127afa868f10985c1a41449e673477cee1eb19994339a5ae8b592e7
+          name: ntfy
+          ports:
+            - containerPort: 8080
+              name: http
+          resources:
+            limits:
+              memory: 256Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /var/cache/ntfy
+              name: cache
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsUser: 1000
+      volumes:
+        - name: cache
+          persistentVolumeClaim:
+            claimName: ntfy-cache

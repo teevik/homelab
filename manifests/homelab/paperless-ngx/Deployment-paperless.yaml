@@ -18,7 +18,10 @@ spec:
       containers:
         - env:
             - name: PAPERLESS_ADMIN_PASSWORD
-              value: admin
+              valueFrom:
+                secretKeyRef:
+                  key: PAPERLESS_ADMIN_PASSWORD
+                  name: paperless-secrets
             - name: PAPERLESS_ADMIN_USER
               value: admin
             - name: PAPERLESS_DBHOST
@@ -26,7 +29,10 @@ spec:
             - name: PAPERLESS_DBNAME
               value: paperless
             - name: PAPERLESS_DBPASS
-              value: paperless
+              valueFrom:
+                secretKeyRef:
+                  key: PAPERLESS_DBPASS
+                  name: paperless-secrets
             - name: PAPERLESS_DBPORT
               value: "5432"
             - name: PAPERLESS_DBUSER

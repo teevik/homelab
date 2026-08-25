@@ -8,9 +8,9 @@ metadata:
 spec:
   defaultBackend:
     service:
-      name: immich-server
+      name: immich-public-proxy
       port:
-        number: 2283
+        number: 3000
   ingressClassName: tailscale
   tls:
     - hosts:

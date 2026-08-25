@@ -1,7 +1,4 @@
 { charts, ... }:
-let
-  dbPassword = "immich";
-in
 {
   applications.immich = {
     namespace = "immich";
@@ -16,11 +13,15 @@ in
         controllers.main.containers.main.image.tag =
           "v3.1.0@sha256:b434cb9287eea1471c9974845914d4dd328c9c2d652e446ed4930f99944f0ceb";
 
-        # Database connection (shared across components)
+        # Database connection (shared across components); the password comes
+        # from the sops-provisioned immich-secrets (modules/nixos/kubernetes.nix)
         controllers.main.containers.main.env = {
           DB_HOSTNAME = "immich-postgresql";
           DB_USERNAME = "immich";
-          DB_PASSWORD = dbPassword;
+          DB_PASSWORD.valueFrom.secretKeyRef = {
+            name = "immich-secrets";
+            key = "DB_PASSWORD";
+          };
           DB_DATABASE_NAME = "immich";
         };
 
@@ -50,42 +51,28 @@ in
               env.HSA_OVERRIDE_GFX_VERSION = "10.3.0";
               # MIGraphX model compilation blocks /ping for several minutes on gfx1032.
               probes.liveness.spec.failureThreshold = 60;
+              # GPU access comes from the AMD device plugin
+              # (kubernetes/amd-device-plugin.nix) instead of a privileged
+              # container with raw hostPath device mounts.
+              resources.limits."amd.com/gpu" = 1;
               securityContext = {
-                privileged = true;
-                allowPrivilegeEscalation = true;
-                seccompProfile.type = "Unconfined";
-                capabilities.add = [ "SYS_PTRACE" ];
+                allowPrivilegeEscalation = false;
+                capabilities.drop = [ "ALL" ];
+                seccompProfile.type = "RuntimeDefault";
               };
             };
-            # Grant GPU device access to the pod
+            # /dev/kfd and /dev/dri device nodes are group-owned on the host
             pod.securityContext.supplementalGroups = [
               26
               303
             ]; # video, render
           };
 
-          persistence = {
-            cache = {
-              enabled = true;
-              type = "persistentVolumeClaim";
-              size = "10Gi";
-              accessMode = "ReadWriteOnce";
-            };
-            # AMD GPU device access
-            dev-kfd = {
-              enabled = true;
-              type = "hostPath";
-              hostPath = "/dev/kfd";
-              hostPathType = "CharDevice";
-              globalMounts = [ { path = "/dev/kfd"; } ];
-            };
-            dev-dri = {
-              enabled = true;
-              type = "hostPath";
-              hostPath = "/dev/dri";
-              hostPathType = "Directory";
-              globalMounts = [ { path = "/dev/dri"; } ];
-            };
+          persistence.cache = {
+            enabled = true;
+            type = "persistentVolumeClaim";
+            size = "10Gi";
+            accessMode = "ReadWriteOnce";
           };
         };
 
@@ -140,7 +127,10 @@ in
               ports.postgresql.containerPort = 5432;
               env = {
                 POSTGRES_USER.value = "immich";
-                POSTGRES_PASSWORD.value = dbPassword;
+                POSTGRES_PASSWORD.valueFrom.secretKeyRef = {
+                  name = "immich-secrets";
+                  key = "DB_PASSWORD";
+                };
                 POSTGRES_DB.value = "immich";
               };
               volumeMounts."/var/lib/postgresql/data" = {
@@ -162,8 +152,48 @@ in
         };
       };
 
-      # Public HTTPS endpoint for Immich share links via Tailscale Funnel.
-      # Immich's random /share/<token> URL remains the bearer secret.
+      # Share-link gateway: only serves Immich's public share pages and the
+      # assets they reference, so the Funnel never exposes the Immich login,
+      # API, or admin surface to the internet.
+      deployments.immich-public-proxy.spec = {
+        replicas = 1;
+        selector.matchLabels.app = "immich-public-proxy";
+        template = {
+          metadata.labels.app = "immich-public-proxy";
+          spec = {
+            automountServiceAccountToken = false;
+            containers.proxy = {
+              # renovate: datasource=docker depName=ghcr.io/alangrainger/immich-public-proxy
+              image = "ghcr.io/alangrainger/immich-public-proxy:3.2.1@sha256:7ca34cc3efa618a11674db00e1d943e4611cb2e14d1f6d73343757db700a6e3c";
+              ports.http.containerPort = 3000;
+              env.IMMICH_URL.value = "http://immich-server:2283";
+              securityContext = {
+                allowPrivilegeEscalation = false;
+                capabilities.drop = [ "ALL" ];
+                seccompProfile.type = "RuntimeDefault";
+              };
+              resources = {
+                requests = {
+                  cpu = "10m";
+                  memory = "64Mi";
+                };
+                limits.memory = "256Mi";
+              };
+            };
+          };
+        };
+      };
+
+      services.immich-public-proxy.spec = {
+        selector.app = "immich-public-proxy";
+        ports.http = {
+          port = 3000;
+          targetPort = 3000;
+        };
+      };
+
+      # Public HTTPS endpoint for Immich share links via Tailscale Funnel,
+      # routed through immich-public-proxy (share pages only, never the app).
       ingresses.immich-funnel = {
         metadata.annotations = {
           "tailscale.com/funnel" = "true";
@@ -171,8 +201,8 @@ in
         spec = {
           ingressClassName = "tailscale";
           defaultBackend.service = {
-            name = "immich-server";
-            port.number = 2283;
+            name = "immich-public-proxy";
+            port.number = 3000;
           };
           tls = [
             {

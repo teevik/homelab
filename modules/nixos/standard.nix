@@ -25,7 +25,13 @@ in
   # Networking
   networking = {
     networkmanager.enable = true;
-    firewall.enable = false;
+    firewall = {
+      enable = true;
+      # Full access from the tailnet; LAN only gets explicitly opened ports.
+      trustedInterfaces = [ "tailscale0" ];
+      # Tailscale WireGuard port for direct (non-DERP) connections
+      allowedUDPPorts = [ 41641 ];
+    };
   };
 
   # Sops secrets

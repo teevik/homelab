@@ -53,13 +53,40 @@ let
       namespace = "paperless-ngx";
       data = {
         PAPERLESS_SECRET_KEY = "paperless_secret_key";
+        PAPERLESS_DBPASS = "paperless_db_password";
+        PAPERLESS_ADMIN_PASSWORD = "paperless_admin_password";
       };
     };
 
-    argocd-webhook-secret = {
+    immich-secrets = {
+      namespace = "immich";
+      data = {
+        DB_PASSWORD = "immich_db_password";
+      };
+    };
+
+    grafana-admin = {
+      namespace = "victoria-metrics";
+      data = {
+        "admin-password" = "grafana_admin_password";
+      };
+      literals = {
+        "admin-user" = "admin";
+      };
+    };
+
+    # Argo CD reads admin credentials, session signing key, and webhook secret
+    # from this secret. The chart's own secret is disabled (createSecret=false)
+    # so none of these values end up in the generated manifests.
+    argocd-secret = {
       namespace = "argocd";
       data = {
-        githubSecret = "argocd_github_webhook_secret";
+        "admin.password" = "argocd_admin_password_bcrypt";
+        "server.secretkey" = "argocd_server_secretkey";
+        "webhook.github.secret" = "argocd_github_webhook_secret";
+      };
+      literals = {
+        "admin.passwordMtime" = "2026-08-25T00:00:00Z";
       };
       labels = {
         "app.kubernetes.io/part-of" = "argocd";
@@ -130,6 +157,9 @@ let
           ''
             until kubectl get ns >/dev/null 2>&1; do sleep 2; done
             kubectl create namespace ${secret.namespace} --dry-run=client -o yaml | kubectl apply -f -
+            # Delete first so labels from previous owners (e.g. Helm/Argo CD
+            # tracking labels) don't survive and cause Argo CD to prune the secret.
+            kubectl delete secret ${name} --namespace ${secret.namespace} --ignore-not-found
             kubectl create secret generic ${name} \
               --namespace ${secret.namespace} \
               ${allArgs} \

@@ -13,6 +13,21 @@ spec:
       labels:
         app: kodekamp-code-runner
     spec:
+      automountServiceAccountToken: false
       containers:
         - image: ghcr.io/teevik/kodekamp-code-runner:latest
           name: code-runner
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault

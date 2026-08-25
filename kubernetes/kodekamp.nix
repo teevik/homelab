@@ -20,8 +20,11 @@
         template = {
           metadata.labels.app = "kodekamp-db";
           spec = {
+            automountServiceAccountToken = false;
             containers.mongodb = {
-              image = "mongo:4.4.6";
+              # Last 4.4.x patch release; same feature-compatibility version as
+              # 4.4.6 so it's a drop-in upgrade. 5.0+ needs a stepped migration.
+              image = "mongo:4.4.29@sha256:52c42cbab240b3c5b1748582cc13ef46d521ddacae002bbbda645cebed270ec0";
               ports.mongodb.containerPort = 27017;
               volumeMounts."/data/db" = {
                 name = "data";
@@ -41,15 +44,35 @@
         };
       };
 
-      # Code runner deployment (3 replicas for parallel code execution)
+      # Code runner deployment (3 replicas for parallel code execution).
+      # Executes untrusted user code, so it gets the tightest settings in the
+      # cluster: no privilege escalation, no capabilities, no service account
+      # token, hard resource limits, and (below) a NetworkPolicy that only
+      # allows traffic from the web app and DNS egress.
       deployments.kodekamp-code-runner.spec = {
         replicas = 3;
         selector.matchLabels.app = "kodekamp-code-runner";
         template = {
           metadata.labels.app = "kodekamp-code-runner";
           spec = {
+            automountServiceAccountToken = false;
             containers.code-runner = {
               image = "ghcr.io/teevik/kodekamp-code-runner:latest";
+              securityContext = {
+                allowPrivilegeEscalation = false;
+                capabilities.drop = [ "ALL" ];
+                seccompProfile.type = "RuntimeDefault";
+              };
+              resources = {
+                requests = {
+                  cpu = "100m";
+                  memory = "256Mi";
+                };
+                limits = {
+                  cpu = "1";
+                  memory = "1Gi";
+                };
+              };
             };
           };
         };
@@ -71,6 +94,7 @@
         template = {
           metadata.labels.app = "kodekamp-web";
           spec = {
+            automountServiceAccountToken = false;
             containers.web = {
               image = "ghcr.io/teevik/kodekamp-web:latest";
               ports.http.containerPort = 3000;
@@ -105,6 +129,159 @@
           port = 3000;
           targetPort = 3000;
         };
+      };
+
+      # --- NetworkPolicies ---
+      # KodeKamp runs untrusted user code and fronts the public internet via
+      # Cloudflare, so the namespace is default-deny with explicit allows.
+      # Enforced by k3s's embedded network policy controller.
+
+      networkPolicies.default-deny.spec = {
+        podSelector = { };
+        policyTypes = [
+          "Ingress"
+          "Egress"
+        ];
+      };
+
+      networkPolicies.web.spec = {
+        podSelector.matchLabels.app = "kodekamp-web";
+        policyTypes = [
+          "Ingress"
+          "Egress"
+        ];
+        # Reachable only from the Cloudflare tunnel and Tailscale ingress proxies
+        ingress = [
+          {
+            from = [
+              { namespaceSelector.matchLabels."kubernetes.io/metadata.name" = "cloudflare-tunnel"; }
+              { namespaceSelector.matchLabels."kubernetes.io/metadata.name" = "tailscale"; }
+            ];
+            ports = [
+              {
+                protocol = "TCP";
+                port = 3000;
+              }
+            ];
+          }
+        ];
+        egress = [
+          # MongoDB
+          {
+            to = [ { podSelector.matchLabels.app = "kodekamp-db"; } ];
+            ports = [
+              {
+                protocol = "TCP";
+                port = 27017;
+              }
+            ];
+          }
+          # Code runner
+          {
+            to = [ { podSelector.matchLabels.app = "kodekamp-code-runner"; } ];
+            ports = [
+              {
+                protocol = "TCP";
+                port = 3000;
+              }
+            ];
+          }
+          # Cluster DNS
+          {
+            to = [
+              {
+                namespaceSelector.matchLabels."kubernetes.io/metadata.name" = "kube-system";
+                podSelector.matchLabels."k8s-app" = "kube-dns";
+              }
+            ];
+            ports = [
+              {
+                protocol = "UDP";
+                port = 53;
+              }
+              {
+                protocol = "TCP";
+                port = 53;
+              }
+            ];
+          }
+          # Internet egress for outgoing email; never cluster or LAN ranges
+          {
+            to = [
+              {
+                ipBlock = {
+                  cidr = "0.0.0.0/0";
+                  except = [
+                    "10.0.0.0/8"
+                    "172.16.0.0/12"
+                    "192.168.0.0/16"
+                  ];
+                };
+              }
+            ];
+          }
+        ];
+      };
+
+      networkPolicies.code-runner.spec = {
+        podSelector.matchLabels.app = "kodekamp-code-runner";
+        policyTypes = [
+          "Ingress"
+          "Egress"
+        ];
+        # Only the web app may submit code
+        ingress = [
+          {
+            from = [ { podSelector.matchLabels.app = "kodekamp-web"; } ];
+            ports = [
+              {
+                protocol = "TCP";
+                port = 3000;
+              }
+            ];
+          }
+        ];
+        # Untrusted code gets no network beyond cluster DNS
+        egress = [
+          {
+            to = [
+              {
+                namespaceSelector.matchLabels."kubernetes.io/metadata.name" = "kube-system";
+                podSelector.matchLabels."k8s-app" = "kube-dns";
+              }
+            ];
+            ports = [
+              {
+                protocol = "UDP";
+                port = 53;
+              }
+              {
+                protocol = "TCP";
+                port = 53;
+              }
+            ];
+          }
+        ];
+      };
+
+      networkPolicies.db.spec = {
+        podSelector.matchLabels.app = "kodekamp-db";
+        policyTypes = [
+          "Ingress"
+          "Egress"
+        ];
+        # Only the web app may talk to MongoDB; the database dials nothing
+        ingress = [
+          {
+            from = [ { podSelector.matchLabels.app = "kodekamp-web"; } ];
+            ports = [
+              {
+                protocol = "TCP";
+                port = 27017;
+              }
+            ];
+          }
+        ];
       };
 
       # Tailscale service for internal access via MagicDNS

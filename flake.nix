@@ -67,6 +67,8 @@
           ./kubernetes/crafty.nix
           ./kubernetes/twitchdropsminer.nix
           ./kubernetes/kavita.nix
+          ./kubernetes/amd-device-plugin.nix
+          ./kubernetes/ntfy.nix
         ];
       };
     };

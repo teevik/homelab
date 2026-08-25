@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-public-proxy
+  namespace: immich
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-public-proxy
+  template:
+    metadata:
+      labels:
+        app: immich-public-proxy
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - env:
+            - name: IMMICH_URL
+              value: http://immich-server:2283
+          image: ghcr.io/alangrainger/immich-public-proxy:3.2.1@sha256:7ca34cc3efa618a11674db00e1d943e4611cb2e14d1f6d73343757db700a6e3c
+          name: proxy
+          ports:
+            - containerPort: 3000
+              name: http
+          resources:
+            limits:
+              memory: 256Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault

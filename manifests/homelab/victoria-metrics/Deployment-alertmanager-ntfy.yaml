@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager-ntfy
+  namespace: victoria-metrics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager-ntfy
+  template:
+    metadata:
+      labels:
+        app: alertmanager-ntfy
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - args:
+            - --configs
+            - /etc/alertmanager-ntfy/config.yml
+          image: ghcr.io/alexbakker/alertmanager-ntfy:1.2.1@sha256:2a862f23c8fb67f777824979487c06a417b2f9bbbc2eb45a974a1fb45b9bbff3
+          name: alertmanager-ntfy
+          ports:
+            - containerPort: 8000
+              name: http
+          resources:
+            limits:
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /etc/alertmanager-ntfy
+              name: config
+      volumes:
+        - configMap:
+            name: alertmanager-ntfy
+          name: config
