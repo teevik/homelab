@@ -68,10 +68,13 @@
         # vlsingle stores logs; vlagent runs as a DaemonSet (k8sCollector mode,
         # the chart default) tailing /var/log/pods and pushing to vlsingle. The
         # chart adds the Grafana datasource, dashboards, and alert rules itself.
+        # Tag only, no digest: the chart copies this value verbatim into the
+        # app.kubernetes.io/version label and a digest breaks the 63-char limit
+        # (renovate.json5 disables pinDigests for this image accordingly).
         # renovate: datasource=docker depName=victoriametrics/victoria-logs
-        vlsingle.spec.image.tag = "v1.52.0@sha256:47b820890d64c4575a2a0a46415dcd8a4fd59a0f1fcd6a377693d7aea639442e";
+        vlsingle.spec.image.tag = "v1.52.0";
         # renovate: datasource=docker depName=victoriametrics/victoria-logs
-        vlagent.spec.image.tag = "v1.52.0@sha256:47b820890d64c4575a2a0a46415dcd8a4fd59a0f1fcd6a377693d7aea639442e";
+        vlagent.spec.image.tag = "v1.52.0";
 
         vlsingle.enabled = true;
         vlsingle.spec = {

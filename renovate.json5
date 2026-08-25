@@ -100,6 +100,12 @@
       "pinDigests": true
     },
     {
+      // The k8s-stack chart copies the VictoriaLogs image tag verbatim into an
+      // app.kubernetes.io/version label; a digest suffix exceeds the 63-char limit.
+      "matchPackageNames": ["victoriametrics/victoria-logs"],
+      "pinDigests": false
+    },
+    {
       // Create major-update PRs immediately, but mark them for careful review
       // regardless of whether they come from Docker, Helm, or another manager.
       "matchUpdateTypes": ["major"],
