@@ -410,7 +410,7 @@ data:
         {
           "id": 6,
           "type": "stat",
-          "title": "Backups in error",
+          "title": "Backup health",
           "gridPos": {
             "x": 15,
             "y": 0,
@@ -428,8 +428,19 @@ data:
                 "uid": "${datasource}"
               },
               "expr": "count(longhorn_backup_state == 4) or vector(0)",
-              "legendFormat": "__auto",
+              "legendFormat": "errors",
               "refId": "A",
+              "range": false,
+              "instant": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "count(label_replace(label_replace(kube_persistentvolumeclaim_labels{label_recurring_job_group_longhorn_io_backup=\"enabled\"}, \"pvc\", \"$1\", \"persistentvolumeclaim\", \"(.*)\"), \"pvc_namespace\", \"$1\", \"namespace\", \"(.*)\") unless on (pvc, pvc_namespace) (longhorn_volume_last_backup_at > 0)) or vector(0)",
+              "legendFormat": "never",
+              "refId": "B",
               "range": false,
               "instant": true
             }
@@ -476,7 +487,8 @@ data:
             "text": {
               "valueSize": 28
             }
-          }
+          },
+          "description": "Failed backups and backup-enabled volumes that have never completed a backup."
         },
         {
           "id": 7,
@@ -1022,7 +1034,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sort_desc(topk(10, sum by (namespace, pod) (container_memory_working_set_bytes{container!=\"\",pod!=\"\"})))",
+              "expr": "sort_desc(topk(10, sum by (namespace, pod) (container_memory_working_set_bytes{container!=\"\",pod!=\"\",job=\"kubelet\",metrics_path=\"/metrics/cadvisor\"})))",
               "legendFormat": "{{namespace}}/{{pod}}",
               "refId": "A",
               "range": false,
@@ -1092,7 +1104,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sort_desc(topk(10, sum by (namespace, pod) (rate(container_cpu_usage_seconds_total{container!=\"\",pod!=\"\"}[$__rate_interval]))))",
+              "expr": "sort_desc(topk(10, sum by (namespace, pod) (rate(container_cpu_usage_seconds_total{container!=\"\",pod!=\"\",job=\"kubelet\",metrics_path=\"/metrics/cadvisor\"}[$__rate_interval]))))",
               "legendFormat": "{{namespace}}/{{pod}}",
               "refId": "A",
               "range": false,
@@ -1268,7 +1280,7 @@ data:
               "recovering": true
             },
             "viewMode": "list",
-            "datasource": "Alertmanager",
+            "datasource": "${datasource}",
             "alertInstanceLabelFilter": "{alertname!~\"Watchdog|InfoInhibitor\"}"
           }
         },
@@ -1292,7 +1304,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sort_desc(topk(12, max by (namespace, persistentvolumeclaim) (100 * kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes)))",
+              "expr": "sort_desc(topk(12, max by (namespace, persistentvolumeclaim) (100 * kubelet_volume_stats_used_bytes{job=\"kubelet\"} / kubelet_volume_stats_capacity_bytes{job=\"kubelet\"})))",
               "legendFormat": "{{namespace}}/{{persistentvolumeclaim}}",
               "refId": "A",
               "range": false,
@@ -1810,7 +1822,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "max by (volume) (label_replace((100 * kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) * on (namespace, persistentvolumeclaim) group_left (volumename) kube_persistentvolumeclaim_info, \"volume\", \"$1\", \"volumename\", \"(.*)\"))",
+              "expr": "max by (volume) (label_replace((100 * kubelet_volume_stats_used_bytes{job=\"kubelet\"} / kubelet_volume_stats_capacity_bytes{job=\"kubelet\"}) * on (namespace, persistentvolumeclaim) group_left (volumename) kube_persistentvolumeclaim_info, \"volume\", \"$1\", \"volumename\", \"(.*)\"))",
               "legendFormat": "__auto",
               "refId": "D",
               "range": false,

@@ -48,6 +48,14 @@
           "persistentvolumeclaims=[recurring-job-group.longhorn.io/backup]"
         ];
 
+        # The ASUS WMI hwmon driver exposes duplicate pwm_enable metrics. Keep
+        # the chart's filesystem exclusions when overriding its extraArgs list.
+        "prometheus-node-exporter".extraArgs = [
+          "--collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)"
+          "--collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|erofs|sysfs|tracefs)$"
+          "--collector.hwmon.chip-exclude=^platform_asus_nb_wmi$"
+        ];
+
         # Give vmagent enough CPU headroom to avoid CPUThrottlingHigh alerts
         vmagent.spec.resources = {
           requests = {
