@@ -28,6 +28,8 @@ spec:
               value: /var/cache/ntfy/cache.db
             - name: NTFY_LISTEN_HTTP
               value: :8080
+            - name: NTFY_UPSTREAM_BASE_URL
+              value: https://ntfy.sh
           image: docker.io/binwiederhier/ntfy:v2.27.0@sha256:f2419f405127afa868f10985c1a41449e673477cee1eb19994339a5ae8b592e7
           name: ntfy
           ports:

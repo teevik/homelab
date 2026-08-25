@@ -36,6 +36,10 @@
                 NTFY_BASE_URL.value = "http://ntfy.tail84b6c.ts.net";
                 NTFY_LISTEN_HTTP.value = ":8080"; # unprivileged port, non-root user
                 NTFY_BEHIND_PROXY.value = "true";
+                # Forward poll requests through ntfy.sh -> APNs so the iOS
+                # app gets instant notifications (iOS can't hold a background
+                # connection to a self-hosted server).
+                NTFY_UPSTREAM_BASE_URL.value = "https://ntfy.sh";
                 NTFY_CACHE_FILE.value = "/var/cache/ntfy/cache.db";
               };
               volumeMounts."/var/cache/ntfy".name = "cache";
