@@ -95,32 +95,12 @@
         # with the chart, which rolls the pod anyway).
         grafana.sidecar.datasources.watchMethod = "LIST";
 
-        # ONE-TIME MIGRATION — remove after the next rollout. The datasources
-        # were first provisioned without UIDs and Grafana cannot change the UID
-        # of an existing datasource ("data source not found"), so drop them by
-        # name first; the sidecar's datasource.yaml (sorted after this file)
-        # then recreates them with the chart's UIDs.
-        grafana.datasources."0-cleanup.yaml" = {
-          apiVersion = 1;
-          deleteDatasources = [
-            {
-              name = "VictoriaMetrics";
-              orgId = 1;
-            }
-            {
-              name = "VictoriaMetrics (DS)";
-              orgId = 1;
-            }
-            {
-              name = "Alertmanager";
-              orgId = 1;
-            }
-          ];
-        };
-
         # Dashboards whose ConfigMap carries a `grafana_folder` annotation land
         # in that folder; unannotated ones (the home dashboard) stay at the root.
         grafana.sidecar.dashboards.folderAnnotation = "grafana_folder";
+        # Per-service dashboards live in their own namespaces (longhorn, argocd);
+        # the sidecar defaults to its own namespace only.
+        grafana.sidecar.dashboards.searchNamespace = "ALL";
         grafana.sidecar.dashboards.provider.foldersFromFilesStructure = true;
         defaultDashboards.annotations.grafana_folder = "Cluster";
 

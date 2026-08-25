@@ -20,7 +20,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 555664c3b69b881d2d0c6ced4110d7b5e1c6cb1a3ff2c69e48557514c9ad21f2
+        checksum/config: 7ff5aa65b9b6e8060129a9e352ebb125ade3d704b0e9d85a9b2a50dadb03d157
         checksum/sc-dashboard-provider-config: 92acfe758217826510cd0a64ddda352df7bf0eb63759781e9e3206b245430244
         kubectl.kubernetes.io/default-container: grafana
       labels:
@@ -42,6 +42,8 @@ spec:
               value: /var/lib/grafana/dashboards/default
             - name: RESOURCE
               value: both
+            - name: NAMESPACE
+              value: ALL
             - name: FOLDER_ANNOTATION
               value: grafana_folder
             - name: REQ_USERNAME
@@ -161,9 +163,6 @@ spec:
               name: storage
             - mountPath: /var/lib/grafana-search
               name: search
-            - mountPath: /etc/grafana/provisioning/datasources/0-cleanup.yaml
-              name: config
-              subPath: 0-cleanup.yaml
             - mountPath: /var/lib/grafana/dashboards
               name: sc-dashboard-volume
             - mountPath: /etc/grafana/provisioning/dashboards/sc-dashboardproviders.yaml
