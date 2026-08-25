@@ -84,6 +84,56 @@
       };
     };
 
+    # Scrape longhorn-manager metrics (volume, node, and backup health).
+    # Written as a VMServiceScrape directly: the ServiceMonitor CRD is not
+    # installed, so the chart's metrics.serviceMonitor toggle cannot be used.
+    yamls = [
+      ''
+        apiVersion: operator.victoriametrics.com/v1beta1
+        kind: VMServiceScrape
+        metadata:
+          name: longhorn-manager
+          namespace: longhorn-system
+        spec:
+          selector:
+            matchLabels:
+              app: longhorn-manager
+          endpoints:
+            - port: manager
+      ''
+    ];
+
+    # Longhorn's own NetworkPolicy only admits Longhorn pods to longhorn-manager;
+    # let vmagent in on the metrics port. Policies are additive.
+    resources.networkPolicies.longhorn-manager-metrics.spec = {
+      podSelector.matchLabels.app = "longhorn-manager";
+      policyTypes = [ "Ingress" ];
+      ingress = [
+        {
+          from = [
+            {
+              namespaceSelector.matchLabels."kubernetes.io/metadata.name" = "victoria-metrics";
+              podSelector.matchLabels."app.kubernetes.io/name" = "vmagent";
+            }
+          ];
+          ports = [
+            {
+              port = 9500;
+              protocol = "TCP";
+            }
+          ];
+        }
+      ];
+    };
+
+    # Longhorn dashboard (grafana.com/dashboards/13032), picked up by the
+    # Grafana sidecar from any namespace via the grafana_dashboard label.
+    resources.configMaps.longhorn-dashboard = {
+      metadata.labels.grafana_dashboard = "1";
+      metadata.annotations.grafana_folder = "Cluster";
+      data."longhorn.json" = builtins.readFile ./dashboards/longhorn.json;
+    };
+
     # Tailscale LoadBalancer to expose Longhorn UI
     resources.services.longhorn-tailscale = {
       metadata.annotations = {

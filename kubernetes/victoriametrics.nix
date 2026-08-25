@@ -65,8 +65,79 @@
         # Required for the victoriametrics-metrics-datasource type in Grafana
         grafana.plugins = [ "victoriametrics-metrics-datasource" ];
 
-        grafana."grafana.ini".dashboards.default_home_dashboard_path =
-          "/var/lib/grafana/dashboards/default/homelab-overview.json";
+        # Pin the Grafana image like the VM images above; the chart's appVersion
+        # is otherwise unpinned and invisible to Renovate.
+        # renovate: datasource=docker depName=docker.io/grafana/grafana
+        grafana.image.tag = "13.1.1@sha256:7cb8c64c4d57a57e734073f3cc94620adb24a0acb929bd80ba9f14017e3a975b";
+
+        grafana.resources = {
+          requests = {
+            cpu = "50m";
+            memory = "256Mi";
+          };
+          limits.memory = "1Gi";
+        };
+        grafana.sidecar.resources = {
+          requests = {
+            cpu = "10m";
+            memory = "64Mi";
+          };
+          limits.memory = "256Mi";
+        };
+
+        # The datasource sidecar writes its file after Grafana has already
+        # started, so provisioning relied on a reload POST that fails whenever
+        # the admin password in SQLite drifts from the secret. Run the sidecar
+        # once as an init container so datasources are present at boot.
+        grafana.sidecar.datasources.initDatasources = true;
+
+        # Dashboards whose ConfigMap carries a `grafana_folder` annotation land
+        # in that folder; unannotated ones (the home dashboard) stay at the root.
+        grafana.sidecar.dashboards.folderAnnotation = "grafana_folder";
+        grafana.sidecar.dashboards.provider.foldersFromFilesStructure = true;
+        defaultDashboards.annotations.grafana_folder = "Cluster";
+
+        # Skip chart dashboards that can't show anything on a single Linux k3s node.
+        defaultDashboards.dashboards = {
+          k8s-resources-multicluster.enabled = false;
+          k8s-resources-windows-cluster.enabled = false;
+          k8s-resources-windows-namespace.enabled = false;
+          k8s-resources-windows-pod.enabled = false;
+          k8s-windows-cluster-rsrc-use.enabled = false;
+          k8s-windows-node-rsrc-use.enabled = false;
+          nodes-aix.enabled = false;
+          nodes-darwin.enabled = false;
+          prometheus.enabled = false;
+          prometheus-remote-write.enabled = false;
+        };
+
+        # Let Grafana-managed alert rules (if any are ever created) flow through
+        # the same Alertmanager -> ntfy path instead of Grafana's built-in one.
+        defaultDatasources.alertmanager.datasources = [
+          {
+            name = "Alertmanager";
+            access = "proxy";
+            uid = "Alertmanager";
+            jsonData = {
+              implementation = "prometheus";
+              handleGrafanaManagedAlerts = true;
+            };
+          }
+        ];
+
+        grafana."grafana.ini" = {
+          dashboards.default_home_dashboard_path = "/var/lib/grafana/dashboards/default/homelab-overview.json";
+          # Tailnet address; used for share links and alert links.
+          server.root_url = "http://grafana.tail84b6c.ts.net";
+          # No phoning home from the homelab.
+          analytics = {
+            reporting_enabled = false;
+            check_for_updates = false;
+            check_for_plugin_updates = false;
+            feedback_links_enabled = false;
+          };
+          news.news_feed_enabled = false;
+        };
 
         # Persist Grafana's SQLite database so sessions and settings survive pod restarts
         grafana.persistence = {
@@ -84,14 +155,17 @@
         };
 
         # Route alerts to ntfy (via the alertmanager-ntfy forwarder below)
-        # instead of the chart's default blackhole receiver. Watchdog is the
-        # always-firing heartbeat alert and stays silenced.
+        # instead of the chart's default blackhole receiver. Silenced:
+        #   - Watchdog: always-firing heartbeat
+        #   - InfoInhibitor: kube-prometheus's info-severity inhibitor, always firing
+        #   - RecordingRulesNoData: false positive here (count:up0 and the bare/Node/Job
+        #     pod_owner recording rules are legitimately empty on this cluster)
         alertmanager.config = {
           route = {
             receiver = "ntfy";
             routes = [
               {
-                matchers = [ ''alertname="Watchdog"'' ];
+                matchers = [ ''alertname=~"Watchdog|InfoInhibitor|RecordingRulesNoData"'' ];
                 receiver = "blackhole";
               }
             ];

@@ -5,14 +5,12 @@ data:
     providers:
       - name: 'default'
         orgId: 1
-        folder: ''
-        folderUid: ''
         type: file
         disableDeletion: false
         allowUiUpdates: false
         updateIntervalSeconds: 30
         options:
-          foldersFromFilesStructure: false
+          foldersFromFilesStructure: true
           path: /var/lib/grafana/dashboards/default
 kind: ConfigMap
 metadata:

@@ -28,6 +28,12 @@
         # GitHub push payloads are small; constrain the unauthenticated public endpoint.
         configs.cm."webhook.maxPayloadSizeMB" = "1";
 
+        # Expose Prometheus metrics for the VMServiceScrape below
+        controller.metrics.enabled = true;
+        server.metrics.enabled = true;
+        repoServer.metrics.enabled = true;
+        applicationSet.metrics.enabled = true;
+
         # Grant admin user full permissions
         configs.rbac."policy.csv" = "g, admin, role:admin";
       };
@@ -49,6 +55,38 @@
         }
       ];
       orphanedResources.warn = true;
+    };
+
+    # Scrape the Argo CD *-metrics Services. Written as a VMServiceScrape
+    # directly: the chart's ServiceMonitor templates are gated on the
+    # monitoring.coreos.com CRD, which is not installed.
+    yamls = [
+      ''
+        apiVersion: operator.victoriametrics.com/v1beta1
+        kind: VMServiceScrape
+        metadata:
+          name: argocd-metrics
+          namespace: argocd
+        spec:
+          selector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - argocd-metrics
+                  - argocd-server-metrics
+                  - argocd-repo-server-metrics
+          endpoints:
+            - port: http-metrics
+      ''
+    ];
+
+    # Argo CD dashboard (grafana.com/dashboards/14584), picked up by the
+    # Grafana sidecar from any namespace via the grafana_dashboard label.
+    resources.configMaps.argocd-dashboard = {
+      metadata.labels.grafana_dashboard = "1";
+      metadata.annotations.grafana_folder = "Cluster";
+      data."argocd.json" = builtins.readFile ./dashboards/argocd.json;
     };
 
     # Expose only the webhook route publicly; keep the Argo CD UI tailnet-private.
