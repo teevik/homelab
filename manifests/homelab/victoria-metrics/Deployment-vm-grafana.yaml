@@ -197,7 +197,7 @@ spec:
             - name: HEALTH_PORT
               value: "8082"
             - name: METHOD
-              value: WATCH
+              value: LIST
             - name: LABEL
               value: grafana_datasource
             - name: LABEL_VALUE
@@ -220,8 +220,6 @@ spec:
               value: http://localhost:3000/api/admin/provisioning/datasources/reload
             - name: REQ_METHOD
               value: POST
-            - name: REQ_SKIP_INIT
-              value: "true"
           image: quay.io/kiwigrid/k8s-sidecar:2.8.1
           imagePullPolicy: IfNotPresent
           name: grafana-init-sc-datasources

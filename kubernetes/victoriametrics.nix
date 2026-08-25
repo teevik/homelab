@@ -90,6 +90,10 @@
         # the admin password in SQLite drifts from the secret. Run the sidecar
         # once as an init container so datasources are present at boot.
         grafana.sidecar.datasources.initDatasources = true;
+        # The init container inherits watchMethod; WATCH never exits and wedges
+        # the pod in Init. LIST syncs once and exits (datasources only change
+        # with the chart, which rolls the pod anyway).
+        grafana.sidecar.datasources.watchMethod = "LIST";
 
         # Dashboards whose ConfigMap carries a `grafana_folder` annotation land
         # in that folder; unannotated ones (the home dashboard) stay at the root.
