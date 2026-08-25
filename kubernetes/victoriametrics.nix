@@ -1,13 +1,4 @@
 { charts, ... }:
-let
-  # Prototype home dashboards; provisioned into Grafana's "Prototypes" folder
-  # so they can be compared side by side before one replaces the home page.
-  prototypeDashboard = name: {
-    metadata.labels.grafana_dashboard = "1";
-    metadata.annotations.grafana_folder = "Prototypes";
-    data."${name}.json" = builtins.readFile ./dashboards/prototypes/${name}.json;
-  };
-in
 {
   applications.victoria-metrics = {
     namespace = "victoria-metrics";
@@ -333,12 +324,6 @@ in
       metadata.labels.grafana_dashboard = "1";
       data."homelab-overview.json" = builtins.readFile ./dashboards/homelab-overview.json;
     };
-
-    resources.configMaps.proto-wall = prototypeDashboard "proto-wall";
-    resources.configMaps.proto-journal = prototypeDashboard "proto-journal";
-    resources.configMaps.proto-cards = prototypeDashboard "proto-cards";
-    resources.configMaps.proto-quiet = prototypeDashboard "proto-quiet";
-    resources.configMaps.proto-ledger = prototypeDashboard "proto-ledger";
 
     # Tailscale LoadBalancer to expose Grafana
     resources.services.grafana-tailscale = {
