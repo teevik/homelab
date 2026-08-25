@@ -64,12 +64,57 @@
           };
         };
 
+        # --- VictoriaLogs ---
+        # vlsingle stores logs; vlagent runs as a DaemonSet (k8sCollector mode,
+        # the chart default) tailing /var/log/pods and pushing to vlsingle. The
+        # chart adds the Grafana datasource, dashboards, and alert rules itself.
+        # renovate: datasource=docker depName=victoriametrics/victoria-logs
+        vlsingle.spec.image.tag = "v1.52.0@sha256:47b820890d64c4575a2a0a46415dcd8a4fd59a0f1fcd6a377693d7aea639442e";
+        # renovate: datasource=docker depName=victoriametrics/victoria-logs
+        vlagent.spec.image.tag = "v1.52.0@sha256:47b820890d64c4575a2a0a46415dcd8a4fd59a0f1fcd6a377693d7aea639442e";
+
+        vlsingle.enabled = true;
+        vlsingle.spec = {
+          retentionPeriod = "30d";
+          # Hard cap below the PVC size so retention can never fill the volume
+          extraArgs."retention.maxDiskSpaceUsageBytes" = "8GiB";
+          storage = {
+            storageClassName = "longhorn";
+            accessModes = [ "ReadWriteOnce" ];
+            resources.requests.storage = "10Gi";
+          };
+          resources = {
+            requests = {
+              cpu = "100m";
+              memory = "256Mi";
+            };
+            limits.memory = "1Gi";
+          };
+        };
+
+        # With logs enabled the chart puts an internal vmauth in front of vmalert
+        # so LogsQL rules reach vlsingle and PromQL rules reach vmsingle.
+        # renovate: datasource=docker depName=victoriametrics/vmauth
+        internal.vmauth.spec.image.tag = "v1.150.0@sha256:18501bc13770dbb921fc999b6ae15ddb5054b5147bab027b5d459662855c172d";
+
+        vlagent.enabled = true;
+        vlagent.spec.resources = {
+          requests = {
+            cpu = "50m";
+            memory = "128Mi";
+          };
+          limits.memory = "512Mi";
+        };
+
         # Disable admission webhook to avoid TLS certs being regenerated on every build
         # (Helm's `lookup` function doesn't work with offline rendering)
         victoria-metrics-operator.admissionWebhooks.enabled = false;
 
-        # Required for the victoriametrics-metrics-datasource type in Grafana
-        grafana.plugins = [ "victoriametrics-metrics-datasource" ];
+        # Required for the victoriametrics-{metrics,logs}-datasource types in Grafana
+        grafana.plugins = [
+          "victoriametrics-metrics-datasource"
+          "victoriametrics-logs-datasource"
+        ];
 
         # Pin the Grafana image like the VM images above; the chart's appVersion
         # is otherwise unpinned and invisible to Renovate.

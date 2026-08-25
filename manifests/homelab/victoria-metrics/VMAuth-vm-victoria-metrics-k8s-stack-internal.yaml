@@ -1,0 +1,26 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMAuth
+metadata:
+  labels:
+    app.kubernetes.io/component: vmauth
+    app.kubernetes.io/instance: vm
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: victoria-metrics-k8s-stack
+    app.kubernetes.io/version: v1.150.0
+    helm.sh/chart: victoria-metrics-k8s-stack-0.91.2
+  name: vm-victoria-metrics-k8s-stack-internal
+  namespace: victoria-metrics
+spec:
+  image:
+    tag: v1.150.0@sha256:18501bc13770dbb921fc999b6ae15ddb5054b5147bab027b5d459662855c172d
+  port: "8427"
+  unauthorizedUserAccessSpec:
+    url_map:
+      - src_paths:
+          - /select/logsql/.*
+        url_prefix:
+          - http://vlsingle-vm-victoria-metrics-k8s-stack.victoria-metrics.svc.cluster.local.:9428/
+      - src_paths:
+          - /.*
+        url_prefix:
+          - http://vmsingle-vm-victoria-metrics-k8s-stack.victoria-metrics.svc.cluster.local.:8428/

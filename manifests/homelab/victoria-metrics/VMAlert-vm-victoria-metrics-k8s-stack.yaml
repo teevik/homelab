@@ -13,7 +13,7 @@ metadata:
 spec:
   configMaps: []
   datasource:
-    url: http://vmsingle-vm-victoria-metrics-k8s-stack.victoria-metrics.svc.cluster.local.:8428
+    url: http://vmauth-vm-victoria-metrics-k8s-stack-internal.victoria-metrics.svc.cluster.local.:8427
   evaluationInterval: 20s
   externalLabels: {}
   extraArgs:

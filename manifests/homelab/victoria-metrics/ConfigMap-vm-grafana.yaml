@@ -22,7 +22,7 @@ data:
     root_url = http://grafana.tail84b6c.ts.net
     [unified_storage]
     index_path = /var/lib/grafana-search/bleve
-  plugins: victoriametrics-metrics-datasource
+  plugins: victoriametrics-metrics-datasource,victoriametrics-logs-datasource
 kind: ConfigMap
 metadata:
   labels:

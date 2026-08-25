@@ -1,0 +1,26 @@
+apiVersion: operator.victoriametrics.com/v1
+kind: VLAgent
+metadata:
+  labels:
+    app.kubernetes.io/component: vlagent
+    app.kubernetes.io/instance: vm
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: victoria-metrics-k8s-stack
+    app.kubernetes.io/version: v1.52.0@sha256:47b820890d64c4575a2a0a46415dcd8a4fd59a0f1fcd6a377693d7aea639442e
+    helm.sh/chart: victoria-metrics-k8s-stack-0.91.2
+  name: vm-victoria-metrics-k8s-stack
+  namespace: victoria-metrics
+spec:
+  image:
+    tag: v1.52.0@sha256:47b820890d64c4575a2a0a46415dcd8a4fd59a0f1fcd6a377693d7aea639442e
+  k8sCollector:
+    enabled: true
+  port: "9429"
+  remoteWrite:
+    - url: http://vlsingle-vm-victoria-metrics-k8s-stack.victoria-metrics.svc.cluster.local.:9428/insert/native
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
