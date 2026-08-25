@@ -150,12 +150,14 @@
           "Ingress"
           "Egress"
         ];
-        # Reachable only from the Cloudflare tunnel and Tailscale ingress proxies
+        # Reachable only from the Cloudflare tunnel, Tailscale ingress proxies,
+        # and Glance (dashboard health check)
         ingress = [
           {
             from = [
               { namespaceSelector.matchLabels."kubernetes.io/metadata.name" = "cloudflare-tunnel"; }
               { namespaceSelector.matchLabels."kubernetes.io/metadata.name" = "tailscale"; }
+              { namespaceSelector.matchLabels."kubernetes.io/metadata.name" = "glance"; }
             ];
             ports = [
               {

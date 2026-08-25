@@ -81,6 +81,24 @@ let
                     check-url = "http://kavita.kavita.svc";
                     icon = "di:kavita";
                   }
+                  {
+                    title = "Kavita Files";
+                    url = "http://kavita-files";
+                    check-url = "http://kavita-files.kavita.svc";
+                    icon = "di:filebrowser";
+                  }
+                  {
+                    title = "ntfy";
+                    url = "http://ntfy";
+                    check-url = "http://ntfy.ntfy.svc";
+                    icon = "si:ntfy";
+                  }
+                  {
+                    title = "Immich Share";
+                    url = "https://immich-share.tail84b6c.ts.net";
+                    check-url = "http://immich-public-proxy.immich.svc:3000";
+                    icon = "si:immich";
+                  }
                 ];
               }
 
