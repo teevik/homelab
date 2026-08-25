@@ -20,7 +20,7 @@ spec:
     - url: http://vlsingle-vm-victoria-metrics-k8s-stack.victoria-metrics.svc.cluster.local.:9428/insert/native
   resources:
     limits:
-      memory: 512Mi
+      memory: 1Gi
     requests:
       cpu: 50m
       memory: 128Mi

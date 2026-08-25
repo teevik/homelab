@@ -86,12 +86,14 @@
             accessModes = [ "ReadWriteOnce" ];
             resources.requests.storage = "10Gi";
           };
+          # VictoriaLogs sizes its caches to 60% of the cgroup limit and idles
+          # near 800Mi; 1Gi OOM-killed it during vlagent's initial backfill.
           resources = {
             requests = {
               cpu = "100m";
-              memory = "256Mi";
+              memory = "512Mi";
             };
-            limits.memory = "1Gi";
+            limits.memory = "2Gi";
           };
         };
 
@@ -106,7 +108,8 @@
             cpu = "50m";
             memory = "128Mi";
           };
-          limits.memory = "512Mi";
+          # Headroom for buffered backlog while vlsingle is restarting
+          limits.memory = "1Gi";
         };
 
         # Disable admission webhook to avoid TLS certs being regenerated on every build
