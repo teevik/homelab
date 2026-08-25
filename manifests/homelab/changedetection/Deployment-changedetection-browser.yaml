@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: changedetection-browser
+  namespace: changedetection
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: changedetection-browser
+  template:
+    metadata:
+      labels:
+        app: changedetection-browser
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - env:
+            - name: MAX_CONCURRENT_CHROME_PROCESSES
+              value: "3"
+            - name: SCREEN_DEPTH
+              value: "16"
+            - name: SCREEN_HEIGHT
+              value: "1024"
+            - name: SCREEN_WIDTH
+              value: "1920"
+          image: docker.io/dgtlmoon/sockpuppetbrowser:0.0.3@sha256:23a7be698216407648b6c78fc55de0411bde550635edc30347373c86a5176fad
+          name: sockpuppetbrowser
+          ports:
+            - containerPort: 3000
+              name: ws
+          resources:
+            limits:
+              memory: 2Gi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          securityContext:
+            capabilities:
+              add:
+                - SYS_ADMIN

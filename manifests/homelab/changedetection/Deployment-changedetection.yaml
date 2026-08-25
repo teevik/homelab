@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: changedetection
+  namespace: changedetection
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: changedetection
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: changedetection
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - env:
+            - name: BASE_URL
+              value: http://changedetection.tail84b6c.ts.net
+            - name: PLAYWRIGHT_DRIVER_URL
+              value: ws://changedetection-browser:3000/?stealth=1
+            - name: TZ
+              value: Europe/Oslo
+          image: docker.io/dgtlmoon/changedetection.io:0.55.8@sha256:5438423d5e906eff4e8f7886823482ad23f472bf7b8530ccaca89fb48c337882
+          name: changedetection
+          ports:
+            - containerPort: 5000
+              name: http
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              cpu: 50m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /datastore
+              name: data
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsUser: 1000
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: changedetection-data

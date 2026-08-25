@@ -99,6 +99,12 @@ let
                     check-url = "http://immich-public-proxy.immich.svc:3000";
                     icon = "si:immich";
                   }
+                  {
+                    title = "Changedetection";
+                    url = "http://changedetection";
+                    check-url = "http://changedetection-tailscale.changedetection.svc";
+                    icon = "di:changedetection-io";
+                  }
                 ];
               }
 

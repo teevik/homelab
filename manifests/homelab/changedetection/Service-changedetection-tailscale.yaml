@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    tailscale.com/hostname: changedetection
+    tailscale.com/proxy-group: ingress
+  name: changedetection-tailscale
+  namespace: changedetection
+spec:
+  loadBalancerClass: tailscale
+  ports:
+    - name: http
+      port: 80
+      targetPort: 5000
+  selector:
+    app: changedetection
+  type: LoadBalancer

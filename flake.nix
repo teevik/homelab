@@ -69,6 +69,7 @@
           ./kubernetes/kavita.nix
           ./kubernetes/amd-device-plugin.nix
           ./kubernetes/ntfy.nix
+          ./kubernetes/changedetection.nix
         ];
       };
     };
