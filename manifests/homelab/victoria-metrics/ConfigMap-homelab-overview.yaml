@@ -1720,6 +1720,112 @@ data:
               "sort": "none"
             }
           }
+        },
+        {
+          "id": 28,
+          "type": "row",
+          "title": "Logs",
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 68
+          },
+          "panels": []
+        },
+        {
+          "id": 29,
+          "type": "timeseries",
+          "title": "Error log lines per 5 min by namespace",
+          "description": "Lines matching error, fatal or panic (VictoriaLogs)",
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "VictoriaLogs"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 24,
+            "x": 0,
+            "y": 69
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "queryType": "statsRange",
+              "step": "5m",
+              "expr": "(error OR fatal OR panic) | stats by (kubernetes.pod_namespace) count() errors"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "decimals": 0,
+              "min": 0,
+              "displayName": "${__field.labels[\"kubernetes.pod_namespace\"]}",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "drawStyle": "bars",
+                "lineWidth": 1,
+                "fillOpacity": 70,
+                "gradientMode": "none",
+                "showPoints": "never",
+                "stacking": {
+                  "mode": "normal",
+                  "group": "A"
+                },
+                "axisSoftMin": 0
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "showLegend": true,
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        },
+        {
+          "id": 30,
+          "type": "logs",
+          "title": "Recent error lines",
+          "description": "Newest 100 lines matching error, fatal or panic in the dashboard time range",
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "VictoriaLogs"
+          },
+          "gridPos": {
+            "h": 14,
+            "w": 24,
+            "x": 0,
+            "y": 76
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "queryType": "instant",
+              "maxLines": 100,
+              "expr": "error OR fatal OR panic"
+            }
+          ],
+          "options": {
+            "showTime": true,
+            "showLabels": false,
+            "showCommonLabels": false,
+            "wrapLogMessage": true,
+            "prettifyLogMessage": false,
+            "enableLogDetails": true,
+            "dedupStrategy": "none",
+            "sortOrder": "Descending"
+          }
         }
       ]
     }
