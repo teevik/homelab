@@ -36,6 +36,7 @@ spec:
         - args:
             - --port=8080
             - --resources=certificatesigningrequests,configmaps,cronjobs,daemonsets,deployments,endpointslices,horizontalpodautoscalers,ingresses,jobs,leases,limitranges,mutatingwebhookconfigurations,namespaces,networkpolicies,nodes,persistentvolumeclaims,persistentvolumes,poddisruptionbudgets,pods,replicasets,replicationcontrollers,resourcequotas,secrets,services,statefulsets,storageclasses,validatingwebhookconfigurations,volumeattachments
+            - --metric-labels-allowlist=persistentvolumeclaims=[recurring-job-group.longhorn.io/backup]
           image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.19.1
           imagePullPolicy: IfNotPresent
           livenessProbe:

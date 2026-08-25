@@ -1,0 +1,731 @@
+apiVersion: v1
+data:
+  proto-quiet.json: |
+    {
+      "uid": "proto-quiet",
+      "title": "Prototype D \u00b7 Quiet",
+      "description": "Shows nothing unless something is wrong. One number, one list, and how long the disks last.",
+      "tags": [
+        "homelab",
+        "prototype"
+      ],
+      "editable": true,
+      "graphTooltip": 1,
+      "refresh": "1m",
+      "time": {
+        "from": "now-24h",
+        "to": "now"
+      },
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "fiscalYearStartMonth": 0,
+      "version": 1,
+      "links": [
+        {
+          "title": "Prototypes",
+          "type": "dashboards",
+          "tags": [
+            "prototype"
+          ],
+          "asDropdown": true,
+          "includeVars": false,
+          "keepTime": true,
+          "icon": "external link",
+          "targetBlank": false,
+          "tooltip": "",
+          "url": ""
+        }
+      ],
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": {
+              "type": "grafana",
+              "uid": "-- Grafana --"
+            },
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          }
+        ]
+      },
+      "templating": {
+        "list": [
+          {
+            "name": "datasource",
+            "label": "Datasource",
+            "type": "datasource",
+            "query": "prometheus",
+            "current": {},
+            "hide": 0,
+            "refresh": 1,
+            "regex": "",
+            "options": []
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "",
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 24,
+            "h": 7
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "count(\nsum by (what, where) (label_replace(label_replace(kube_pod_status_phase{phase=~\"Pending|Failed|Unknown\"} == 1, \"what\", \"Pod not running\", \"\", \"\"), \"where\", \"$1\", \"pod\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(round(sum by (pod) (increase(kube_pod_container_status_restarts_total[24h]))) > 0, \"what\", \"Restarts in 24 h\", \"\", \"\"), \"where\", \"$1\", \"pod\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(argocd_app_info{sync_status!=\"Synced\"}, \"what\", \"App out of sync\", \"\", \"\"), \"where\", \"$1\", \"name\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(argocd_app_info{health_status!=\"Healthy\"}, \"what\", \"App unhealthy\", \"\", \"\"), \"where\", \"$1\", \"name\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(longhorn_volume_robustness{state=~\"degraded|faulted\"} == 1, \"what\", \"Volume degraded\", \"\", \"\"), \"where\", \"$1\", \"pvc\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(max by (persistentvolumeclaim) (100 * kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) > 80, \"what\", \"Volume over 80 % full\", \"\", \"\"), \"where\", \"$1\", \"persistentvolumeclaim\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace((((time() - longhorn_volume_last_backup_at) / 3600 > 36) and (longhorn_volume_last_backup_at > 0)) and on (pvc, pvc_namespace) label_replace(label_replace(kube_persistentvolumeclaim_labels{label_recurring_job_group_longhorn_io_backup=\"enabled\"}, \"pvc\", \"$1\", \"persistentvolumeclaim\", \"(.*)\"), \"pvc_namespace\", \"$1\", \"namespace\", \"(.*)\"), \"what\", \"Hours since last backup\", \"\", \"\"), \"where\", \"$1\", \"pvc\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(((longhorn_volume_last_backup_at == 0) and on (pvc, pvc_namespace) label_replace(label_replace(kube_persistentvolumeclaim_labels{label_recurring_job_group_longhorn_io_backup=\"enabled\"}, \"pvc\", \"$1\", \"persistentvolumeclaim\", \"(.*)\"), \"pvc_namespace\", \"$1\", \"namespace\", \"(.*)\")) + 1, \"what\", \"Opted in, never backed up\", \"\", \"\"), \"where\", \"$1\", \"pvc\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(longhorn_backup_state == 4, \"what\", \"Backup in error\", \"\", \"\"), \"where\", \"$1\", \"volume\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(up == 0, \"what\", \"Scrape target down\", \"\", \"\"), \"where\", \"$1\", \"job\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(kube_node_status_condition{condition=~\"DiskPressure|MemoryPressure|PIDPressure\",status=\"true\"} == 1, \"what\", \"Node pressure\", \"\", \"\"), \"where\", \"$1\", \"condition\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(kube_job_status_failed > 0, \"what\", \"Job failed\", \"\", \"\"), \"where\", \"$1\", \"job_name\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(ALERTS{alertstate=\"firing\",alertname!~\"Watchdog|InfoInhibitor\"}, \"what\", \"Alert firing\", \"\", \"\"), \"where\", \"$1\", \"alertname\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace((100 * (1 - node_filesystem_avail_bytes{job=\"node-exporter\",mountpoint=\"/\",fstype!=\"rootfs\"} / node_filesystem_size_bytes{job=\"node-exporter\",mountpoint=\"/\",fstype!=\"rootfs\"})) > 85, \"what\", \"Root disk % used\", \"\", \"\"), \"where\", \"$1\", \"mountpoint\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace((100 * (1 - node_memory_MemAvailable_bytes{job=\"node-exporter\"} / node_memory_MemTotal_bytes{job=\"node-exporter\"})) > 92, \"what\", \"Memory % used\", \"\", \"\"), \"where\", \"$1\", \"job\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace((max by (chip) (node_hwmon_temp_celsius{chip!~\"nvme.*|ieee80211.*\"})) > 85, \"what\", \"CPU \u00b0C\", \"\", \"\"), \"where\", \"$1\", \"chip\", \"(.*)\"))\n) or vector(0)",
+              "legendFormat": "__auto",
+              "refId": "A",
+              "range": false,
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "suffix: things need attention",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 1
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "All quiet",
+                      "index": 0
+                    },
+                    "1": {
+                      "text": "1 thing needs attention",
+                      "index": 1
+                    }
+                  }
+                }
+              ],
+              "noValue": "0",
+              "decimals": 0
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "textMode": "auto",
+            "wideLayout": true,
+            "showPercentChange": false,
+            "text": {
+              "valueSize": 64
+            }
+          },
+          "description": "Counts everything listed below."
+        },
+        {
+          "id": 2,
+          "type": "table",
+          "title": "Needs attention",
+          "gridPos": {
+            "x": 0,
+            "y": 7,
+            "w": 24,
+            "h": 10
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum by (what, where) (label_replace(label_replace(kube_pod_status_phase{phase=~\"Pending|Failed|Unknown\"} == 1, \"what\", \"Pod not running\", \"\", \"\"), \"where\", \"$1\", \"pod\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(round(sum by (pod) (increase(kube_pod_container_status_restarts_total[24h]))) > 0, \"what\", \"Restarts in 24 h\", \"\", \"\"), \"where\", \"$1\", \"pod\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(argocd_app_info{sync_status!=\"Synced\"}, \"what\", \"App out of sync\", \"\", \"\"), \"where\", \"$1\", \"name\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(argocd_app_info{health_status!=\"Healthy\"}, \"what\", \"App unhealthy\", \"\", \"\"), \"where\", \"$1\", \"name\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(longhorn_volume_robustness{state=~\"degraded|faulted\"} == 1, \"what\", \"Volume degraded\", \"\", \"\"), \"where\", \"$1\", \"pvc\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(max by (persistentvolumeclaim) (100 * kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) > 80, \"what\", \"Volume over 80 % full\", \"\", \"\"), \"where\", \"$1\", \"persistentvolumeclaim\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace((((time() - longhorn_volume_last_backup_at) / 3600 > 36) and (longhorn_volume_last_backup_at > 0)) and on (pvc, pvc_namespace) label_replace(label_replace(kube_persistentvolumeclaim_labels{label_recurring_job_group_longhorn_io_backup=\"enabled\"}, \"pvc\", \"$1\", \"persistentvolumeclaim\", \"(.*)\"), \"pvc_namespace\", \"$1\", \"namespace\", \"(.*)\"), \"what\", \"Hours since last backup\", \"\", \"\"), \"where\", \"$1\", \"pvc\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(((longhorn_volume_last_backup_at == 0) and on (pvc, pvc_namespace) label_replace(label_replace(kube_persistentvolumeclaim_labels{label_recurring_job_group_longhorn_io_backup=\"enabled\"}, \"pvc\", \"$1\", \"persistentvolumeclaim\", \"(.*)\"), \"pvc_namespace\", \"$1\", \"namespace\", \"(.*)\")) + 1, \"what\", \"Opted in, never backed up\", \"\", \"\"), \"where\", \"$1\", \"pvc\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(longhorn_backup_state == 4, \"what\", \"Backup in error\", \"\", \"\"), \"where\", \"$1\", \"volume\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(up == 0, \"what\", \"Scrape target down\", \"\", \"\"), \"where\", \"$1\", \"job\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(kube_node_status_condition{condition=~\"DiskPressure|MemoryPressure|PIDPressure\",status=\"true\"} == 1, \"what\", \"Node pressure\", \"\", \"\"), \"where\", \"$1\", \"condition\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(kube_job_status_failed > 0, \"what\", \"Job failed\", \"\", \"\"), \"where\", \"$1\", \"job_name\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace(ALERTS{alertstate=\"firing\",alertname!~\"Watchdog|InfoInhibitor\"}, \"what\", \"Alert firing\", \"\", \"\"), \"where\", \"$1\", \"alertname\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace((100 * (1 - node_filesystem_avail_bytes{job=\"node-exporter\",mountpoint=\"/\",fstype!=\"rootfs\"} / node_filesystem_size_bytes{job=\"node-exporter\",mountpoint=\"/\",fstype!=\"rootfs\"})) > 85, \"what\", \"Root disk % used\", \"\", \"\"), \"where\", \"$1\", \"mountpoint\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace((100 * (1 - node_memory_MemAvailable_bytes{job=\"node-exporter\"} / node_memory_MemTotal_bytes{job=\"node-exporter\"})) > 92, \"what\", \"Memory % used\", \"\", \"\"), \"where\", \"$1\", \"job\", \"(.*)\"))\n or sum by (what, where) (label_replace(label_replace((max by (chip) (node_hwmon_temp_celsius{chip!~\"nvme.*|ieee80211.*\"})) > 85, \"what\", \"CPU \u00b0C\", \"\", \"\"), \"where\", \"$1\", \"chip\", \"(.*)\"))",
+              "legendFormat": "__auto",
+              "refId": "A",
+              "range": false,
+              "instant": true,
+              "format": "table"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "inspect": false,
+                "filterable": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "text",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Amount"
+                },
+                "properties": [
+                  {
+                    "id": "decimals",
+                    "value": 0
+                  },
+                  {
+                    "id": "custom.width",
+                    "value": 120
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "What"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 260
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "fields": ""
+            },
+            "sortBy": [
+              {
+                "displayName": "What",
+                "desc": false
+              }
+            ]
+          },
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true
+                },
+                "indexByName": {
+                  "what": 0,
+                  "where": 1,
+                  "Value": 2
+                },
+                "renameByName": {
+                  "what": "What",
+                  "where": "Where",
+                  "Value": "Amount"
+                }
+              }
+            }
+          ],
+          "description": "Empty when nothing is outside its limit. The limits are listed at the bottom of the page."
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Root disk \u00b7 runway",
+          "gridPos": {
+            "x": 0,
+            "y": 17,
+            "w": 5,
+            "h": 5
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "clamp_max(node_filesystem_avail_bytes{job=\"node-exporter\",mountpoint=\"/\"} / clamp_min(-deriv(node_filesystem_avail_bytes{job=\"node-exporter\",mountpoint=\"/\"}[7d]), 1) / 86400, 3650)",
+              "legendFormat": "__auto",
+              "refId": "A",
+              "range": false,
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "d",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 14
+                  },
+                  {
+                    "color": "text",
+                    "value": 60
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "type": "range",
+                  "options": {
+                    "from": 3650,
+                    "to": 1000000000000.0,
+                    "result": {
+                      "text": "not shrinking",
+                      "index": 0
+                    }
+                  }
+                }
+              ],
+              "noValue": "0",
+              "decimals": 0
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "textMode": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "description": "How long until full at the 7-day growth rate."
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "Longhorn \u00b7 runway",
+          "gridPos": {
+            "x": 5,
+            "y": 17,
+            "w": 5,
+            "h": 5
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "clamp_max(sum(longhorn_node_storage_capacity_bytes - longhorn_node_storage_reservation_bytes - longhorn_node_storage_usage_bytes) / clamp_min(deriv(sum(longhorn_node_storage_usage_bytes)[7d:5m]), 1) / 86400, 3650)",
+              "legendFormat": "__auto",
+              "refId": "A",
+              "range": false,
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "d",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 14
+                  },
+                  {
+                    "color": "text",
+                    "value": 60
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "type": "range",
+                  "options": {
+                    "from": 3650,
+                    "to": 1000000000000.0,
+                    "result": {
+                      "text": "not shrinking",
+                      "index": 0
+                    }
+                  }
+                }
+              ],
+              "noValue": "0",
+              "decimals": 0
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "textMode": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "description": "How long until full at the 7-day growth rate."
+        },
+        {
+          "id": 5,
+          "type": "stat",
+          "title": "Metrics disk \u00b7 runway",
+          "gridPos": {
+            "x": 10,
+            "y": 17,
+            "w": 5,
+            "h": 5
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "clamp_max(vm_free_disk_space_bytes / clamp_min(-deriv(vm_free_disk_space_bytes[7d]), 1) / 86400, 3650)",
+              "legendFormat": "__auto",
+              "refId": "A",
+              "range": false,
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "d",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 14
+                  },
+                  {
+                    "color": "text",
+                    "value": 60
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "type": "range",
+                  "options": {
+                    "from": 3650,
+                    "to": 1000000000000.0,
+                    "result": {
+                      "text": "not shrinking",
+                      "index": 0
+                    }
+                  }
+                }
+              ],
+              "noValue": "0",
+              "decimals": 0
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "textMode": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "description": "How long until full at the 7-day growth rate."
+        },
+        {
+          "id": 6,
+          "type": "stat",
+          "title": "Logs disk \u00b7 runway",
+          "gridPos": {
+            "x": 15,
+            "y": 17,
+            "w": 5,
+            "h": 5
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "clamp_max(vl_free_disk_space_bytes / clamp_min(-deriv(vl_free_disk_space_bytes[7d]), 1) / 86400, 3650)",
+              "legendFormat": "__auto",
+              "refId": "A",
+              "range": false,
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "d",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 14
+                  },
+                  {
+                    "color": "text",
+                    "value": 60
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "type": "range",
+                  "options": {
+                    "from": 3650,
+                    "to": 1000000000000.0,
+                    "result": {
+                      "text": "not shrinking",
+                      "index": 0
+                    }
+                  }
+                }
+              ],
+              "noValue": "0",
+              "decimals": 0
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "textMode": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "description": "How long until full at the 7-day growth rate."
+        },
+        {
+          "id": 7,
+          "type": "stat",
+          "title": "Oldest backup",
+          "gridPos": {
+            "x": 20,
+            "y": 17,
+            "w": 4,
+            "h": 5
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "max(((time() - longhorn_volume_last_backup_at) and (longhorn_volume_last_backup_at > 0)) and on (pvc, pvc_namespace) label_replace(label_replace(kube_persistentvolumeclaim_labels{label_recurring_job_group_longhorn_io_backup=\"enabled\"}, \"pvc\", \"$1\", \"persistentvolumeclaim\", \"(.*)\"), \"pvc_namespace\", \"$1\", \"namespace\", \"(.*)\"))",
+              "legendFormat": "__auto",
+              "refId": "A",
+              "range": false,
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "text",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 129600
+                  },
+                  {
+                    "color": "red",
+                    "value": 259200
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "noValue": "\u2014",
+              "decimals": 0
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "textMode": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "description": "Age of the stalest backup among volumes opted in to daily backups."
+        },
+        {
+          "id": 8,
+          "type": "text",
+          "title": "",
+          "gridPos": {
+            "x": 0,
+            "y": 22,
+            "w": 24,
+            "h": 4
+          },
+          "datasource": {
+            "type": "datasource",
+            "uid": "grafana"
+          },
+          "targets": [],
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "options": {
+            "mode": "markdown",
+            "content": "Listed above only when outside its limit: a pod not running \u00b7 any restart in 24 h \u00b7 an Argo CD app out of sync or unhealthy \u00b7 a Longhorn volume degraded or a backup in error \u00b7 a volume over 80 % full \u00b7 a volume not backed up for 36 h \u00b7 a scrape target down \u00b7 node disk, memory, or PID pressure \u00b7 a failed job \u00b7 a firing alert \u00b7 root disk over 85 % \u00b7 memory over 92 % \u00b7 CPU over 85 \u00b0C.\n\nActive alerts also go to ntfy; this page is for the things that are not alerts yet."
+          }
+        }
+      ]
+    }
+kind: ConfigMap
+metadata:
+  annotations:
+    grafana_folder: Prototypes
+  labels:
+    grafana_dashboard: "1"
+  name: proto-quiet
+  namespace: victoria-metrics
