@@ -221,7 +221,7 @@
         grafana.persistence = {
           enabled = true;
           storageClassName = "longhorn";
-          size = "1Gi";
+          size = "2Gi";
         };
 
         # Admin credentials come from the sops-provisioned grafana-admin secret

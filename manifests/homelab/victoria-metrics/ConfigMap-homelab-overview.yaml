@@ -143,7 +143,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "round(sum(increase(kube_pod_container_status_restarts_total[1h]))) or vector(0)",
+              "expr": "round(sum(increase_prometheus(kube_pod_container_status_restarts_total[1h]))) or vector(0)",
               "legendFormat": "__auto",
               "refId": "A",
               "range": false,
@@ -1176,7 +1176,7 @@ data:
                 "type": "victoriametrics-logs-datasource",
                 "uid": "VictoriaLogs"
               },
-              "expr": "(error OR fatal OR panic) | stats by (kubernetes.pod_namespace) count() errors",
+              "expr": "((~\"(?i)^.{0,160}level[=:](error|fatal|panic|critical)\" OR ~\"^.{0,160}[^A-Za-z](ERROR|ERR|FATAL|PANIC|CRITICAL)[^A-Za-z]\") AND NOT ~\"(?i)^.{0,160}level[=:](warn|warning|debug|info)\" AND NOT ~\"(?i)^.{0,160}[^A-Za-z](DEBUG|WARN|WARNING|INFO)[^A-Za-z]\") | stats by (kubernetes.pod_namespace) count() errors",
               "refId": "A",
               "queryType": "statsRange",
               "legendFormat": "{{kubernetes.pod_namespace}}",
@@ -1584,7 +1584,7 @@ data:
               "refId": "A",
               "instant": true,
               "format": "table",
-              "expr": "round(sum by (namespace, pod) (increase(kube_pod_container_status_restarts_total[24h]))) > 0"
+              "expr": "round(sum by (namespace, pod) (increase_prometheus(kube_pod_container_status_restarts_total[24h]))) > 0"
             }
           ],
           "transformations": [
@@ -3507,7 +3507,7 @@ data:
           "id": 46,
           "type": "logs",
           "title": "Recent error lines",
-          "description": "Newest 100 lines matching error, fatal or panic in the dashboard time range",
+          "description": "Newest 100 lines with an explicit error, fatal, panic, or critical severity in the dashboard time range",
           "datasource": {
             "type": "victoriametrics-logs-datasource",
             "uid": "VictoriaLogs"
@@ -3523,7 +3523,7 @@ data:
               "refId": "A",
               "queryType": "instant",
               "maxLines": 100,
-              "expr": "error OR fatal OR panic"
+              "expr": "((~\"(?i)^.{0,160}level[=:](error|fatal|panic|critical)\" OR ~\"^.{0,160}[^A-Za-z](ERROR|ERR|FATAL|PANIC|CRITICAL)[^A-Za-z]\") AND NOT ~\"(?i)^.{0,160}level[=:](warn|warning|debug|info)\" AND NOT ~\"(?i)^.{0,160}[^A-Za-z](DEBUG|WARN|WARNING|INFO)[^A-Za-z]\")"
             }
           ],
           "options": {

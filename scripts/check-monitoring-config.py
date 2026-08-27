@@ -7,6 +7,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD = ROOT / "kubernetes/dashboards/homelab-overview.json"
 VICTORIA_METRICS = ROOT / "kubernetes/victoriametrics.nix"
+LOG_SEVERITY_FILTER = (
+    '((~"(?i)^.{0,160}level[=:](error|fatal|panic|critical)" '
+    'OR ~"^.{0,160}[^A-Za-z](ERROR|ERR|FATAL|PANIC|CRITICAL)[^A-Za-z]") '
+    'AND NOT ~"(?i)^.{0,160}level[=:](warn|warning|debug|info)" '
+    'AND NOT ~"(?i)^.{0,160}[^A-Za-z](DEBUG|WARN|WARNING|INFO)[^A-Za-z]")'
+)
 
 
 def panel_by_id(dashboard, panel_id):
@@ -61,6 +67,27 @@ def main():
     require(
         "unless on (pvc, pvc_namespace)" in never_backed_up,
         "panel 6 must report backup-enabled volumes that have never backed up",
+        failures,
+    )
+
+    for panel_id in (2, 23):
+        expr = target_by_ref(panel_by_id(dashboard, panel_id), "A")["expr"]
+        require(
+            "increase_prometheus(kube_pod_container_status_restarts_total" in expr,
+            f"panel {panel_id} must ignore the initial restart count of new scrape series",
+            failures,
+        )
+
+    error_rate_expr = target_by_ref(panel_by_id(dashboard, 16), "A")["expr"]
+    require(
+        error_rate_expr.startswith(f"{LOG_SEVERITY_FILTER} | stats "),
+        "panel 16 must count only explicit error-severity log lines",
+        failures,
+    )
+    recent_errors_expr = target_by_ref(panel_by_id(dashboard, 46), "A")["expr"]
+    require(
+        recent_errors_expr == LOG_SEVERITY_FILTER,
+        "panel 46 must show only explicit error-severity log lines",
         failures,
     )
 
