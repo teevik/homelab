@@ -59,6 +59,22 @@
         "type": "github"
       }
     },
+    "kodekamp": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1733401779,
+        "narHash": "sha256-AYEKSBo2+JaIlQOnRNSJvFDDtsU1402gDtWXRk0UmnM=",
+        "owner": "teevik",
+        "repo": "KodeKamp",
+        "rev": "2c3a0ca86ad1e58fb21a9dd0cb14b448fbeb0e97",
+        "type": "github"
+      },
+      "original": {
+        "owner": "teevik",
+        "repo": "KodeKamp",
+        "type": "github"
+      }
+    },
     "nix-kube-generators": {
       "locked": {
         "lastModified": 1748274972,
@@ -116,6 +132,7 @@
       "inputs": {
         "blueprint": "blueprint",
         "disko": "disko",
+        "kodekamp": "kodekamp",
         "nixidy": "nixidy",
         "nixpkgs": "nixpkgs",
         "sops-nix": "sops-nix"

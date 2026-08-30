@@ -25,6 +25,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # KodeKamp source, pinned here so the cluster builds its images from an
+    # exact commit (kubernetes/kodekamp.nix). Renovate bumps it.
+    kodekamp = {
+      url = "github:teevik/KodeKamp";
+      flake = false;
+    };
+
   };
 
   outputs =
@@ -70,6 +77,8 @@
           ./kubernetes/amd-device-plugin.nix
           ./kubernetes/ntfy.nix
           ./kubernetes/changedetection.nix
+          ./kubernetes/registry.nix
+          { _module.args.kodekampSrc = inputs.kodekamp; }
         ];
       };
     };

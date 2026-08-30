@@ -31,6 +31,31 @@ let
       };
     };
 
+    # htpasswd for the zot registry's "ci" push user (bcrypt line generated
+    # from registry_ci_password).
+    zot-htpasswd = {
+      namespace = "registry";
+      data = {
+        htpasswd = "registry_htpasswd";
+      };
+    };
+
+    # docker config.json with the "ci" credential, mounted by the in-cluster
+    # BuildKit PreSync Jobs (kubernetes/lib/build-job.nix) to push images.
+    changedetection-registry-push = {
+      namespace = "changedetection";
+      data = {
+        "config.json" = "registry_dockerconfig_json";
+      };
+    };
+
+    kodekamp-registry-push = {
+      namespace = "kodekamp";
+      data = {
+        "config.json" = "registry_dockerconfig_json";
+      };
+    };
+
     crafty-secrets = {
       namespace = "crafty";
       data = {

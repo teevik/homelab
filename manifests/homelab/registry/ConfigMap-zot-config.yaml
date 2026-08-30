@@ -1,0 +1,7 @@
+apiVersion: v1
+data:
+  config.json: '{"distSpecVersion":"1.1.1","extensions":{"metrics":{"enable":true,"prometheus":{"path":"/metrics"}},"scrub":{"enable":true,"interval":"24h"},"search":{"enable":true},"ui":{"enable":true}},"http":{"accessControl":{"adminPolicy":{"users":["ci"]},"metrics":{"anonymousPolicy":["read"]},"repositories":{"**":{"anonymousPolicy":["read"],"defaultPolicy":[],"policies":[{"actions":["read","create","update","delete"],"users":["ci"]}]}}},"address":"0.0.0.0","auth":{"htpasswd":{"path":"/etc/zot/auth/htpasswd"}},"compat":["docker2s2"],"externalUrl":"https://registry.tail84b6c.ts.net","port":"5000","realm":"registry"},"log":{"level":"info"},"storage":{"dedupe":true,"gc":true,"gcDelay":"1h","gcInterval":"24h","retention":{"delay":"24h","dryRun":false,"policies":[{"deleteReferrers":false,"deleteUntagged":true,"keepTags":[{"mostRecentlyPushedCount":10},{"patterns":["latest"]}],"repositories":["**"]}]},"rootDirectory":"/var/lib/zot"}}'
+kind: ConfigMap
+metadata:
+  name: zot-config
+  namespace: registry

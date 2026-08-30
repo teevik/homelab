@@ -105,6 +105,12 @@ let
                     check-url = "http://changedetection-tailscale.changedetection.svc";
                     icon = "di:changedetection-io";
                   }
+                  {
+                    title = "Registry";
+                    url = "https://registry.tail84b6c.ts.net";
+                    check-url = "http://zot.registry.svc:5000/v2/";
+                    icon = "si:opencontainersinitiative";
+                  }
                 ];
               }
 
