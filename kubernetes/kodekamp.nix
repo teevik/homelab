@@ -1,10 +1,51 @@
-{ ... }:
+{ kodekampSrc, ... }:
+let
+  # KodeKamp's source is a (non-flake) flake input pinned in flake.lock;
+  # Renovate bumps it. Both images are built from that exact commit by the
+  # PreSync Job below and tagged with it.
+  rev = kodekampSrc.rev;
+  imageTag = builtins.substring 0 12 rev;
+  gitContext = "https://github.com/teevik/KodeKamp.git#${rev}";
+  registry = "registry.tail84b6c.ts.net";
+in
 {
   applications.kodekamp = {
     namespace = "kodekamp";
     createNamespace = true;
 
+    # The PreSync build Job fails if the registry is not up yet (fresh cluster,
+    # zot restarting); let Argo CD retry the sync instead of stalling on it.
+    syncPolicy.retry = {
+      limit = 10;
+      backoff = {
+        duration = "30s";
+        factor = 2;
+        maxDuration = "10m";
+      };
+    };
+
     resources = {
+      # Builds kodekamp-web (repo root) and kodekamp-code-runner (code-runner/)
+      # from the pinned KodeKamp commit before Argo CD rolls the Deployments.
+      # The Rust build is the heavy one, hence the memory limit.
+      jobs.build-kodekamp = import ./lib/build-job.nix {
+        name = "build-kodekamp";
+        pushSecret = "kodekamp-registry-push";
+        memoryLimit = "6Gi";
+        builds = [
+          {
+            image = "kodekamp-web";
+            tag = imageTag;
+            context = gitContext;
+          }
+          {
+            image = "kodekamp-code-runner";
+            tag = imageTag;
+            context = "${gitContext}:code-runner";
+          }
+        ];
+      };
+
       # MongoDB persistent storage
       persistentVolumeClaims.kodekamp-db-data.spec = {
         storageClassName = "longhorn";
@@ -57,7 +98,8 @@
           spec = {
             automountServiceAccountToken = false;
             containers.code-runner = {
-              image = "ghcr.io/teevik/kodekamp-code-runner:latest";
+              # Built from teevik/KodeKamp @ flake.lock by build-kodekamp below.
+              image = "${registry}/kodekamp-code-runner:${imageTag}";
               securityContext = {
                 allowPrivilegeEscalation = false;
                 capabilities.drop = [ "ALL" ];
@@ -96,7 +138,8 @@
           spec = {
             automountServiceAccountToken = false;
             containers.web = {
-              image = "ghcr.io/teevik/kodekamp-web:latest";
+              # Built from teevik/KodeKamp @ flake.lock by build-kodekamp below.
+              image = "${registry}/kodekamp-web:${imageTag}";
               ports.http.containerPort = 3000;
               env = {
                 NODE_ENV.value = "production";
@@ -142,6 +185,15 @@
           "Ingress"
           "Egress"
         ];
+      };
+
+      # The build Job clones KodeKamp from GitHub, pulls base images and
+      # pushes to the registry, so it gets unrestricted egress; it serves
+      # nothing, so the default deny keeps all ingress closed.
+      networkPolicies.build.spec = {
+        podSelector.matchLabels.app = "build-kodekamp";
+        policyTypes = [ "Egress" ];
+        egress = [ { } ];
       };
 
       networkPolicies.web.spec = {

@@ -41,7 +41,7 @@ spec:
               value: "3000"
             - name: SERVER_URL
               value: https://kodekamp.teevik.no
-          image: ghcr.io/teevik/kodekamp-web:latest
+          image: registry.tail84b6c.ts.net/kodekamp-web:2c3a0ca86ad1
           name: web
           ports:
             - containerPort: 3000

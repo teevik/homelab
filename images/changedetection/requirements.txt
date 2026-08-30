@@ -1,0 +1,2 @@
+cloakbrowser==0.5.10
+changedetection.io-cloak-browser==0.1.1

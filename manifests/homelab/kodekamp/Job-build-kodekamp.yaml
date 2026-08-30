@@ -1,0 +1,75 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+  name: build-kodekamp
+  namespace: kodekamp
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: build-kodekamp
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - command:
+            - sh
+            - -c
+            - |+
+              set -eu
+              if wget -q --spider --header "Accept: application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json" "http://zot.registry.svc:5000/v2/kodekamp-web/manifests/2c3a0ca86ad1"; then
+                echo "zot.registry.svc:5000/kodekamp-web:2c3a0ca86ad1 is already in the registry; skipping build"
+              else
+                echo "building zot.registry.svc:5000/kodekamp-web:2c3a0ca86ad1"
+                buildctl-daemonless.sh build --frontend dockerfile.v0 --opt context=https://github.com/teevik/KodeKamp.git#2c3a0ca86ad1e58fb21a9dd0cb14b448fbeb0e97 \
+                  --output type=image,name=zot.registry.svc:5000/kodekamp-web:2c3a0ca86ad1,push=true,registry.insecure=true \
+                  --export-cache type=registry,ref=zot.registry.svc:5000/kodekamp-web:buildcache,mode=max,registry.insecure=true \
+                  --import-cache type=registry,ref=zot.registry.svc:5000/kodekamp-web:buildcache,registry.insecure=true
+              fi
+
+              if wget -q --spider --header "Accept: application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json" "http://zot.registry.svc:5000/v2/kodekamp-code-runner/manifests/2c3a0ca86ad1"; then
+                echo "zot.registry.svc:5000/kodekamp-code-runner:2c3a0ca86ad1 is already in the registry; skipping build"
+              else
+                echo "building zot.registry.svc:5000/kodekamp-code-runner:2c3a0ca86ad1"
+                buildctl-daemonless.sh build --frontend dockerfile.v0 --opt context=https://github.com/teevik/KodeKamp.git#2c3a0ca86ad1e58fb21a9dd0cb14b448fbeb0e97:code-runner \
+                  --output type=image,name=zot.registry.svc:5000/kodekamp-code-runner:2c3a0ca86ad1,push=true,registry.insecure=true \
+                  --export-cache type=registry,ref=zot.registry.svc:5000/kodekamp-code-runner:buildcache,mode=max,registry.insecure=true \
+                  --import-cache type=registry,ref=zot.registry.svc:5000/kodekamp-code-runner:buildcache,registry.insecure=true
+              fi
+
+          env:
+            - name: BUILDKITD_FLAGS
+              value: --oci-worker-no-process-sandbox
+            - name: DOCKER_CONFIG
+              value: /home/user/.docker
+          image: docker.io/moby/buildkit:v0.32.2-rootless@sha256:504731e577c20559c00f968f33219f30115e70be29ab96728d1d06e963fc494b
+          name: buildkit
+          resources:
+            limits:
+              memory: 6Gi
+            requests:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            appArmorProfile:
+              type: Unconfined
+            runAsGroup: 1000
+            runAsUser: 1000
+            seccompProfile:
+              type: Unconfined
+          volumeMounts:
+            - mountPath: /home/user/.docker
+              name: docker-config
+              readOnly: true
+            - mountPath: /home/user/.local/share/buildkit
+              name: buildkitd
+      restartPolicy: Never
+      volumes:
+        - emptyDir: {}
+          name: buildkitd
+        - name: docker-config
+          secret:
+            secretName: kodekamp-registry-push

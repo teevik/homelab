@@ -1,0 +1,57 @@
+apiVersion: v1
+data:
+  Dockerfile: |
+    # changedetection.io with the CloakBrowser stealth fetcher plugin baked in.
+    #
+    # The stock image cannot load the plugin via EXTRA_PACKAGES because it lacks
+    # the shared libraries Chromium needs (dgtlmoon/changedetection.io#4141), and
+    # the plugin launches Chromium inside the changedetection container itself.
+    # Built in-cluster by the build-changedetection PreSync Job in
+    # kubernetes/changedetection.nix, which embeds this file and requirements.txt
+    # as the build context and derives the image tag from their contents.
+    FROM docker.io/dgtlmoon/changedetection.io:0.55.8@sha256:5438423d5e906eff4e8f7886823482ad23f472bf7b8530ccaca89fb48c337882
+
+    # Chromium runtime libraries and fonts, from the upstream CloakBrowser
+    # Dockerfile minus Xvfb/openbox: the plugin always runs headless.
+    RUN apt-get update && apt-get install -y --no-install-recommends \
+        libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
+        libdbus-1-3 libdrm2 libxkbcommon0 libatspi2.0-0 libxcomposite1 \
+        libxdamage1 libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 \
+        libcairo2 libasound2 libx11-xcb1 libfontconfig1 libx11-6 \
+        libxcb1 libxext6 libxshmfence1 \
+        libglib2.0-0 libgtk-3-0 libpangocairo-1.0-0 libcairo-gobject2 \
+        libgdk-pixbuf-2.0-0 libxss1 libxtst6 fonts-liberation \
+        fonts-noto-color-emoji fonts-unifont fonts-freefont-ttf \
+        fonts-ipafont-gothic fonts-wqy-zenhei fonts-tlwg-loma-otf \
+        fonts-urw-base35 \
+        && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+    # Versions live in requirements.txt so Renovate can bump them. cloakbrowser is
+    # installed with its dependencies (playwright, cryptography and httpx are
+    # already in the base image). The plugin is installed with --no-deps: it
+    # declares a dependency on the changedetection.io PyPI package, but this image
+    # ships the app as plain source under /app, so resolving it would download a
+    # second, unrelated copy from PyPI.
+    COPY requirements.txt /tmp/cloak-requirements.txt
+    RUN pip install --no-cache-dir "$(grep '^cloakbrowser==' /tmp/cloak-requirements.txt)" \
+        && pip install --no-cache-dir --no-deps "$(grep '^changedetection.io-cloak-browser==' /tmp/cloak-requirements.txt)" \
+        && rm /tmp/cloak-requirements.txt
+
+    # Pre-download the patched Chromium at build time (keyless free build) so pod
+    # starts never depend on the CloakHQ CDN, and freeze background update checks
+    # so the running binary always matches the image. The cache is owned by uid
+    # 1000 because the cluster runs the container as that user.
+    ENV CLOAKBROWSER_CACHE_DIR=/opt/cloakbrowser \
+        CLOAKBROWSER_AUTO_UPDATE=false \
+        HOME=/tmp
+    RUN mkdir -p /opt/cloakbrowser && chown 1000:1000 /opt/cloakbrowser
+    USER 1000
+    RUN python -m cloakbrowser install && python -m cloakbrowser info
+    USER root
+  requirements.txt: |
+    cloakbrowser==0.5.10
+    changedetection.io-cloak-browser==0.1.1
+kind: ConfigMap
+metadata:
+  name: changedetection-build-context
+  namespace: changedetection

@@ -6,8 +6,9 @@
   "timezone": "Europe/Oslo",
 
   // Regex managers handle Nix-embedded images and local Helm charts. Native
-  // managers update workflow actions and flake inputs.
-  "enabledManagers": ["custom.regex", "github-actions", "nix"],
+  // managers update workflow actions, flake inputs, and the custom images
+  // under images/ (Dockerfile FROM lines and pinned pip requirements).
+  "enabledManagers": ["custom.regex", "github-actions", "nix", "dockerfile", "pip_requirements"],
   "nix": {
     "enabled": true
   },
@@ -69,8 +70,11 @@
 
   "packageRules": [
     {
-      // Ignore kodekamp images -- user doesn't want updates
-      "matchPackageNames": ["/teevik\\/kodekamp/"],
+      // Images in the tailnet-only registry (kubernetes/registry.nix) are
+      // built in-cluster with tags derived from their sources (images/*,
+      // the kodekamp flake input); Renovate cannot reach the registry and
+      // must not try to pin them.
+      "matchPackageNames": ["/^registry\\.tail84b6c\\.ts\\.net\\//"],
       "enabled": false
     },
     {
@@ -87,6 +91,11 @@
       // Immich ML uses -rocm suffix tags; only match tags like v1.2.3-rocm
       "matchPackageNames": ["ghcr.io/immich-app/immich-machine-learning"],
       "allowedVersions": "/-rocm$/"
+    },
+    {
+      // In-cluster build Jobs run the rootless BuildKit variant
+      "matchPackageNames": ["docker.io/moby/buildkit"],
+      "allowedVersions": "/-rootless$/"
     },
     {
       // Preserve the PostgreSQL compatibility prefix while comparing the

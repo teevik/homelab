@@ -20,21 +20,25 @@ spec:
         - env:
             - name: BASE_URL
               value: http://changedetection.tail84b6c.ts.net
-            - name: PLAYWRIGHT_DRIVER_URL
-              value: ws://changedetection-browser:3000/?stealth=1
+            - name: DEFAULT_FETCH_BACKEND
+              value: html_cloakbrowser
+            - name: FETCH_WORKERS
+              value: "3"
+            - name: HOME
+              value: /tmp
             - name: TZ
               value: Europe/Oslo
-          image: docker.io/dgtlmoon/changedetection.io:0.55.8@sha256:5438423d5e906eff4e8f7886823482ad23f472bf7b8530ccaca89fb48c337882
+          image: registry.tail84b6c.ts.net/changedetection:0.55.8-2029456b
           name: changedetection
           ports:
             - containerPort: 5000
               name: http
           resources:
             limits:
-              memory: 512Mi
+              memory: 2Gi
             requests:
-              cpu: 50m
-              memory: 128Mi
+              cpu: 200m
+              memory: 512Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -45,6 +49,8 @@ spec:
           volumeMounts:
             - mountPath: /datastore
               name: data
+            - mountPath: /dev/shm
+              name: dshm
       securityContext:
         fsGroup: 1000
         runAsGroup: 1000
@@ -53,3 +59,7 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: changedetection-data
+        - emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
+          name: dshm

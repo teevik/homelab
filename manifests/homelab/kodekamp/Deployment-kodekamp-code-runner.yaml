@@ -15,7 +15,7 @@ spec:
     spec:
       automountServiceAccountToken: false
       containers:
-        - image: ghcr.io/teevik/kodekamp-code-runner:latest
+        - image: registry.tail84b6c.ts.net/kodekamp-code-runner:2c3a0ca86ad1
           name: code-runner
           resources:
             limits:
