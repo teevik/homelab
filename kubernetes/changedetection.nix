@@ -30,12 +30,14 @@ in
 
     # The PreSync build Job fails if the registry is not up yet (fresh cluster,
     # zot restarting); let Argo CD retry the sync instead of stalling on it.
+    # Kept short: while an operation is retrying, Argo CD does not start a
+    # sync to a newer commit, so a long retry loop would delay a fix.
     syncPolicy.retry = {
-      limit = 10;
+      limit = 3;
       backoff = {
         duration = "30s";
         factor = 2;
-        maxDuration = "10m";
+        maxDuration = "3m";
       };
     };
 
