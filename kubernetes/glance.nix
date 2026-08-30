@@ -145,7 +145,6 @@ let
                     title = "selfh.st";
                     limit = 4;
                   }
-                  { url = "https://blog.syndtr.com/feed.xml"; }
                   { url = "https://samwho.dev/rss.xml"; }
                   { url = "https://ciechanow.ski/atom.xml"; }
                   {
@@ -228,7 +227,6 @@ let
                 repositories = [
                   "glanceapp/glance"
                   "k3s-io/k3s"
-                  "NixOS/nixpkgs"
                 ];
               }
             ];
