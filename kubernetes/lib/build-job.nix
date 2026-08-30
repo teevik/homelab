@@ -69,6 +69,9 @@ in
   metadata.annotations = {
     "argocd.argoproj.io/hook" = "PreSync";
     "argocd.argoproj.io/hook-delete-policy" = "BeforeHookCreation";
+    # Anything the Job needs (build-context ConfigMap, NetworkPolicy) must be
+    # a PreSync hook in an earlier wave; regular resources sync after hooks.
+    "argocd.argoproj.io/sync-wave" = "0";
   };
   spec = {
     backoffLimit = 0;

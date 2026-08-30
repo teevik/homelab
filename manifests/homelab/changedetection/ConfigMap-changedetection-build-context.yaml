@@ -53,5 +53,9 @@ data:
     changedetection.io-cloak-browser==0.1.1
 kind: ConfigMap
 metadata:
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "-1"
   name: changedetection-build-context
   namespace: changedetection

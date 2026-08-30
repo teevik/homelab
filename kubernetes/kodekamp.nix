@@ -190,10 +190,19 @@ in
       # The build Job clones KodeKamp from GitHub, pulls base images and
       # pushes to the registry, so it gets unrestricted egress; it serves
       # nothing, so the default deny keeps all ingress closed.
-      networkPolicies.build.spec = {
-        podSelector.matchLabels.app = "build-kodekamp";
-        policyTypes = [ "Egress" ];
-        egress = [ { } ];
+      networkPolicies.build = {
+        metadata.annotations = {
+          # Applied as a PreSync hook one wave before the build Job: regular
+          # resources are only synced after hooks, so the Job could never see it.
+          "argocd.argoproj.io/hook" = "PreSync";
+          "argocd.argoproj.io/hook-delete-policy" = "BeforeHookCreation";
+          "argocd.argoproj.io/sync-wave" = "-1";
+        };
+        spec = {
+          podSelector.matchLabels.app = "build-kodekamp";
+          policyTypes = [ "Egress" ];
+          egress = [ { } ];
+        };
       };
 
       networkPolicies.web.spec = {
