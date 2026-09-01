@@ -90,12 +90,14 @@
       # creating an object with a kubectl last-applied-configuration
       # annotation, or changing that annotation on update — i.e. client-side
       # `kubectl apply`. Still allowed: `kubectl create`/`edit`/`patch`/`scale`/
-      # `rollout restart`/`delete`, `--server-side` applies, and Secrets (so the
-      # ad-hoc `kubectl create secret ... | kubectl apply -f -` habit keeps
-      # working; the one chart-rendered Secret in manifests/ is harmless).
+      # `rollout restart`/`delete`, and Secrets (so the ad-hoc `kubectl create
+      # secret ... | kubectl apply -f -` habit keeps working; the one
+      # chart-rendered Secret in manifests/ is harmless). `--server-side` is
+      # caught too: the API server rewrites the annotation for manager `kubectl`.
       #
-      # Deliberate bypass (e.g. bootstrapping): impersonate the group,
-      #   kubectl apply --as=teevik@github --as-group=system:masters --as-group=gitops-bypass -f ...
+      # Deliberate bypass (e.g. `nixidy bootstrap`): name the field manager —
+      #   kubectl apply --field-manager=gitops-bypass -f ...
+      # (impersonation groups don't survive the Tailscale API proxy.)
       ''
         apiVersion: admissionregistration.k8s.io/v1
         kind: ValidatingAdmissionPolicy
@@ -129,14 +131,14 @@
                      == object.metadata.annotations[variables.key]
                 )
             - name: bypass
-              expression: "has(request.userInfo.groups) && 'gitops-bypass' in request.userInfo.groups"
+              expression: "has(request.options.fieldManager) && request.options.fieldManager == 'gitops-bypass'"
           validations:
             - expression: variables.bypass || !variables.clientSideApply
               reason: Forbidden
               message: >-
                 Client-side kubectl apply is disabled: this cluster is managed by
                 Argo CD from git. Commit and push instead of `nixidy apply` /
-                `kubectl apply -f manifests`, or impersonate group gitops-bypass
+                `kubectl apply -f manifests`, or pass --field-manager=gitops-bypass
                 if this is deliberate.
       ''
       ''

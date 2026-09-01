@@ -22,7 +22,7 @@ spec:
           - '*'
   validations:
     - expression: variables.bypass || !variables.clientSideApply
-      message: 'Client-side kubectl apply is disabled: this cluster is managed by Argo CD from git. Commit and push instead of `nixidy apply` / `kubectl apply -f manifests`, or impersonate group gitops-bypass if this is deliberate.'
+      message: 'Client-side kubectl apply is disabled: this cluster is managed by Argo CD from git. Commit and push instead of `nixidy apply` / `kubectl apply -f manifests`, or pass --field-manager=gitops-bypass if this is deliberate.'
       reason: Forbidden
   variables:
     - expression: '''kubectl.kubernetes.io/last-applied-configuration'''
@@ -36,5 +36,5 @@ spec:
              == object.metadata.annotations[variables.key]
         )
       name: clientSideApply
-    - expression: has(request.userInfo.groups) && 'gitops-bypass' in request.userInfo.groups
+    - expression: has(request.options.fieldManager) && request.options.fieldManager == 'gitops-bypass'
       name: bypass
