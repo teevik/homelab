@@ -79,6 +79,75 @@
           endpoints:
             - port: http-metrics
       ''
+
+      # Guard against applying the rendered tree by hand. `nixidy apply` (or
+      # `kubectl apply -f manifests/...`) bypasses Argo CD and, on 2026-08-30,
+      # created Helm pre-delete hook Jobs that Argo itself never runs; one of
+      # them wiped every VictoriaMetrics CR and the VictoriaLogs volume.
+      #
+      # Only non-system callers (you, via the Tailscale proxy) are evaluated;
+      # Argo CD, controllers and the host's system:admin are untouched. Denied:
+      # creating an object with a kubectl last-applied-configuration
+      # annotation, or changing that annotation on update — i.e. client-side
+      # `kubectl apply`. Still allowed: `kubectl create`/`edit`/`patch`/`scale`/
+      # `rollout restart`/`delete`, `--server-side` applies, and Secrets (so the
+      # ad-hoc `kubectl create secret ... | kubectl apply -f -` habit keeps
+      # working; the one chart-rendered Secret in manifests/ is harmless).
+      #
+      # Deliberate bypass (e.g. bootstrapping): impersonate the group,
+      #   kubectl apply --as=teevik@github --as-group=system:masters --as-group=gitops-bypass -f ...
+      ''
+        apiVersion: admissionregistration.k8s.io/v1
+        kind: ValidatingAdmissionPolicy
+        metadata:
+          name: no-manual-apply
+        spec:
+          failurePolicy: Fail
+          matchConstraints:
+            resourceRules:
+              - apiGroups: ["*"]
+                apiVersions: ["*"]
+                operations: ["CREATE", "UPDATE"]
+                resources: ["*"]
+          matchConditions:
+            - name: human-caller
+              expression: "!request.userInfo.username.startsWith('system:')"
+            - name: not-a-secret
+              expression: '!(request.resource.group == "" && request.resource.resource == "secrets")'
+          variables:
+            - name: key
+              expression: "'kubectl.kubernetes.io/last-applied-configuration'"
+            - name: clientSideApply
+              expression: >-
+                has(object.metadata.annotations)
+                && variables.key in object.metadata.annotations
+                && !(
+                  request.operation == 'UPDATE'
+                  && has(oldObject.metadata.annotations)
+                  && variables.key in oldObject.metadata.annotations
+                  && oldObject.metadata.annotations[variables.key]
+                     == object.metadata.annotations[variables.key]
+                )
+            - name: bypass
+              expression: "has(request.userInfo.groups) && 'gitops-bypass' in request.userInfo.groups"
+          validations:
+            - expression: variables.bypass || !variables.clientSideApply
+              reason: Forbidden
+              message: >-
+                Client-side kubectl apply is disabled: this cluster is managed by
+                Argo CD from git. Commit and push instead of `nixidy apply` /
+                `kubectl apply -f manifests`, or impersonate group gitops-bypass
+                if this is deliberate.
+      ''
+      ''
+        apiVersion: admissionregistration.k8s.io/v1
+        kind: ValidatingAdmissionPolicyBinding
+        metadata:
+          name: no-manual-apply
+        spec:
+          policyName: no-manual-apply
+          validationActions: ["Deny"]
+      ''
     ];
 
     # Argo CD dashboard (grafana.com/dashboards/14584), picked up by the

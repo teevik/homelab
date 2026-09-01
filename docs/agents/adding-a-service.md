@@ -6,7 +6,7 @@ Steps for adding a new application to the cluster. Done when all five are true.
 2. Import the module in `envs.homelab.modules` in `flake.nix`.
 3. `git add -N kubernetes/<name>.nix` — flake evaluation ignores untracked files.
 4. Add the service to the Glance monitor list in `kubernetes/glance.nix`: `url` is the tailnet hostname, `check-url` is the cluster-internal service (the `-tailscale` LoadBalancer service works).
-5. Regenerate manifests with `nix develop -c nixidy switch .#homelab` and commit `manifests/` together with the source change. Argo CD deploys from pushed `main`; nothing reaches the cluster until then.
+5. Regenerate manifests with `nix develop -c nixidy switch .#homelab` and commit `manifests/` together with the source change. Argo CD deploys from pushed `main`; nothing reaches the cluster until then. Never `nixidy apply` or `kubectl apply -f manifests/` by hand: the rendered tree contains Helm hook Jobs Argo CD deliberately never runs, and the cluster's `no-manual-apply` admission policy rejects client-side applies from non-system users.
 
 If the service exposes Prometheus metrics, add a `VMServiceScrape` via `yamls` and a dashboard ConfigMap labeled `grafana_dashboard: "1"` with a `grafana_folder` annotation, both in the service's own module (see `kubernetes/longhorn.nix`). vmagent and the Grafana sidecar watch every namespace.
 

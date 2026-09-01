@@ -1,0 +1,40 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: no-manual-apply
+spec:
+  failurePolicy: Fail
+  matchConditions:
+    - expression: '!request.userInfo.username.startsWith(''system:'')'
+      name: human-caller
+    - expression: '!(request.resource.group == "" && request.resource.resource == "secrets")'
+      name: not-a-secret
+  matchConstraints:
+    resourceRules:
+      - apiGroups:
+          - '*'
+        apiVersions:
+          - '*'
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - '*'
+  validations:
+    - expression: variables.bypass || !variables.clientSideApply
+      message: 'Client-side kubectl apply is disabled: this cluster is managed by Argo CD from git. Commit and push instead of `nixidy apply` / `kubectl apply -f manifests`, or impersonate group gitops-bypass if this is deliberate.'
+      reason: Forbidden
+  variables:
+    - expression: '''kubectl.kubernetes.io/last-applied-configuration'''
+      name: key
+    - expression: |-
+        has(object.metadata.annotations) && variables.key in object.metadata.annotations && !(
+          request.operation == 'UPDATE'
+          && has(oldObject.metadata.annotations)
+          && variables.key in oldObject.metadata.annotations
+          && oldObject.metadata.annotations[variables.key]
+             == object.metadata.annotations[variables.key]
+        )
+      name: clientSideApply
+    - expression: has(request.userInfo.groups) && 'gitops-bypass' in request.userInfo.groups
+      name: bypass

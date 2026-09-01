@@ -130,6 +130,14 @@
         # (Helm's `lookup` function doesn't work with offline rendering)
         victoria-metrics-operator.admissionWebhooks.enabled = false;
 
+        # The k8s-stack parent chart turns on the operator's pre-delete cleanup
+        # hook (a Job that runs `kubectl delete <every VM kind> --all`). Helm's
+        # pre-delete phase has no Argo CD equivalent, so Argo neither runs nor
+        # prunes it — but the Job still lands in manifests/ and fires if the
+        # tree is ever applied by hand (2026-08-30: wiped every VM CR, including
+        # the VictoriaLogs volume). Nothing here is ever helm-uninstalled.
+        victoria-metrics-operator.crds.cleanup.enabled = false;
+
         # Required for the victoriametrics-{metrics,logs}-datasource types in Grafana
         grafana.plugins = [
           "victoriametrics-metrics-datasource"

@@ -7,6 +7,14 @@
     helm.releases.longhorn = {
       chart = charts.longhorn.longhorn;
 
+      # The chart renders an unconditional pre-delete hook Job that runs
+      # `longhorn-manager uninstall --force`. Argo CD has no pre-delete phase,
+      # so it never runs it, but a stray `kubectl apply` of manifests/ does
+      # (2026-08-30; only deletingConfirmationFlag=false stopped it). There is
+      # no values toggle, so drop it from the rendered output. --no-hooks would
+      # also lose the post-upgrade Job, which Argo does run (PostSync).
+      transformer = builtins.filter (o: !(o.kind == "Job" && o.metadata.name == "longhorn-uninstall"));
+
       values = {
         # Longhorn's pre-upgrade Helm job is unsupported under Argo CD.
         preUpgradeChecker.jobEnabled = false;
