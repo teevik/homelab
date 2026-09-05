@@ -13,7 +13,8 @@ install TARGET-IP:
     ssh root@{{ TARGET-IP }} "chown -R 1000:100 /mnt/home/teevik"
 
 deploy:
-    nixos-rebuild switch --flake .#homelab --target-host homelab --sudo
+    # Keep the local Nix version that matches the configured cargo-nix-plugin.
+    nixos-rebuild switch --flake .#homelab --target-host homelab --sudo --no-reexec
 
 switch:
     nixidy switch .#homelab
