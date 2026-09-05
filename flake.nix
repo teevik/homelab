@@ -5,6 +5,9 @@
 
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
+    # TODO: switch to latest when 0.10 is in nixpkgs
+    ncps.url = "github:kalbasit/ncps/v0.10.0-rc17";
+
     blueprint = {
       url = "github:numtide/blueprint";
       inputs.nixpkgs.follows = "nixpkgs";

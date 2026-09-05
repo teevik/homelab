@@ -2,6 +2,8 @@
   config,
   flake,
   inputs,
+  lib,
+  pkgs,
   ...
 }:
 {
@@ -35,6 +37,7 @@
   # original upstream signatures, so ncps intentionally does not re-sign them.
   services.ncps = {
     enable = true;
+    package = inputs.ncps.packages.${pkgs.stdenv.hostPlatform.system}.default;
     analytics.reporting.enable = false;
     logLevel = "warn";
     prometheus.enable = true;
@@ -90,6 +93,13 @@
       };
     };
   };
+
+  # The pinned nixpkgs module still calls the removed dbmate-ncps binary.
+  # Clear the old 0.9.4 cache once before upgrading; see docs/research/ncps.md.
+  systemd.services.ncps.preStart = lib.mkForce ''
+    ${lib.getExe config.services.ncps.package} migrate up \
+      --cache-database-url=${lib.escapeShellArg config.services.ncps.cache.databaseURL}
+  '';
 
   # Ignore lid close so the laptop doesn't sleep
   services.logind.settings.Login.HandleLidSwitch = "ignore";
