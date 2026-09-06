@@ -41,7 +41,7 @@ in
           spec = {
             containers.kavita = {
               # renovate: datasource=docker depName=jvmilazz0/kavita
-              image = "docker.io/jvmilazz0/kavita:0.9.0@sha256:36aab0c578d488f8b10bd33910953b50965aff9ac6adc476ef4692c38c60427e";
+              image = "docker.io/jvmilazz0/kavita:0.9.1@sha256:454f2a77ac740b70c58cc7300a11122fc9ce7b7e2161ef5b0d1df8f81067cc85";
               ports.http.containerPort = 5000;
               env = {
                 TZ.value = "Europe/Oslo";

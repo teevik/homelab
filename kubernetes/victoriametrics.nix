@@ -14,11 +14,11 @@
       values = {
         # Pin VictoriaMetrics image version
         # renovate: datasource=docker depName=victoriametrics/victoria-metrics
-        vmsingle.spec.image.tag = "v1.150.0@sha256:54467c7764a3e6579199af1914bb779f01ce32265cd552eb5ae0d4f8a2b80a97";
+        vmsingle.spec.image.tag = "v1.151.0@sha256:6d164540a04f49ba4e696cbdb70f9fee78be1e94b8f2a1292743a0b1ab8275bd";
         # renovate: datasource=docker depName=victoriametrics/vmagent
-        vmagent.spec.image.tag = "v1.150.0@sha256:3eff5874d59292714878dcb6aee14f048bf19b7312b727860ba5e7d29e2e0c07";
+        vmagent.spec.image.tag = "v1.151.0@sha256:ff6168d22b523d0bc3db1a0fedd0dafd37a77dba75489120464c39fadbfa1ff7";
         # renovate: datasource=docker depName=victoriametrics/vmalert
-        vmalert.spec.image.tag = "v1.150.0@sha256:c6e6c1ef6e43c09510dd0aff264bf0ea319c1bdfced1ccc79dad1545950a7989";
+        vmalert.spec.image.tag = "v1.151.0@sha256:e519f14c31f4d68015702e684a0fc3f1b4e559aa985d8f4462768f07f55b05c9";
 
         # k3s bundles controller-manager, scheduler, and etcd into the main
         # k3s process — there are no separate pods to scrape, so disable these
@@ -114,7 +114,7 @@
         # With logs enabled the chart puts an internal vmauth in front of vmalert
         # so LogsQL rules reach vlsingle and PromQL rules reach vmsingle.
         # renovate: datasource=docker depName=victoriametrics/vmauth
-        internal.vmauth.spec.image.tag = "v1.150.0@sha256:18501bc13770dbb921fc999b6ae15ddb5054b5147bab027b5d459662855c172d";
+        internal.vmauth.spec.image.tag = "v1.151.0@sha256:efd05bb90de99c842dae9b5848a0c83347caf5004c3e81deabcc8562024ab072";
 
         vlagent.enabled = true;
         vlagent.spec.resources = {
@@ -147,7 +147,7 @@
         # Pin the Grafana image like the VM images above; the chart's appVersion
         # is otherwise unpinned and invisible to Renovate.
         # renovate: datasource=docker depName=docker.io/grafana/grafana
-        grafana.image.tag = "13.1.1@sha256:7cb8c64c4d57a57e734073f3cc94620adb24a0acb929bd80ba9f14017e3a975b";
+        grafana.image.tag = "13.2.0@sha256:3fd54ae1214669f8355f065ec9f6445d5279a3d77095ab048ca045685272429b";
 
         grafana.resources = {
           requests = {

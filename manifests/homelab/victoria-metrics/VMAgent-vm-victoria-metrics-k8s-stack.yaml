@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/instance: vm
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: victoria-metrics-k8s-stack
-    app.kubernetes.io/version: v1.150.0
+    app.kubernetes.io/version: v1.151.0
     helm.sh/chart: victoria-metrics-k8s-stack-0.91.2
   name: vm-victoria-metrics-k8s-stack
   namespace: victoria-metrics
@@ -15,7 +15,7 @@ spec:
   extraArgs:
     promscrape.streamParse: "true"
   image:
-    tag: v1.150.0@sha256:3eff5874d59292714878dcb6aee14f048bf19b7312b727860ba5e7d29e2e0c07
+    tag: v1.151.0@sha256:ff6168d22b523d0bc3db1a0fedd0dafd37a77dba75489120464c39fadbfa1ff7
   port: "8429"
   remoteWrite:
     - url: http://vmsingle-vm-victoria-metrics-k8s-stack.victoria-metrics.svc.cluster.local.:8428/api/v1/write
