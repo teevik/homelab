@@ -30,7 +30,7 @@
           enabled = true;
           # renovate: datasource=docker depName=docker.io/valkey/valkey
           controllers.main.containers.main.image.tag =
-            "9.1.1-alpine@sha256:de31910896150d5e754a07d57d227cfdde4e258ddd0d1aa4607f2d2f95843715";
+            "9.1.2-alpine@sha256:a0dbf4c1d5708782907c10e2c72deff317518518b5288a58416981d9db95d30b";
           persistence.data = {
             enabled = true;
             type = "persistentVolumeClaim";
@@ -205,7 +205,7 @@
             automountServiceAccountToken = false;
             containers.proxy = {
               # renovate: datasource=docker depName=ghcr.io/alangrainger/immich-public-proxy
-              image = "ghcr.io/alangrainger/immich-public-proxy:3.2.1@sha256:7ca34cc3efa618a11674db00e1d943e4611cb2e14d1f6d73343757db700a6e3c";
+              image = "ghcr.io/alangrainger/immich-public-proxy:3.3.1@sha256:8657d0d1b79e7f008261bbb65c2f177a89e8a0fd325b9a312d16cf7b5cbee209";
               ports.http.containerPort = 3000;
               env.IMMICH_URL.value = "http://immich-server:2283";
               securityContext = {
