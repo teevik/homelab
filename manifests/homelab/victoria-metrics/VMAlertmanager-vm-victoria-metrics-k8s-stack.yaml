@@ -6,15 +6,15 @@ metadata:
     app.kubernetes.io/instance: vm
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: victoria-metrics-k8s-stack
-    app.kubernetes.io/version: v0.32.1
-    helm.sh/chart: victoria-metrics-k8s-stack-0.91.2
+    app.kubernetes.io/version: v1.151.0
+    helm.sh/chart: victoria-metrics-k8s-stack-0.92.0
   name: vm-victoria-metrics-k8s-stack
   namespace: victoria-metrics
 spec:
   configSecret: vmalertmanager-vm-victoria-metrics-k8s-stack
   externalURL: ""
   image:
-    tag: v0.32.1
+    tag: v0.34.0
   port: "9093"
   replicaCount: 1
   routePrefix: /
