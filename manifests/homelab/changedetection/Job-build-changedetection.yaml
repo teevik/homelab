@@ -21,12 +21,12 @@ spec:
             - -c
             - |+
               set -eu
-              if wget -q --spider --header "Accept: application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json" "http://zot.registry.svc:5000/v2/changedetection/manifests/0.55.8-2029456b"; then
-                echo "zot.registry.svc:5000/changedetection:0.55.8-2029456b is already in the registry; skipping build"
+              if wget -q --spider --header "Accept: application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json" "http://zot.registry.svc:5000/v2/changedetection/manifests/0.60.3-312d802f"; then
+                echo "zot.registry.svc:5000/changedetection:0.60.3-312d802f is already in the registry; skipping build"
               else
-                echo "building zot.registry.svc:5000/changedetection:0.55.8-2029456b"
+                echo "building zot.registry.svc:5000/changedetection:0.60.3-312d802f"
                 buildctl-daemonless.sh build --frontend dockerfile.v0 --local context=/workspace --local dockerfile=/workspace \
-                  --output type=image,name=zot.registry.svc:5000/changedetection:0.55.8-2029456b,push=true,registry.insecure=true \
+                  --output type=image,name=zot.registry.svc:5000/changedetection:0.60.3-312d802f,push=true,registry.insecure=true \
                   --export-cache type=registry,ref=zot.registry.svc:5000/changedetection:buildcache,mode=max,registry.insecure=true \
                   --import-cache type=registry,ref=zot.registry.svc:5000/changedetection:buildcache,registry.insecure=true
               fi
@@ -36,7 +36,7 @@ spec:
               value: --oci-worker-no-process-sandbox
             - name: DOCKER_CONFIG
               value: /home/user/.docker
-          image: docker.io/moby/buildkit:v0.32.2-rootless@sha256:504731e577c20559c00f968f33219f30115e70be29ab96728d1d06e963fc494b
+          image: docker.io/moby/buildkit:v0.33.0-rootless@sha256:80b15f0735e87bab7bf59ec4d695dfb4a7cfb25521cf56dc75d6f256285b63ef
           name: buildkit
           resources:
             limits:
