@@ -53,7 +53,7 @@
 
         # Recurring jobs:
         #   - hourly-snapshot: local snapshot every hour, retain 24 (intra-day rollback)
-        #   - daily-backup: S3 export daily at 02:00, retain 14 (off-site DR)
+        #   - daily-backup: S3 export daily at 02:00 UTC, retain 14 (off-site DR)
         # Volumes opt in via labels:
         #   recurring-job-group.longhorn.io/snapshot: "enabled"
         #   recurring-job-group.longhorn.io/backup:   "enabled"

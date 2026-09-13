@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: amp
+  namespace: amp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: amp
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        checksum/proxy: f6afcd86b734f11a15359e5c4417fdace86e41b706131c58eee92e40616c778f
+      labels:
+        app: amp
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - env:
+            - name: TZ
+              value: Europe/Oslo
+          image: registry.tail84b6c.ts.net/amp:v26-d7f28405
+          livenessProbe:
+            exec:
+              command:
+                - python3
+                - -c
+                - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/', timeout=3)
+            failureThreshold: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+          name: amp
+          readinessProbe:
+            exec:
+              command:
+                - python3
+                - -c
+                - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/', timeout=3)
+            periodSeconds: 15
+            timeoutSeconds: 5
+          resources:
+            limits:
+              memory: 10Gi
+            requests:
+              cpu: "1"
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          startupProbe:
+            exec:
+              command:
+                - test
+                - -f
+                - /tmp/amp-ready
+            failureThreshold: 120
+            periodSeconds: 10
+          volumeMounts:
+            - mountPath: /home/amp
+              name: data
+            - mountPath: /run/secrets/amp
+              name: secrets
+              readOnly: true
+        - image: nginxinc/nginx-unprivileged:1.30.4-alpine@sha256:b8c179cd3c2ae222a873dd59fbae240fadc03836cae5198afc9e9c19919c3880
+          name: proxy
+          ports:
+            - containerPort: 8088
+              name: http
+          resources:
+            limits:
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /etc/nginx/conf.d
+              name: proxy-config
+              readOnly: true
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.io/hostname: homelab
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      terminationGracePeriodSeconds: 360
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: amp-data
+        - configMap:
+            name: amp-proxy
+          name: proxy-config
+        - name: secrets
+          secret:
+            defaultMode: 288
+            secretName: amp-secrets

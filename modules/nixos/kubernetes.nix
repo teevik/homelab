@@ -63,6 +63,24 @@ let
       };
     };
 
+    amp-secrets = {
+      namespace = "amp";
+      data = {
+        AMP_LICENSE_KEY = "amp_license_key";
+        AMP_ADMIN_PASSWORD = "amp_admin_password";
+      };
+    };
+
+    amp-registry-push = {
+      namespace = "amp";
+      data."config.json" = "registry_dockerconfig_json";
+    };
+
+    amp-ddns = {
+      namespace = "amp";
+      data.CLOUDFLARE_API_TOKEN = "cloudflare_api_token";
+    };
+
     longhorn-backup-secret = {
       namespace = "longhorn-system";
       data = {
@@ -181,7 +199,11 @@ let
           in
           ''
             until kubectl get ns >/dev/null 2>&1; do sleep 2; done
-            kubectl create namespace ${secret.namespace} --dry-run=client -o yaml | kubectl apply -f -
+            # Several secret units can create the same namespace concurrently.
+            # Accept a racing creator only after confirming the namespace exists.
+            if ! kubectl get namespace ${secret.namespace} >/dev/null 2>&1; then
+              kubectl create namespace ${secret.namespace} || kubectl get namespace ${secret.namespace} >/dev/null
+            fi
             # Delete first so labels from previous owners (e.g. Helm/Argo CD
             # tracking labels) don't survive and cause Argo CD to prune the secret.
             kubectl delete secret ${name} --namespace ${secret.namespace} --ignore-not-found
@@ -253,6 +275,20 @@ in
 
     networking.firewall.allowedTCPPorts = [
       30565
+    ];
+    # One router forwarding rule covers future AMP game instances. Assign
+    # game ports within this range in AMP; management ports remain separate.
+    networking.firewall.allowedTCPPortRanges = [
+      {
+        from = 20000;
+        to = 20999;
+      }
+    ];
+    networking.firewall.allowedUDPPortRanges = [
+      {
+        from = 20000;
+        to = 20999;
+      }
     ];
   };
 }

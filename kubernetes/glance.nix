@@ -70,6 +70,12 @@ let
                     icon = "di:crafty-controller";
                   }
                   {
+                    title = "AMP";
+                    url = "http://amp";
+                    check-url = "http://amp.amp.svc";
+                    icon = "mdi:gamepad-variant";
+                  }
+                  {
                     title = "TwitchDropsMiner";
                     url = "http://twitchdropsminer";
                     check-url = "http://twitchdropsminer.twitchdropsminer.svc";

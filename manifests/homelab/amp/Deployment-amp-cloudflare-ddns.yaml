@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: amp-cloudflare-ddns
+  namespace: amp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: amp-cloudflare-ddns
+  template:
+    metadata:
+      labels:
+        app: amp-cloudflare-ddns
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - env:
+            - name: CLOUDFLARE_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  key: CLOUDFLARE_API_TOKEN
+                  name: amp-ddns
+            - name: IP4_DOMAINS
+              value: games.teevik.no
+            - name: IP6_PROVIDER
+              value: none
+            - name: PROXIED
+              value: "false"
+          image: favonia/cloudflare-ddns:1.17.0@sha256:61013368c8f95981c0bb8bf56d962078d8b4e95724a554fa2dabb20d6e478097
+          name: ddns
+          resources:
+            limits:
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+      securityContext:
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
