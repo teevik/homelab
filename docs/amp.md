@@ -25,7 +25,14 @@ firewall range is installed; router forwarding is configured by the owner.
 | Games | `games.teevik.no:<game port>` | DNS-only DDNS → router → `192.168.1.225` |
 
 Forward **TCP and UDP 20000–20999** at the router to `192.168.1.225`, keeping
-the same internal ports. NixOS allows this range. AMP's **Instance Deployment →
+the same internal ports. This is the homelab's static Ethernet address; reserve
+it for Ethernet MAC `6C:6E:07:22:0D:0A` in the router's DHCP settings. Wi-Fi is
+disabled and its saved connection has been removed. Keeping the existing node
+address on Ethernet also preserves K3s and embedded-etcd connectivity. Forwarding
+to the former Wi-Fi address while Ethernet used `192.168.1.79` caused Valheim's
+UDP replies to use a different source address from incoming traffic.
+
+NixOS allows this range. AMP's **Instance Deployment →
 Networking → Application Port Ranges** is set to the single entry
 `20000:20999`, replacing `1024:65535`. Its native allocator uses this pool for
 new instances, so another router rule is unnecessary while capacity remains.

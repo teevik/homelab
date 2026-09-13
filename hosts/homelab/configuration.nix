@@ -22,6 +22,28 @@
 
   # Networking
   networking.hostName = "homelab";
+  networking.networkmanager = {
+    unmanaged = [ "type:wifi" ];
+    ensureProfiles.profiles.homelab-ethernet = {
+      connection = {
+        id = "Homelab Ethernet";
+        uuid = "f6afd505-5506-3864-a152-d7b990c6cac2";
+        type = "ethernet";
+        autoconnect = true;
+      };
+      ethernet.mac-address = "6C:6E:07:22:0D:0A";
+      ipv4 = {
+        # Preserve the K3s/etcd address and router forwarding destination.
+        # Reserve this IP for the Ethernet MAC in the router's DHCP settings.
+        method = "manual";
+        address1 = "192.168.1.225/24,192.168.1.1";
+        dns = "192.168.1.1;";
+        dns-search = "lan;";
+        route-metric = 100;
+      };
+      ipv6.method = "auto";
+    };
+  };
 
   sops.secrets.tailscale_key = { };
   services.tailscale = {
