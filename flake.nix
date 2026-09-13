@@ -74,7 +74,6 @@
           ./kubernetes/victoriametrics.nix
           ./kubernetes/paperless-ngx.nix
           ./kubernetes/bentopdf.nix
-          ./kubernetes/crafty.nix
           ./kubernetes/amp.nix
           ./kubernetes/twitchdropsminer.nix
           ./kubernetes/kavita.nix
