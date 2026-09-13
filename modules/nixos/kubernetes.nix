@@ -56,13 +56,6 @@ let
       };
     };
 
-    crafty-secrets = {
-      namespace = "crafty";
-      data = {
-        CLOUDFLARE_API_TOKEN = "cloudflare_api_token";
-      };
-    };
-
     amp-secrets = {
       namespace = "amp";
       data = {
@@ -273,9 +266,6 @@ in
       "flannel.+"
     ];
 
-    networking.firewall.allowedTCPPorts = [
-      30565
-    ];
     # One router forwarding rule covers future AMP game instances. Assign
     # game ports within this range in AMP; management ports remain separate.
     networking.firewall.allowedTCPPortRanges = [

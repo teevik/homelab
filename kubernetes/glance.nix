@@ -63,13 +63,6 @@ let
                     icon = "si:files";
                   }
                   {
-                    title = "Crafty Controller";
-                    url = "https://crafty";
-                    check-url = "https://crafty.crafty.svc:8443";
-                    allow-insecure = true;
-                    icon = "di:crafty-controller";
-                  }
-                  {
                     title = "AMP";
                     url = "http://amp";
                     check-url = "http://amp.amp.svc";

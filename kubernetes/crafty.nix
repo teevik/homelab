@@ -7,6 +7,7 @@ let
   };
 
   mkPvc = storage: {
+    metadata.annotations."argocd.argoproj.io/sync-options" = "Prune=false,Delete=false";
     spec = {
       storageClassName = "longhorn";
       accessModes = [ "ReadWriteOnce" ];
@@ -14,9 +15,17 @@ let
     };
   };
 
-  mkBackedUpPvc = storage: (mkPvc storage) // { metadata.labels = backupLabels; };
+  mkBackedUpPvc =
+    storage:
+    let
+      pvc = mkPvc storage;
+    in
+    pvc // { metadata = pvc.metadata // { labels = backupLabels; }; };
 in
 {
+  # Crafty is retired in favour of AMP. Keep the existing application and
+  # namespace so Argo CD prunes its workloads while retaining all five data
+  # volumes for migration. Remove these claims only after the data is migrated.
   applications.crafty = {
     namespace = "crafty";
     createNamespace = true;
@@ -27,143 +36,6 @@ in
       persistentVolumeClaims.crafty-backups = mkBackedUpPvc "50Gi";
       persistentVolumeClaims.crafty-logs = mkPvc "5Gi";
       persistentVolumeClaims.crafty-import = mkPvc "10Gi";
-
-      deployments.crafty.spec = {
-        replicas = 1;
-        strategy.type = "Recreate";
-        selector.matchLabels.app = "crafty";
-        template = {
-          metadata.labels.app = "crafty";
-          spec = {
-            securityContext = {
-              fsGroup = 0;
-              fsGroupChangePolicy = "OnRootMismatch";
-            };
-            containers.crafty = {
-              image = "registry.gitlab.com/crafty-controller/crafty-4:4.10.8@sha256:166a06f73d8c831fe594550885655fc051546f042fc5ff79f373542fed4f644f";
-              ports = {
-                http.containerPort = 8000;
-                https.containerPort = 8443;
-                minecraft.containerPort = 25565;
-              };
-              volumeMounts = {
-                "/crafty/app/config" = {
-                  name = "config";
-                };
-                "/crafty/servers" = {
-                  name = "servers";
-                };
-                "/crafty/backups" = {
-                  name = "backups";
-                };
-                "/crafty/logs" = {
-                  name = "logs";
-                };
-                "/crafty/import" = {
-                  name = "import";
-                };
-              };
-              resources = {
-                requests = {
-                  cpu = "2";
-                  memory = "10Gi";
-                };
-                limits.memory = "14Gi";
-              };
-            };
-            volumes = {
-              config.persistentVolumeClaim.claimName = "crafty-config";
-              servers.persistentVolumeClaim.claimName = "crafty-servers";
-              backups.persistentVolumeClaim.claimName = "crafty-backups";
-              logs.persistentVolumeClaim.claimName = "crafty-logs";
-              import.persistentVolumeClaim.claimName = "crafty-import";
-            };
-          };
-        };
-      };
-
-      services.crafty.spec = {
-        selector.app = "crafty";
-        ports = {
-          http = {
-            port = 8000;
-            targetPort = 8000;
-            protocol = "TCP";
-          };
-          https = {
-            port = 8443;
-            targetPort = 8443;
-            protocol = "TCP";
-          };
-          minecraft = {
-            port = 25565;
-            targetPort = 25565;
-            protocol = "TCP";
-          };
-        };
-      };
-
-      services.crafty-minecraft-public-nodeport.spec = {
-        type = "NodePort";
-        selector.app = "crafty";
-        ports.minecraft = {
-          port = 25565;
-          targetPort = 25565;
-          nodePort = 30565;
-          protocol = "TCP";
-        };
-      };
-
-      services.crafty-tailscale = {
-        metadata.annotations = {
-          "tailscale.com/proxy-group" = "ingress";
-          "tailscale.com/hostname" = "crafty";
-        };
-        spec = {
-          type = "LoadBalancer";
-          loadBalancerClass = "tailscale";
-          selector.app = "crafty";
-          ports = {
-            http = {
-              port = 80;
-              targetPort = 8000;
-              protocol = "TCP";
-            };
-            https = {
-              port = 443;
-              targetPort = 8443;
-              protocol = "TCP";
-            };
-          };
-        };
-      };
-
-      deployments.crafty-cloudflare-ddns.spec = {
-        replicas = 1;
-        selector.matchLabels.app = "crafty-cloudflare-ddns";
-        template = {
-          metadata.labels.app = "crafty-cloudflare-ddns";
-          spec.containers.ddns = {
-            image = "favonia/cloudflare-ddns:1.17.0@sha256:61013368c8f95981c0bb8bf56d962078d8b4e95724a554fa2dabb20d6e478097";
-            env = {
-              CLOUDFLARE_API_TOKEN.valueFrom.secretKeyRef = {
-                name = "crafty-secrets";
-                key = "CLOUDFLARE_API_TOKEN";
-              };
-              IP4_DOMAINS.value = "gtnh.teevik.no";
-              IP6_PROVIDER.value = "none";
-              PROXIED.value = "false";
-            };
-            resources = {
-              requests = {
-                cpu = "10m";
-                memory = "32Mi";
-              };
-              limits.memory = "128Mi";
-            };
-          };
-        };
-      };
     };
   };
 }
