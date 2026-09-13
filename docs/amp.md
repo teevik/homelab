@@ -32,12 +32,6 @@ address on Ethernet also preserves K3s and embedded-etcd connectivity. Forwardin
 to the former Wi-Fi address while Ethernet used `192.168.1.79` caused Valheim's
 UDP replies to use a different source address from incoming traffic.
 
-The router panel is available over Tailscale at
-`http://homelab.tail84b6c.ts.net:8081`, using the router's own login. A host nginx
-proxy on `127.0.0.1:18081` supplies the `Host: 192.168.1.1` header required by the
-router; Tailscale Serve exposes it only inside the tailnet. Both services are
-configured in `hosts/homelab/configuration.nix`. Port 8081 needs no router rule.
-
 NixOS allows this range. AMP's **Instance Deployment →
 Networking → Application Port Ranges** is set to the single entry
 `20000:20999`, replacing `1024:65535`. Its native allocator uses this pool for

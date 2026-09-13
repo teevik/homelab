@@ -55,46 +55,6 @@
     ];
   };
 
-  # The router validates Host, so proxy it locally before sharing it on the
-  # tailnet. Neither the proxy listener nor Tailscale Serve is public.
-  services.nginx = {
-    enable = true;
-    virtualHosts.router-panel = {
-      listen = [
-        {
-          addr = "127.0.0.1";
-          port = 18081;
-        }
-      ];
-      locations."/" = {
-        proxyPass = "http://192.168.1.1";
-        extraConfig = ''
-          proxy_set_header Host 192.168.1.1;
-          proxy_redirect http://192.168.1.1/ /;
-        '';
-      };
-    };
-  };
-
-  systemd.services.router-panel = {
-    description = "Share the router panel privately over Tailscale";
-    wantedBy = [ "multi-user.target" ];
-    requires = [
-      "nginx.service"
-      "tailscaled.service"
-    ];
-    after = [
-      "nginx.service"
-      "tailscaled.service"
-    ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      ExecStart = "${lib.getExe config.services.tailscale.package} serve --bg --http=8081 http://127.0.0.1:18081";
-      ExecStop = "${lib.getExe config.services.tailscale.package} serve --http=8081 off";
-    };
-  };
-
   # Share one pull-through Nix cache across the tailnet. Clients validate the
   # original upstream signatures, so ncps intentionally does not re-sign them.
   services.ncps = {
