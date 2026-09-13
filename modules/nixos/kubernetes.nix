@@ -74,6 +74,11 @@ let
       data.CLOUDFLARE_API_TOKEN = "cloudflare_api_token";
     };
 
+    amp-exporter = {
+      namespace = "amp";
+      data.AMP_PASSWORD = "amp_exporter_password";
+    };
+
     longhorn-backup-secret = {
       namespace = "longhorn-system";
       data = {

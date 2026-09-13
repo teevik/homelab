@@ -1,0 +1,20 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: amp-exporter
+  namespace: amp
+spec:
+  endpoints:
+    - interval: 30s
+      metricRelabelConfigs:
+        - action: drop
+          regex: ADS
+          sourceLabels:
+            - module
+      path: /metrics
+      port: metrics
+      scrapeTimeout: 20s
+  jobLabel: app
+  selector:
+    matchLabels:
+      app: amp-exporter

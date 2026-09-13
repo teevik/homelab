@@ -219,6 +219,128 @@ in
         };
       };
 
+      # A separate pod collects through ADS, including instances created later.
+      # The common Metrics Reader role grants only Instances.*.Manage; it has
+      # no application control, console, file, or role-management permissions.
+      deployments.amp-exporter.spec = {
+        replicas = 1;
+        selector.matchLabels.app = "amp-exporter";
+        template = {
+          metadata.labels.app = "amp-exporter";
+          spec = {
+            automountServiceAccountToken = false;
+            securityContext = {
+              runAsNonRoot = true;
+              runAsUser = 65532;
+              runAsGroup = 65532;
+            };
+            containers.exporter = {
+              # renovate: datasource=docker depName=ghcr.io/soynx/amp-cubecoders-exporter
+              image = "ghcr.io/soynx/amp-cubecoders-exporter:0.1.0@sha256:69154b351258608e9830ff5c4e54230ff4cd66ccc77cc2ad8cb36db691ef6ed2";
+              securityContext = containerSecurity // {
+                readOnlyRootFilesystem = true;
+              };
+              env = {
+                AMP_URL.value = "http://amp.amp.svc:80";
+                AMP_USERNAME.value = "amp-metrics";
+                AMP_PASSWORD.valueFrom.secretKeyRef = {
+                  name = "amp-exporter";
+                  key = "AMP_PASSWORD";
+                };
+              };
+              ports.metrics.containerPort = 9822;
+              readinessProbe.httpGet = {
+                path = "/healthz";
+                port = "metrics";
+              };
+              livenessProbe = {
+                httpGet = {
+                  path = "/healthz";
+                  port = "metrics";
+                };
+                initialDelaySeconds = 10;
+                periodSeconds = 30;
+              };
+              resources = {
+                requests = {
+                  cpu = "10m";
+                  memory = "32Mi";
+                };
+                limits.memory = "128Mi";
+              };
+            };
+          };
+        };
+      };
+
+      services.amp-exporter = {
+        metadata.labels.app = "amp-exporter";
+        spec = {
+          selector.app = "amp-exporter";
+          ports.metrics = {
+            port = 9822;
+            targetPort = "metrics";
+          };
+        };
+      };
+
+      networkPolicies.amp-exporter.spec = {
+        podSelector.matchLabels.app = "amp-exporter";
+        policyTypes = [
+          "Ingress"
+          "Egress"
+        ];
+        ingress = [
+          {
+            from = [
+              { namespaceSelector.matchLabels."kubernetes.io/metadata.name" = "victoria-metrics"; }
+            ];
+            ports = [
+              {
+                protocol = "TCP";
+                port = 9822;
+              }
+            ];
+          }
+        ];
+        egress = [
+          {
+            to = [
+              {
+                namespaceSelector.matchLabels."kubernetes.io/metadata.name" = "kube-system";
+                podSelector.matchLabels."k8s-app" = "kube-dns";
+              }
+            ];
+            ports = [
+              {
+                protocol = "UDP";
+                port = 53;
+              }
+              {
+                protocol = "TCP";
+                port = 53;
+              }
+            ];
+          }
+          {
+            # AMP uses hostNetwork; its Service routes to the node's proxy.
+            to = [ { ipBlock.cidr = "192.168.1.225/32"; } ];
+            ports = [
+              {
+                protocol = "TCP";
+                port = 8088;
+              }
+            ];
+          }
+        ];
+      };
+
+      configMaps.amp-dashboard = {
+        metadata.labels.grafana_dashboard = "1";
+        metadata.annotations.grafana_folder = "Games";
+        data."amp.json" = builtins.readFile ./dashboards/amp.json;
+      };
+
       deployments.amp-cloudflare-ddns.spec = {
         replicas = 1;
         selector.matchLabels.app = "amp-cloudflare-ddns";
@@ -255,5 +377,31 @@ in
         };
       };
     };
+
+    yamls = [
+      ''
+        apiVersion: operator.victoriametrics.com/v1beta1
+        kind: VMServiceScrape
+        metadata:
+          name: amp-exporter
+          namespace: amp
+        spec:
+          jobLabel: app
+          selector:
+            matchLabels:
+              app: amp-exporter
+          endpoints:
+            - port: metrics
+              path: /metrics
+              interval: 30s
+              scrapeTimeout: 20s
+              metricRelabelConfigs:
+                # ADS is the controller, not a game; its app metrics are not
+                # meaningful. amp_up still reports controller connectivity.
+                - sourceLabels: [module]
+                  regex: ADS
+                  action: drop
+      ''
+    ];
   };
 }

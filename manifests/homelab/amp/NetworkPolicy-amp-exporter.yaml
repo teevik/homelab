@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: amp-exporter
+  namespace: amp
+spec:
+  egress:
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+      to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+    - ports:
+        - port: 8088
+          protocol: TCP
+      to:
+        - ipBlock:
+            cidr: 192.168.1.225/32
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: victoria-metrics
+      ports:
+        - port: 9822
+          protocol: TCP
+  podSelector:
+    matchLabels:
+      app: amp-exporter
+  policyTypes:
+    - Ingress
+    - Egress
