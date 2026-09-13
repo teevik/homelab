@@ -32,7 +32,7 @@ data:
       "panels": [
         {
           "id": 1,
-          "title": "AMP connection",
+          "title": "AMP",
           "type": "stat",
           "datasource": {
             "type": "prometheus",
@@ -111,7 +111,7 @@ data:
         },
         {
           "id": 2,
-          "title": "Games ready",
+          "title": "Ready games",
           "type": "stat",
           "datasource": {
             "type": "prometheus",
@@ -176,7 +176,7 @@ data:
         },
         {
           "id": 3,
-          "title": "Game instances",
+          "title": "Instances",
           "type": "stat",
           "datasource": {
             "type": "prometheus",
@@ -241,7 +241,7 @@ data:
         },
         {
           "id": 4,
-          "title": "Players online",
+          "title": "Players",
           "type": "stat",
           "datasource": {
             "type": "prometheus",
@@ -306,7 +306,7 @@ data:
         },
         {
           "id": 5,
-          "title": "AMP pod memory",
+          "title": "Shared RAM",
           "type": "stat",
           "datasource": {
             "type": "prometheus",
@@ -371,7 +371,7 @@ data:
         },
         {
           "id": 6,
-          "title": "AMP pod memory limit",
+          "title": "RAM limit",
           "type": "stat",
           "datasource": {
             "type": "prometheus",
@@ -800,8 +800,10 @@ data:
                 },
                 "thresholdsStyle": {
                   "mode": "off"
-                }
-              }
+                },
+                "axisSoftMax": 1
+              },
+              "decimals": 0
             },
             "overrides": []
           },
@@ -971,7 +973,34 @@ data:
                 }
               }
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Container limit"
+                },
+                "properties": [
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 0
+                  },
+                  {
+                    "id": "custom.lineWidth",
+                    "value": 1
+                  },
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "fill": "dash",
+                      "dash": [
+                        6,
+                        4
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "targets": [
             {
@@ -1067,7 +1096,34 @@ data:
                 }
               }
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Capacity"
+                },
+                "properties": [
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 0
+                  },
+                  {
+                    "id": "custom.lineWidth",
+                    "value": 1
+                  },
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "fill": "dash",
+                      "dash": [
+                        6,
+                        4
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "targets": [
             {
