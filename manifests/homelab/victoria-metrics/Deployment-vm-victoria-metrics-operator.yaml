@@ -5,8 +5,8 @@ metadata:
     app.kubernetes.io/instance: vm
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: victoria-metrics-operator
-    app.kubernetes.io/version: v0.74.0
-    helm.sh/chart: victoria-metrics-operator-0.67.2
+    app.kubernetes.io/version: v0.74.1
+    helm.sh/chart: victoria-metrics-operator-0.67.3
   name: vm-victoria-metrics-operator
   namespace: victoria-metrics
 spec:
@@ -34,6 +34,16 @@ spec:
             - --leader-elect
             - --health-probe-bind-address=:8081
           env:
+            - name: VM_ANOMALY_VERSION
+              value: v1.30.4
+            - name: VM_LOGS_VERSION
+              value: v1.52.0
+            - name: VM_METRICS_VERSION
+              value: v1.151.0
+            - name: VM_TRACES_VERSION
+              value: v0.10.0
+            - name: VM_VMALERTMANAGER_ALERTMANAGERVERSION
+              value: v0.34.0
             - name: POD_NAME
               valueFrom:
                 fieldRef:
@@ -42,7 +52,7 @@ spec:
               value: victoria-metrics-operator
             - name: VM_ENABLEDPROMETHEUSCONVERTEROWNERREFERENCES
               value: "false"
-          image: victoriametrics/operator:v0.74.0
+          image: victoriametrics/operator:v0.74.1
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
