@@ -68,7 +68,7 @@ spec:
             - mountPath: /run/secrets/amp
               name: secrets
               readOnly: true
-        - image: nginxinc/nginx-unprivileged:1.30.4-alpine@sha256:b8c179cd3c2ae222a873dd59fbae240fadc03836cae5198afc9e9c19919c3880
+        - image: nginxinc/nginx-unprivileged:1.31.5-alpine@sha256:1905fed0833f52c25fdda4d37e17740615f44e9520b62782a0affcfa8448cb96
           name: proxy
           ports:
             - containerPort: 8088
