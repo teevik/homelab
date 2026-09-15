@@ -75,18 +75,6 @@ let
                     icon = "si:twitch";
                   }
                   {
-                    title = "Kavita";
-                    url = "http://kavita";
-                    check-url = "http://kavita.kavita.svc";
-                    icon = "di:kavita";
-                  }
-                  {
-                    title = "Kavita Files";
-                    url = "http://kavita-files";
-                    check-url = "http://kavita-files.kavita.svc";
-                    icon = "di:filebrowser";
-                  }
-                  {
                     title = "ntfy";
                     url = "http://ntfy";
                     check-url = "http://ntfy.ntfy.svc";

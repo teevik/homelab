@@ -76,7 +76,6 @@
           ./kubernetes/bentopdf.nix
           ./kubernetes/amp.nix
           ./kubernetes/twitchdropsminer.nix
-          ./kubernetes/kavita.nix
           ./kubernetes/amd-device-plugin.nix
           ./kubernetes/ntfy.nix
           ./kubernetes/changedetection.nix
