@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reclip
+  namespace: reclip
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reclip
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: reclip
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - image: registry.tail84b6c.ts.net/reclip:1d161d15a4fe
+          name: reclip
+          ports:
+            - containerPort: 8899
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            timeoutSeconds: 5
+          resources:
+            limits:
+              ephemeral-storage: 12Gi
+              memory: 2Gi
+            requests:
+              cpu: 100m
+              ephemeral-storage: 1Gi
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          startupProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - mountPath: /app/downloads
+              name: downloads
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      volumes:
+        - emptyDir:
+            sizeLimit: 10Gi
+          name: downloads

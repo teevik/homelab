@@ -35,6 +35,11 @@
       flake = false;
     };
 
+    reclip = {
+      url = "github:averygan/reclip";
+      flake = false;
+    };
+
   };
 
   outputs =
@@ -80,7 +85,9 @@
           ./kubernetes/ntfy.nix
           ./kubernetes/changedetection.nix
           ./kubernetes/registry.nix
+          ./kubernetes/reclip.nix
           { _module.args.kodekampSrc = inputs.kodekamp; }
+          { _module.args.reclipSrc = inputs.reclip; }
         ];
       };
     };

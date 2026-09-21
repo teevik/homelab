@@ -302,6 +302,22 @@
         "type": "github"
       }
     },
+    "reclip": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1783619380,
+        "narHash": "sha256-ffSd3Ao3jR0R2LR49gSgDix31rTgvTW8Qwcd2xMT1S4=",
+        "owner": "averygan",
+        "repo": "reclip",
+        "rev": "1d161d15a4fe93d9b3371377f0a421dc3e965b10",
+        "type": "github"
+      },
+      "original": {
+        "owner": "averygan",
+        "repo": "reclip",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "blueprint": "blueprint",
@@ -310,6 +326,7 @@
         "ncps": "ncps",
         "nixidy": "nixidy",
         "nixpkgs": "nixpkgs_3",
+        "reclip": "reclip",
         "sops-nix": "sops-nix"
       }
     },

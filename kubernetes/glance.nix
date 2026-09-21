@@ -98,6 +98,12 @@ let
                     check-url = "http://zot.registry.svc:5000/v2/";
                     icon = "si:opencontainersinitiative";
                   }
+                  {
+                    title = "Reclip";
+                    url = "http://reclip";
+                    check-url = "http://reclip-tailscale.reclip.svc";
+                    icon = "mdi:download";
+                  }
                 ];
               }
 

@@ -56,6 +56,11 @@ let
       };
     };
 
+    reclip-registry-push = {
+      namespace = "reclip";
+      data."config.json" = "registry_dockerconfig_json";
+    };
+
     amp-secrets = {
       namespace = "amp";
       data = {
