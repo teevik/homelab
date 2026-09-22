@@ -15,6 +15,7 @@
     flake.nixosModules.standard
     flake.nixosModules.kubernetes
     flake.nixosModules.anime-matrix
+    flake.nixosModules.nix-cache
   ];
 
   # Disk configuration
