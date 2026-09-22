@@ -22,12 +22,12 @@ spec:
             - -c
             - |+
               set -eu
-              if wget -q --spider --header "Accept: application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json" "http://zot.registry.svc:5000/v2/amp/manifests/v26-d7f28405"; then
-                echo "zot.registry.svc:5000/amp:v26-d7f28405 is already in the registry; skipping build"
+              if wget -q --spider --header "Accept: application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json" "http://zot.registry.svc:5000/v2/amp/manifests/v27-72ed7f6b"; then
+                echo "zot.registry.svc:5000/amp:v27-72ed7f6b is already in the registry; skipping build"
               else
-                echo "building zot.registry.svc:5000/amp:v26-d7f28405"
+                echo "building zot.registry.svc:5000/amp:v27-72ed7f6b"
                 buildctl-daemonless.sh build --frontend dockerfile.v0 --local context=/workspace --local dockerfile=/workspace \
-                  --output type=image,name=zot.registry.svc:5000/amp:v26-d7f28405,push=true,registry.insecure=true \
+                  --output type=image,name=zot.registry.svc:5000/amp:v27-72ed7f6b,push=true,registry.insecure=true \
                   --export-cache type=registry,ref=zot.registry.svc:5000/amp:buildcache,mode=max,registry.insecure=true \
                   --import-cache type=registry,ref=zot.registry.svc:5000/amp:buildcache,registry.insecure=true
               fi
