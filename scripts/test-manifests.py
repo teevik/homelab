@@ -149,6 +149,74 @@ class ManifestChecks(unittest.TestCase):
         self.assertEqual(result.returncode, 1, result.stderr)
         self.assertIn("hostNetwork", result.stdout)
 
+    def test_rejects_direct_operator_host_network_override(self):
+        # These CRDs all define pod overrides directly under spec.
+        for kind, version in (
+            ("VMAgent", "v1beta1"),
+            ("VMAlert", "v1beta1"),
+            ("VMAlertmanager", "v1beta1"),
+            ("VMAuth", "v1beta1"),
+            ("VMSingle", "v1beta1"),
+            ("VLAgent", "v1"),
+            ("VLSingle", "v1"),
+            ("VTSingle", "v1"),
+            ("VMAnomaly", "v1"),
+        ):
+            with self.subTest(kind=kind):
+                resource = {
+                    "apiVersion": f"operator.victoriametrics.com/{version}",
+                    "kind": kind,
+                    "metadata": {"namespace": "monitoring", "name": "metrics"},
+                    "spec": {"hostNetwork": True},
+                }
+                name = f"monitoring/{kind}/metrics"
+                result = self.check([resource])
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn(f"{name}: unexpected hostNetwork", result.stdout)
+                policy = {"exceptions": {"hostNetwork": [name]}}
+                result = self.check([resource], policy)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                resource["metadata"]["name"] = "another-agent"
+                result = self.check([resource], policy)
+                self.assertEqual(result.returncode, 1, result.stderr)
+                resource["spec"]["hostNetwork"] = False
+                result = self.check([resource])
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_rejects_direct_operator_volume_and_container_overrides(self):
+        for field, override, message, exception in (
+            (
+                "volumes",
+                {"name": "host", "hostPath": {"path": "/"}},
+                "unexpected hostPath /",
+                {"hostPaths": {"monitoring/VMAgent/metrics": ["/"]}},
+            ),
+            (
+                "containers",
+                {"name": "sidecar", "securityContext": {"privileged": True}},
+                "metrics/sidecar: unexpected privileged container",
+                {"privileged": ["monitoring/VMAgent/metrics/sidecar"]},
+            ),
+            (
+                "initContainers",
+                {"name": "init", "securityContext": {"privileged": True}},
+                "metrics/init: unexpected privileged container",
+                {"privileged": ["monitoring/VMAgent/metrics/init"]},
+            ),
+        ):
+            with self.subTest(field=field):
+                resource = {
+                    "apiVersion": "operator.victoriametrics.com/v1beta1",
+                    "kind": "VMAgent",
+                    "metadata": {"namespace": "monitoring", "name": "metrics"},
+                    "spec": {field: [override]},
+                }
+                result = self.check([resource])
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn(message, result.stdout)
+                result = self.check([resource], {"exceptions": exception})
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

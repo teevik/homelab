@@ -35,6 +35,9 @@ def annotations(resource):
 def pod_template(resource):
     if resource["kind"] == "Pod":
         return resource
+    if resource.get("apiVersion", "").startswith("operator.victoriametrics.com/"):
+        # These operator CRs expose pod overrides directly on spec.
+        return resource
     if resource["kind"] == "CronJob":
         return resource["spec"]["jobTemplate"]["spec"]["template"]
     return resource.get("spec", {}).get("template", {})
