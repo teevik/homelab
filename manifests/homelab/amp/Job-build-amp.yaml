@@ -5,7 +5,7 @@ metadata:
     argocd.argoproj.io/hook: PreSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
     argocd.argoproj.io/sync-wave: "0"
-    homelab.teevik.dev/image-builds: '[{"context":"/workspace","image":"amp","tag":"v26-d7f28405"}]'
+    homelab.teevik.dev/image-builds: '[{"context":"/workspace","image":"amp","tag":"v27-72ed7f6b"}]'
   name: build-amp
   namespace: amp
 spec:
