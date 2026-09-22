@@ -5,6 +5,7 @@ metadata:
     argocd.argoproj.io/hook: PreSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
     argocd.argoproj.io/sync-wave: "0"
+    homelab.teevik.dev/image-builds: '[{"context":"https://github.com/teevik/KodeKamp.git#2c3a0ca86ad1e58fb21a9dd0cb14b448fbeb0e97","image":"kodekamp-web","tag":"2c3a0ca86ad1"},{"context":"https://github.com/teevik/KodeKamp.git#2c3a0ca86ad1e58fb21a9dd0cb14b448fbeb0e97:code-runner","image":"kodekamp-code-runner","tag":"2c3a0ca86ad1"}]'
   name: build-kodekamp
   namespace: kodekamp
 spec:

@@ -19,6 +19,15 @@ deploy:
 switch:
     nixidy switch .#homelab
 
+check:
+    nix flake check -L --no-update-lock-file
+
+check-manifests:
+    nix build -L --no-link .#checks.x86_64-linux.manifests
+
+check-k3s:
+    nix build -L --no-link .#checks.x86_64-linux.k3s
+
 bootstrap:
     nixidy bootstrap .#homelab | kubectl apply -f -
 

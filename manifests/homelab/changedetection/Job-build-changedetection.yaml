@@ -5,6 +5,7 @@ metadata:
     argocd.argoproj.io/hook: PreSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
     argocd.argoproj.io/sync-wave: "0"
+    homelab.teevik.dev/image-builds: '[{"context":"/workspace","image":"changedetection","tag":"0.55.8-2029456b"}]'
   name: build-changedetection
   namespace: changedetection
 spec:

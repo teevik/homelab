@@ -59,6 +59,12 @@
     in
     blueprintOutputs
     // {
+      # Blueprint exports paths; flake validation expects module attrsets or
+      # functions. Keep file imports so module diagnostics retain their source.
+      nixosModules = builtins.mapAttrs (_: module: {
+        imports = [ module ];
+      }) blueprintOutputs.nixosModules;
+
       apps.${system}.updateCharts = {
         type = "app";
         program = pkgs.lib.getExe updateCharts;

@@ -5,6 +5,7 @@ metadata:
     argocd.argoproj.io/hook: PreSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
     argocd.argoproj.io/sync-wave: "0"
+    homelab.teevik.dev/image-builds: '[{"context":"https://github.com/averygan/reclip.git#1d161d15a4fe93d9b3371377f0a421dc3e965b10","image":"reclip","tag":"1d161d15a4fe"}]'
   name: build-reclip
   namespace: reclip
 spec:

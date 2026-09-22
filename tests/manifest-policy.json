@@ -1,0 +1,33 @@
+{
+  "persistentVolumes": {
+    "amp/PersistentVolumeClaim/amp-data": { "storageClassName": "longhorn", "backup": true },
+    "changedetection/PersistentVolumeClaim/changedetection-data": { "storageClassName": "longhorn", "backup": true },
+    "immich/PersistentVolumeClaim/immich-library": { "storageClassName": "longhorn", "backup": true },
+    "immich/PersistentVolumeClaim/immich-postgresql-data": { "storageClassName": "longhorn", "backup": true },
+    "kodekamp/PersistentVolumeClaim/kodekamp-db-data": { "storageClassName": "longhorn" },
+    "paperless-ngx/PersistentVolumeClaim/paperless-db-data": { "storageClassName": "longhorn", "backup": true },
+    "paperless-ngx/PersistentVolumeClaim/paperless-data": { "storageClassName": "longhorn", "backup": true },
+    "paperless-ngx/PersistentVolumeClaim/paperless-media": { "storageClassName": "longhorn", "backup": true },
+    "registry/PersistentVolumeClaim/zot-data": { "storageClassName": "longhorn", "backup": true },
+    "twitchdropsminer/PersistentVolumeClaim/twitchdropsminer-config": { "storageClassName": "longhorn", "backup": true },
+    "victoria-metrics/PersistentVolumeClaim/vm-grafana": { "storageClassName": "longhorn" }
+  },
+  "preSyncDependencies": {
+    "kodekamp/Job/build-kodekamp": ["kodekamp/NetworkPolicy/build"]
+  },
+  "exceptions": {
+    "hostPID": ["victoria-metrics/DaemonSet/vm-prometheus-node-exporter"],
+    "hostNetwork": [
+      "amp/Deployment/amp",
+      "glance/DaemonSet/glance-agent",
+      "victoria-metrics/DaemonSet/vm-prometheus-node-exporter"
+    ],
+    "hostPaths": {
+      "kube-system/DaemonSet/amdgpu-device-plugin": ["/var/lib/kubelet/device-plugins", "/sys"],
+      "longhorn-system/DaemonSet/longhorn-manager": ["/boot/", "/dev/", "/proc/", "/etc/", "/var/lib/longhorn/"],
+      "victoria-metrics/DaemonSet/vm-prometheus-node-exporter": ["/proc", "/sys", "/"]
+    },
+    "privileged": ["longhorn-system/DaemonSet/longhorn-manager/longhorn-manager"],
+    "funnel": ["argocd/Ingress/argocd-webhook", "immich/Ingress/immich-funnel"]
+  }
+}
