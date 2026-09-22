@@ -1,0 +1,105 @@
+name: Homelab checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: homelab-checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nix:
+    name: Nix checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@v22
+      - uses: DeterminateSystems/magic-nix-cache-action@v14
+      - name: Check virtualization support
+        run: test -r /dev/kvm && test -w /dev/kvm
+      - name: Build and test the flake
+        run: nix flake check -L --no-update-lock-file --max-jobs 2 --cores 2
+
+  image-plan:
+    name: Changed image sources
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      images: ${{ steps.plan.outputs.images }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@v22
+      - uses: DeterminateSystems/magic-nix-cache-action@v14
+      - name: Render candidate manifests
+        run: nix build --no-update-lock-file --out-link rendered .#nixidyEnvs.x86_64-linux.homelab.environmentPackage
+      - name: Compare build sources
+        id: plan
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
+        run: |
+          args=()
+          if [[ -n "$BASE_SHA" && ! "$BASE_SHA" =~ ^0+$ ]]; then
+            git worktree add --detach "$RUNNER_TEMP/homelab-base" "$BASE_SHA"
+            args=(--base "$RUNNER_TEMP/homelab-base/manifests/homelab")
+          fi
+          images=$(nix develop --no-update-lock-file --command python3 scripts/build-images.py rendered --list "${args[@]}")
+          echo "images=$images" >> "$GITHUB_OUTPUT"
+
+  images:
+    name: Build ${{ matrix.image }}
+    needs: image-plan
+    if: needs.image-plan.outputs.images != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJSON(needs.image-plan.outputs.images) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@v22
+      - uses: DeterminateSystems/magic-nix-cache-action@v14
+      - name: Render candidate manifests
+        run: nix build --no-update-lock-file --out-link rendered .#nixidyEnvs.x86_64-linux.homelab.environmentPackage
+      - name: Build image without publishing
+        env:
+          IMAGE: ${{ matrix.image }}
+        run: nix develop --no-update-lock-file --command python3 scripts/build-images.py rendered --image "$IMAGE"
+
+  validation:
+    # Require this stable name in the main branch ruleset. A skipped image
+    # matrix is valid only when planning succeeded and found no changed builds.
+    name: Homelab validation
+    if: always()
+    needs: [nix, image-plan, images]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require all applicable checks
+        env:
+          NIX_RESULT: ${{ needs.nix.result }}
+          PLAN_RESULT: ${{ needs.image-plan.result }}
+          IMAGES_RESULT: ${{ needs.images.result }}
+          IMAGES: ${{ needs.image-plan.outputs.images }}
+        run: |
+          test "$NIX_RESULT" = success
+          test "$PLAN_RESULT" = success
+          if [[ "$IMAGES" == '[]' ]]; then
+            test "$IMAGES_RESULT" = skipped
+          else
+            test "$IMAGES_RESULT" = success
+          fi

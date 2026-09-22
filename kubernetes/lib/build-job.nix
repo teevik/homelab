@@ -67,6 +67,8 @@ let
 in
 {
   metadata.annotations = {
+    # CI consumes the same build plan as this Job, including exact source refs.
+    "homelab.teevik.dev/image-builds" = builtins.toJSON builds;
     "argocd.argoproj.io/hook" = "PreSync";
     "argocd.argoproj.io/hook-delete-policy" = "BeforeHookCreation";
     # Anything the Job needs (build-context ConfigMap, NetworkPolicy) must be
