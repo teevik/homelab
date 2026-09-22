@@ -23,8 +23,8 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
-      - uses: DeterminateSystems/nix-installer-action@v22
-      - uses: DeterminateSystems/magic-nix-cache-action@v14
+      - uses: DeterminateSystems/nix-installer-action@v23
+      - uses: DeterminateSystems/magic-nix-cache-action@v15
       - name: Check virtualization support
         run: test -r /dev/kvm && test -w /dev/kvm
       - name: Build and test the flake
@@ -41,8 +41,8 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: DeterminateSystems/nix-installer-action@v22
-      - uses: DeterminateSystems/magic-nix-cache-action@v14
+      - uses: DeterminateSystems/nix-installer-action@v23
+      - uses: DeterminateSystems/magic-nix-cache-action@v15
       - name: Render candidate manifests
         run: nix build --no-update-lock-file --out-link rendered .#nixidyEnvs.x86_64-linux.homelab.environmentPackage
       - name: Compare build sources
@@ -72,8 +72,8 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
-      - uses: DeterminateSystems/nix-installer-action@v22
-      - uses: DeterminateSystems/magic-nix-cache-action@v14
+      - uses: DeterminateSystems/nix-installer-action@v23
+      - uses: DeterminateSystems/magic-nix-cache-action@v15
       - name: Render candidate manifests
         run: nix build --no-update-lock-file --out-link rendered .#nixidyEnvs.x86_64-linux.homelab.environmentPackage
       - name: Build image without publishing
