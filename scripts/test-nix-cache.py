@@ -4,6 +4,7 @@ import importlib.util
 import os
 from pathlib import Path
 import tempfile
+import time
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -26,6 +27,8 @@ class PublicationTests(unittest.TestCase):
             "nix": "nix", "nixStore": "nix-store", "rootsDirectory": str(self.root),
             "storeDirectory": str(self.root), "hosts": ["desktop", "zenbook"],
             "minFreeBytes": 0, "budgetBytes": 1000, "keepGenerations": 2,
+            "dependencyGroups": ["bootstrap", "desktop", "seed"],
+            "dependencyMaxAgeDays": 14, "dependencyBudgetBytes": 1000,
         }
         self.valid = {system(n) for n in range(1, 5)}
         self.register = patch.object(cache, "run", side_effect=self.realise).start()
@@ -35,9 +38,12 @@ class PublicationTests(unittest.TestCase):
     def realise(self, *args):
         self.assertEqual(args[0:2], ("nix-store", "--realise"))
         self.assertEqual(args[-6:], ("--option", "substitute", "false", "--option", "max-jobs", "0"))
-        if args[2] not in self.valid:
-            raise ValueError("missing path")
-        Path(args[4]).symlink_to(args[2])
+        marker = args.index("--add-root")
+        for index, path in enumerate(args[2:marker]):
+            if path not in self.valid:
+                raise ValueError("missing path")
+            suffix = f"-{index}" if index else ""
+            Path(args[marker + 1] + suffix).symlink_to(path)
         return args[2]
 
     def info(self, config, paths):
@@ -96,6 +102,46 @@ class PublicationTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 cache.dispatch(self.config, "cache-preflight 51")
             self.assertEqual(cache.dispatch(self.config, "cache-preflight 50"), {"availableBytes": 150})
+
+    def test_dependencies_retain_multiple_outputs_and_retry_idempotently(self):
+        paths = [system(1), system(2)]
+        receipt = cache.retain_dependencies(self.config, "bootstrap", "1", paths)
+        self.assertEqual(receipt["closurePaths"], 3)
+        self.assertEqual(receipt["retainedBytes"], 210)
+        calls = self.register.call_count
+        cache.retain_dependencies(self.config, "bootstrap", "1", paths)
+        self.assertEqual(self.register.call_count, calls)
+
+    def test_dependency_budget_and_expiry_do_not_remove_system_generations(self):
+        cache.publish(self.config, "desktop", "system", system(1))
+        self.config["dependencyBudgetBytes"] = 150
+        cache.retain_dependencies(self.config, "desktop", "1", [system(2)])
+        cache.retain_dependencies(self.config, "desktop", "2", [system(3)])
+        roots = cache.dependency_roots(self.root / "dependencies")
+        self.assertEqual([os.readlink(root) for root in roots], [system(3)])
+        batch = Path(roots[0]).parent
+        old = time.time() - 15 * 86400
+        os.utime(batch, (old, old))
+        cache.prune_dependencies(self.config)
+        self.assertEqual(cache.dependency_roots(self.root / "dependencies"), [])
+        self.assertEqual(os.readlink(self.root / "desktop/latest"), system(1))
+
+    def test_dependency_rejections_leave_previous_roots(self):
+        cache.retain_dependencies(self.config, "seed", "1", [system(1)])
+        before = cache.dependency_roots(self.root / "dependencies")
+        cases = [
+            ("seed", "../escape", [system(2)]), ("shell", "2", [system(2)]),
+            ("seed", "2", [system(2) + ".drv"]), ("seed", "2", ["/etc/passwd"]),
+            ("seed", "2", [system(2), system(9)]), ("seed", "2", []),
+        ]
+        for group, generation, paths in cases:
+            with self.subTest(paths=paths), self.assertRaises(ValueError):
+                cache.retain_dependencies(self.config, group, generation, paths)
+            self.assertEqual(cache.dependency_roots(self.root / "dependencies"), before)
+        self.config["dependencyBudgetBytes"] = 150
+        with self.assertRaises(ValueError):
+            cache.retain_dependencies(self.config, "seed", "2", [system(2), system(3)])
+        self.assertEqual(cache.dependency_roots(self.root / "dependencies"), before)
 
 
 if __name__ == "__main__":

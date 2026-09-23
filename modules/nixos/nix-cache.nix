@@ -21,6 +21,15 @@ let
       keepGenerations = 14;
       minFreeBytes = 300 * 1024 * 1024 * 1024;
       budgetBytes = 500 * 1024 * 1024 * 1024;
+      dependencyGroups = [
+        "bootstrap"
+        "updater"
+        "desktop"
+        "zenbook"
+        "seed"
+      ];
+      dependencyMaxAgeDays = 14;
+      dependencyBudgetBytes = 250 * 1024 * 1024 * 1024;
     }
   );
   command = pkgs.writeShellScript "nix-cache-command" ''
@@ -111,12 +120,14 @@ in
     "d ${rootsDirectory} 0700 nix-cache nix-cache -"
     "d ${rootsDirectory}/desktop 0700 nix-cache nix-cache -"
     "d ${rootsDirectory}/zenbook 0700 nix-cache nix-cache -"
+    "d ${rootsDirectory}/dependencies 0700 nix-cache nix-cache -"
   ];
   nix.optimise.automatic = true;
   systemd.services.nix-cache-gc = {
     description = "Collect unrooted Nix paths after cache generation pruning";
     serviceConfig = {
       Type = "oneshot";
+      ExecStartPre = "${pkgs.util-linux}/bin/runuser -u nix-cache -- ${pkgs.python3}/bin/python3 ${../../scripts/nix-cache-command.py} ${settings} --prune-dependencies";
       ExecStart = "${config.nix.package}/bin/nix-store --gc";
       Nice = 19;
       IOSchedulingClass = "idle";
