@@ -10,14 +10,6 @@ let
         name = "Home";
         columns = [
           {
-            size = "full";
-            widgets = [
-              widgets.attention
-              widgets.backups
-              widgets.resources
-            ];
-          }
-          {
             size = "small";
             widgets = [
               {
@@ -123,6 +115,14 @@ let
                   }
                 ];
               }
+            ];
+          }
+          {
+            size = "full";
+            widgets = [
+              widgets.attention
+              widgets.backups
+              widgets.resources
             ];
           }
           {
