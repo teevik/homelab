@@ -66,6 +66,24 @@ in
     };
   };
 
+  # vmagent runs in k3s and cannot reach the host's loopback listener. Expose
+  # only metrics on a separate port; the firewall admits the existing trusted
+  # CNI/Tailscale interfaces, with no new LAN/public opening.
+  services.nginx = {
+    enable = true;
+    virtualHosts.harmonia-metrics = {
+      listen = [
+        {
+          addr = "0.0.0.0";
+          port = 8502;
+        }
+      ];
+      locations."= /metrics".proxyPass = "http://127.0.0.1:5000/metrics";
+      locations."/".return = "404";
+      extraConfig = "access_log off;";
+    };
+  };
+
   # The existing tailnet-only proxy preserves original signatures. Evicting
   # its compressed copy simply fetches the retained closure from Harmonia.
   services.ncps.cache.upstream.urls = lib.mkBefore [ "http://127.0.0.1:5000" ];

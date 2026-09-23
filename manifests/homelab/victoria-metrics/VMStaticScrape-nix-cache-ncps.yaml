@@ -1,0 +1,13 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMStaticScrape
+metadata:
+  name: nix-cache-ncps
+  namespace: victoria-metrics
+spec:
+  jobName: nix-cache-ncps
+  targetEndpoints:
+    - interval: 30s
+      path: /metrics
+      scrapeTimeout: 10s
+      targets:
+        - 192.168.1.225:8501

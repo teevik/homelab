@@ -11,7 +11,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 5dcc885ea59aeb30bc918c4e5831fb9ac97abd78ab5b2eb83eab41c07bd5abc0
+        checksum/config: 48aecb7112b0ced71d4cfb142439f341f886e04cb77ce9387e6a147a4a29526e
       labels:
         app: glance
     spec:

@@ -39,6 +39,12 @@ let
                     icon = "si:grafana";
                   }
                   {
+                    title = "Nix Cache";
+                    url = "http://grafana/d/nix-cache";
+                    check-url = "http://192.168.1.225:8501/nix-cache-info";
+                    icon = "si:nixos";
+                  }
+                  {
                     title = "ArgoCD";
                     url = "http://argocd";
                     check-url = "http://argocd-tailscale.argocd.svc";
