@@ -1,0 +1,32 @@
+/* Use Glance's palette and type scale. Keep long Kubernetes names readable. */
+.homelab-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.homelab-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.homelab-value {
+  flex-shrink: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Glance retains the last successful HTML on a transport error. Replace it
+   with an explicit unavailable state so cached "All clear" cannot survive. */
+.homelab-unavailable {
+  display: none;
+}
+
+.homelab-metrics:has(.widget-header .notice-icon-major) .homelab-current {
+  display: none;
+}
+
+.homelab-metrics:has(.widget-header .notice-icon-major) .homelab-unavailable {
+  display: block;
+}

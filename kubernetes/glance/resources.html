@@ -1,0 +1,32 @@
+{{ if not $ok }}
+  <p class="color-negative size-h3">Resource usage unavailable</p>
+  <p class="margin-top-5">Server or container measurements are missing or older than three minutes.</p>
+{{ else }}
+  <div class="dynamic-columns list-with-separator list-gap-20">
+    <div>
+      <p class="size-h6">CPU · 5 minute average</p>
+      <p class="color-highlight size-h2 margin-top-5">{{ $cpu.JSON.Float "data.result.0.value.1" | printf "%.0f" }}% busy</p>
+      <ul class="list list-gap-10 margin-top-15">
+        {{ range $topCPU.JSON.Array "data.result" }}
+          <li class="homelab-row">
+            <span class="homelab-name">{{ .String "metric.namespace" }}</span>
+            <span class="color-highlight homelab-value">{{ .Float "value.1" | printf "%.2f" }} cores</span>
+          </li>
+        {{ end }}
+      </ul>
+    </div>
+    <div>
+      <p class="size-h6">Memory</p>
+      <p class="color-highlight size-h2 margin-top-5">{{ $memory.JSON.Float "data.result.0.value.1" | printf "%.0f" }}% used</p>
+      <ul class="list list-gap-10 margin-top-15">
+        {{ range $topMemory.JSON.Array "data.result" }}
+          <li class="homelab-row">
+            <span class="homelab-name">{{ .String "metric.namespace" }}</span>
+            <span class="color-highlight homelab-value">{{ div (.Float "value.1") 1073741824.0 | printf "%.1f" }} GiB</span>
+          </li>
+        {{ end }}
+      </ul>
+    </div>
+  </div>
+  <p class="size-h6 margin-top-15">Top three application namespaces · totals include the host</p>
+{{ end }}
