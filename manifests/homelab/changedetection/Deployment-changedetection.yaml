@@ -28,7 +28,7 @@ spec:
               value: /tmp
             - name: TZ
               value: Europe/Oslo
-          image: registry.tail84b6c.ts.net/changedetection:0.55.8-2029456b
+          image: registry.tail84b6c.ts.net/changedetection:0.60.7-1486c892
           name: changedetection
           ports:
             - containerPort: 5000
