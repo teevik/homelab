@@ -1,8 +1,11 @@
 { ... }:
 let
+  widgets = import ./glance/widgets.nix;
+  dashboardCSS = builtins.readFile ./glance/dashboard.css;
   glanceConfig = builtins.toJSON {
+    server.assets-path = "/app/assets";
+    theme.custom-css-file = "/assets/dashboard.css";
     pages = [
-      # Home tab - News and content
       {
         name = "Home";
         columns = [
@@ -11,7 +14,7 @@ let
             widgets = [
               {
                 type = "monitor";
-                title = "Service Health";
+                title = "Applications";
                 cache = "1m";
                 sites = [
                   {
@@ -37,6 +40,12 @@ let
                     url = "http://grafana";
                     check-url = "http://grafana-tailscale.victoria-metrics.svc";
                     icon = "si:grafana";
+                  }
+                  {
+                    title = "Nix Cache";
+                    url = "http://grafana/d/nix-cache";
+                    check-url = "http://192.168.1.225:8501/nix-cache-info";
+                    icon = "si:nixos";
                   }
                   {
                     title = "ArgoCD";
@@ -106,7 +115,19 @@ let
                   }
                 ];
               }
-
+            ];
+          }
+          {
+            size = "full";
+            widgets = [
+              widgets.attention
+              widgets.backups
+              widgets.resources
+            ];
+          }
+          {
+            size = "small";
+            widgets = [
               {
                 type = "server-stats";
                 title = "Server";
@@ -118,14 +139,43 @@ let
                   }
                 ];
               }
-
               {
                 type = "weather";
                 location = "Oslo, Norway";
                 units = "metric";
                 hour-format = "24h";
               }
-
+              {
+                type = "calendar";
+                first-day-of-week = "monday";
+              }
+              {
+                type = "markets";
+                markets = [
+                  {
+                    symbol = "KOG.OL";
+                    name = "Kongsberg Gruppen";
+                  }
+                  {
+                    symbol = "NVDA";
+                    name = "NVIDIA";
+                  }
+                  {
+                    symbol = "NVO";
+                    name = "Novo Nordisk ADR";
+                  }
+                ];
+              }
+            ];
+          }
+        ];
+      }
+      {
+        name = "Feeds";
+        columns = [
+          {
+            size = "small";
+            widgets = [
               {
                 type = "rss";
                 title = "News & Blogs";
@@ -146,9 +196,16 @@ let
                   }
                 ];
               }
+              {
+                type = "releases";
+                cache = "1d";
+                repositories = [
+                  "glanceapp/glance"
+                  "k3s-io/k3s"
+                ];
+              }
             ];
           }
-
           {
             size = "full";
             widgets = [
@@ -159,7 +216,6 @@ let
                   { type = "lobsters"; }
                 ];
               }
-
               {
                 type = "videos";
                 channels = [
@@ -169,7 +225,6 @@ let
                   "UCHnyfMqiRRG1u-2MsSQLbXA" # Veritasium
                 ];
               }
-
               {
                 type = "group";
                 widgets = [
@@ -187,50 +242,12 @@ let
               }
             ];
           }
-
-          {
-            size = "small";
-            widgets = [
-              {
-                type = "calendar";
-                first-day-of-week = "monday";
-              }
-
-              {
-                type = "markets";
-                markets = [
-                  {
-                    symbol = "KOG.OL";
-                    name = "Kongsberg Gruppen";
-                  }
-                  {
-                    symbol = "NVDA";
-                    name = "NVIDIA";
-                  }
-                  {
-                    symbol = "NVO";
-                    name = "Novo Nordisk ADR";
-                  }
-                ];
-              }
-
-              {
-                type = "releases";
-                cache = "1d";
-                repositories = [
-                  "glanceapp/glance"
-                  "k3s-io/k3s"
-                ];
-              }
-            ];
-          }
         ];
       }
-
     ];
   };
 
-  configHash = builtins.hashString "sha256" glanceConfig;
+  configHash = builtins.hashString "sha256" (glanceConfig + dashboardCSS);
 in
 {
   applications.glance = {
@@ -238,7 +255,10 @@ in
     createNamespace = true;
 
     resources = {
-      configMaps.glance-config.data."glance.yml" = glanceConfig;
+      configMaps.glance-config.data = {
+        "glance.yml" = glanceConfig;
+        "dashboard.css" = dashboardCSS;
+      };
 
       deployments.glance.spec = {
         replicas = 1;
@@ -252,6 +272,10 @@ in
             containers.glance = {
               image = "glanceapp/glance:v0.8.5@sha256:32ab73d80f2b8b5fb0735b0431deb36b93fbb6b2fb43592449b0178c8b83e350";
               ports.http.containerPort = 8080;
+              volumeMounts."/app/assets/dashboard.css" = {
+                name = "config";
+                subPath = "dashboard.css";
+              };
               volumeMounts."/app/config/glance.yml" = {
                 name = "config";
                 subPath = "glance.yml";

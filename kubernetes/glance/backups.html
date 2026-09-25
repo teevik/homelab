@@ -1,0 +1,45 @@
+{{ if not $ok }}
+  <p class="color-negative size-h3">Backup status unavailable</p>
+  <p class="margin-top-5">Storage or volume inventory data is missing or older than three minutes. Check Longhorn before relying on these backups.</p>
+{{ else if eq (len ($volumes.JSON.Array "data.result")) 0 }}
+  <p class="color-negative">No protected volumes found</p>
+  <p class="margin-top-5">Check the backup labels on your application volumes.</p>
+{{ else }}
+  {{ $healthy := 0 }}
+  {{ range $volumes.JSON.Array "data.result" }}
+    {{ $timestamp := .Float "value.1" }}
+    {{ if and (gt $timestamp 0.0) (le (sub (.Float "value.0") $timestamp) 108000.0) }}{{ $healthy = add $healthy 1 }}{{ end }}
+  {{ end }}
+  <p class="size-h2 {{ if eq $healthy (len ($volumes.JSON.Array "data.result")) }}color-positive{{ else }}color-negative{{ end }}">{{ $healthy }} of {{ len ($volumes.JSON.Array "data.result") }} backups current</p>
+  <p class="size-h5 margin-top-5">Off-site · daily at 02:00 UTC · overdue after 30 hours</p>
+  {{ if gt (len ($failures.JSON.Array "data.result")) 0 }}
+    <ul class="list list-gap-5 margin-top-15">
+      {{ range $failures.JSON.Array "data.result" }}
+        <li class="color-negative homelab-name">{{ .String "metric.pvc" }} · {{ .Float "value.1" | printf "%.0f" }} failed backup records in Longhorn</li>
+      {{ end }}
+    </ul>
+  {{ end }}
+  <ul class="list list-gap-10 list-with-separator margin-top-15 collapsible-container" data-collapse-after="5">
+    {{ range $volumes.JSON.Array "data.result" }}
+      {{ $timestamp := .Float "value.1" }}
+      <li class="homelab-row">
+        <div class="min-width-0">
+          <p class="color-highlight homelab-name">{{ .String "metric.pvc" }}</p>
+          <p class="size-h6">{{ .String "metric.pvc_namespace" }}</p>
+        </div>
+        <div class="homelab-value">
+          {{ if lt $timestamp 0.0 }}
+            <p class="color-negative">Unknown</p>
+            <p class="size-h6">Backup data missing</p>
+          {{ else if eq $timestamp 0.0 }}
+            <p class="color-negative">Never backed up</p>
+          {{ else }}
+            {{ $overdue := gt (sub (.Float "value.0") $timestamp) 108000.0 }}
+            <p class="{{ if $overdue }}color-negative{{ else }}color-positive{{ end }}"><span data-dynamic-relative-time="{{ $timestamp | toInt }}"></span> ago</p>
+            <p class="size-h6">{{ if $overdue }}Overdue{{ else }}Successful{{ end }}</p>
+          {{ end }}
+        </div>
+      </li>
+    {{ end }}
+  </ul>
+{{ end }}

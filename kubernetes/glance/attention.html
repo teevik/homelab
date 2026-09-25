@@ -1,0 +1,47 @@
+{{ $alerts := .Subrequest "alerts" }}
+{{ if not (and (eq $alerts.Response.StatusCode 200) ($alerts.JSON.Exists "#")) }}{{ $ok = false }}{{ end }}
+{{ if not $ok }}
+  <p class="color-negative size-h3">Health status unavailable</p>
+  <p class="margin-top-5">Some monitoring data is missing or older than three minutes. Open the overview to investigate.</p>
+{{ else }}
+  {{ $issues := len ($alerts.JSON.Array "") }}
+  {{ range $apps.JSON.Array "data.result" }}
+    {{ if or (ne (.String "metric.health_status") "Healthy") (ne (.String "metric.sync_status") "Synced") }}{{ $issues = add $issues 1 }}{{ end }}
+  {{ end }}
+  {{ $issues = add $issues (len ($pods.JSON.Array "data.result")) }}
+  {{ $issues = add $issues (len ($restarts.JSON.Array "data.result")) }}
+  {{ if eq $issues 0 }}
+    <p class="color-positive size-h2">All clear</p>
+    <p class="margin-top-5">Apps are healthy and synced. No active alerts, unready pods, or restarts in the last hour.</p>
+  {{ else }}
+    <p class="color-negative size-h2">{{ $issues }} {{ if eq $issues 1 }}item needs{{ else }}items need{{ end }} attention</p>
+    <ul class="list list-gap-15 list-with-separator margin-top-15 collapsible-container" data-collapse-after="5">
+      {{ range $alerts.JSON.Array "" }}
+        <li>
+          <a class="color-highlight" href="http://grafana/alerting/list">{{ if .String "annotations.summary" }}{{ .String "annotations.summary" }}{{ else }}{{ .String "labels.alertname" }}{{ end }}</a>
+          <p class="size-h5">{{ .String "labels.severity" }}{{ if .String "labels.namespace" }} · {{ .String "labels.namespace" }}{{ end }} · firing <span {{ .String "startsAt" | parseTime "rfc3339" | toRelativeTime }}></span></p>
+        </li>
+      {{ end }}
+      {{ range $apps.JSON.Array "data.result" }}
+        {{ if or (ne (.String "metric.health_status") "Healthy") (ne (.String "metric.sync_status") "Synced") }}
+          <li>
+            <a class="color-highlight" href="http://argocd/applications/argocd/{{ .String "metric.name" }}">{{ .String "metric.name" }}</a>
+            <p class="size-h5">Deployment · {{ .String "metric.health_status" }} · {{ .String "metric.sync_status" }}</p>
+          </li>
+        {{ end }}
+      {{ end }}
+      {{ range $pods.JSON.Array "data.result" }}
+        <li>
+          <p class="color-highlight homelab-name">{{ .String "metric.pod" }}</p>
+          <p class="size-h5">{{ .String "metric.namespace" }} · pod is not ready</p>
+        </li>
+      {{ end }}
+      {{ range $restarts.JSON.Array "data.result" }}
+        <li>
+          <p class="color-highlight homelab-name">{{ .String "metric.pod" }}</p>
+          <p class="size-h5">{{ .String "metric.namespace" }} · {{ .Float "value.1" | printf "%.0f" }} restarts in the last hour</p>
+        </li>
+      {{ end }}
+    </ul>
+  {{ end }}
+{{ end }}

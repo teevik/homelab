@@ -11,7 +11,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 5dcc885ea59aeb30bc918c4e5831fb9ac97abd78ab5b2eb83eab41c07bd5abc0
+        checksum/config: 585ee8b1717edbf6ced0aa45c5e938243ab62779726458b034253e9f286678f8
       labels:
         app: glance
     spec:
@@ -22,6 +22,9 @@ spec:
             - containerPort: 8080
               name: http
           volumeMounts:
+            - mountPath: /app/assets/dashboard.css
+              name: config
+              subPath: dashboard.css
             - mountPath: /app/config/glance.yml
               name: config
               subPath: glance.yml
