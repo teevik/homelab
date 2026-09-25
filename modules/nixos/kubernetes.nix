@@ -261,7 +261,8 @@ in
         # Keep the stable Ethernet address aligned with the embedded-etcd peer.
         "--node-ip=192.168.1.225"
         "--advertise-address=192.168.1.225"
-        "--write-kubeconfig-mode=0644"
+        "--write-kubeconfig-mode=0640"
+        "--write-kubeconfig-group=wheel"
         "--disable=traefik" # Use Tailscale ingress instead
         "--disable=servicelb" # Not needed with Tailscale
         "--disable=local-storage" # Use Longhorn instead of local-path provisioner

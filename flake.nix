@@ -4,6 +4,9 @@
   inputs = {
 
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    # Runner releases must stay within GitHub's 30-day update window without
+    # forcing an unrelated upgrade of the homelab's Kubernetes host.
+    runner-nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     # TODO: switch to latest when 0.10 is in nixpkgs
     ncps.url = "github:kalbasit/ncps/v0.10.0-rc17";

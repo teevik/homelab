@@ -10,6 +10,9 @@ is **Homelab validation**; this is the status to require on `main`.
 - Blueprint's host build, development shell, application package, and existing
   private cache tests. The public NixOS module outputs are wrapped as imports so
   they also satisfy flake output validation.
+- `checks/glance.nix`: render the production dashboard templates with the deployed
+  Glance version against fixture APIs. Covers healthy and unhealthy services,
+  overdue and missing backups, absent metrics, API errors, and cached outages.
 - `checks/manifests.nix`: compare fresh nixidy output with the entire committed
   manifest tree; validate every resource with pinned Kubernetes schemas and
   schemas extracted from the rendered CRDs; enforce the deployment invariants

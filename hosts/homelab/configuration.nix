@@ -16,6 +16,7 @@
     flake.nixosModules.kubernetes
     flake.nixosModules.anime-matrix
     flake.nixosModules.nix-cache
+    flake.nixosModules.github-runner
   ];
 
   # Disk configuration

@@ -140,6 +140,40 @@ in
     "d ${rootsDirectory}/zenbook 0700 nix-cache nix-cache -"
     "d ${rootsDirectory}/dependencies 0700 nix-cache nix-cache -"
   ];
+  # Native CI only requests retention of existing store paths. It receives no
+  # cache signing key, SSH key, sudo permission or access to the retention roots.
+  systemd.sockets.config-ci-cache = {
+    wantedBy = [ "sockets.target" ];
+    socketConfig = {
+      ListenStream = "/run/config-ci-cache.sock";
+      SocketUser = "config-runner";
+      SocketMode = "0600";
+      Accept = true;
+      MaxConnections = 4;
+    };
+  };
+  systemd.services."config-ci-cache@" = {
+    serviceConfig = {
+      Slice = "config-ci.slice";
+      ExecStart = "${pkgs.python3}/bin/python3 ${../../scripts/runner/cache-local.py} ${../../scripts/nix-cache-command.py} ${settings} /nix/var/nix/gcroots/config-ci-pending";
+      User = "nix-cache";
+      Group = "nix-cache";
+      StandardInput = "socket";
+      StandardOutput = "socket";
+      StandardError = "journal";
+      RuntimeMaxSec = 600;
+      NoNewPrivileges = true;
+      ProtectSystem = "strict";
+      ProtectHome = true;
+      PrivateTmp = true;
+      PrivateDevices = true;
+      RestrictAddressFamilies = [ "AF_UNIX" ];
+      ReadWritePaths = [
+        rootsDirectory
+        "/nix/var/nix/gcroots/config-ci-pending"
+      ];
+    };
+  };
   nix.optimise.automatic = true;
   systemd.services.nix-cache-gc = {
     description = "Collect unrooted Nix paths after cache generation pruning";
