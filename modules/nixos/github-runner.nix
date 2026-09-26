@@ -105,6 +105,11 @@ let
       ${pkgs.coreutils}/bin/cp -L --remove-destination "$state/$file" "$backup/$file"
       ${pkgs.coreutils}/bin/chmod 0600 "$backup/$file"
     done
+    # The newer runner resolves diagnostics under RUNNER_ROOT; the older
+    # NixOS module only links _diag in workDir. Keep logs across job resets.
+    if [[ ! -e "$state/_diag" ]]; then
+      ${pkgs.coreutils}/bin/ln -s /var/log/github-runner/config-nightly "$state/_diag"
+    fi
   '';
 in
 {
@@ -118,10 +123,10 @@ in
     "d /nix/var/nix/gcroots/config-ci-pending 0770 root nix-cache -"
   ];
   systemd.slices.config-ci.sliceConfig = {
-    CPUQuota = "600%";
+    CPUQuota = "300%";
     CPUWeight = 20;
-    MemoryHigh = "14G";
-    MemoryMax = "16G";
+    MemoryHigh = "13G";
+    MemoryMax = "14G";
     MemorySwapMax = 0;
     IOWeight = 20;
   };
@@ -199,7 +204,13 @@ in
     ];
     extraEnvironment = {
       NIX_REMOTE = "unix:///run/config-ci-nix/socket";
-      NIX_CONFIG = "accept-flake-config = true\nmax-jobs = 2\ncores = 4\nsubstituters = http://10.254.254.1:8501 https://cache.nixos.org\n";
+      NIX_CONFIG = ''
+        accept-flake-config = true
+        max-jobs = 2
+        cores = 4
+        substituters = http://10.254.254.1:8501 https://cache.nixos.org
+        extra-trusted-public-keys = ${lib.concatStringsSep " " config.services.ncps.cache.upstream.publicKeys}
+      '';
       NIX_CACHE_LOCAL_SOCKET = "/run/config-ci-cache.sock";
       NIX_CACHE_URL = "http://10.254.254.1:8501";
     };

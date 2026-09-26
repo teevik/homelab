@@ -1,0 +1,10 @@
+StorePath: /nix/store/kp7qcdqfxcn1wg2fzszf0x3ra89n4akx-libpsl-0.21.5
+URL: nar/00xwr4l14jd1i5n9v48zg46xl1m5h31l1zagf6p8csai537601mh.nar.zst
+Compression: zstd
+FileHash: sha256:1br95bi6qhha2pbyranp4svwb5cjrrbmb0slly4a1bxrprl91q4w
+FileSize: 69933
+NarHash: sha256:00xwr4l14jd1i5n9v48zg46xl1m5h31l1zagf6p8csai537601mh
+NarSize: 117608
+References: fp6wnyklwzdncp0nvhdy9d5fnir0mjq5-libunistring-1.4.2 kp7qcdqfxcn1wg2fzszf0x3ra89n4akx-libpsl-0.21.5 m07h00fl6538s4gavrp66a20ka4hg7fy-glibc-2.42-67 xidgjdv05b8yz6w6qrhk4mmjxm4l2zjf-libidn2-2.3.8 zifx9q7kjslmajccpv3hwrw2v9n27kdd-publicsuffix-list-0-unstable-2026-05-13
+Deriver: bzifg0c4i9gvaacammgd48zqjfl46x1j-libpsl-0.21.5.drv
+Sig: niks3.numtide.com-1:kINJO8DP2J+2/F9d/eYZUsoCMyXYaGF0QcnbXpdznztUq1BeYyPMsEb8xUNXIVTy1rwRsIHr77V0/Nhr6IeHCA==

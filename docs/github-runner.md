@@ -2,14 +2,21 @@
 
 `github-runner-config-nightly.service` runs natively on homelab as the dedicated,
 unprivileged `config-runner` user. Its only GitHub label is
-`homelab-config-nightly`. The Config nightly workflow prepares shared dependencies
-first, then builds desktop and zenbook sequentially on this one runner. Lint/PR
+`homelab-config-nightly`. The Config nightly workflow updates packages once, then builds desktop and
+zenbook sequentially in one job. Source/evaluation caches survive between hosts;
+Nix automatically reuses their shared dependencies. Lint/PR
 checks, the weekly security workflow, and opening the update PR stay on GitHub.
 
 The CI Nix daemon uses the existing `/nix/store` and database. Existing outputs
 need no download or rebuild. Missing paths use ncps at `10.254.254.1:8501`, then
 public upstream caches or a local build. ncps's compressed archive storage is
 separate from `/nix/store`.
+
+Both the CI daemon and runner client trust ncps's configured upstream public
+keys. The proxy preserves upstream signatures, so the client's publication
+verification needs these keys even when its daemon has already accepted a path.
+`checks/native-client-trust.nix` verifies a real Numtide-signed narinfo using the
+runner's client configuration; signature verification remains required.
 
 ## Boundaries
 
@@ -38,6 +45,11 @@ separate from `/nix/store`.
 
 This remains a native shared-kernel service, not a VM isolation boundary. An
 accepted job can read the shared Nix store and contact the public internet.
+It can also read its own active runner registration credentials; the root-only
+backup prevents persistence across resets, not theft by an accepted job. If a
+nightly job is compromised, remove that runner registration in GitHub and
+register a new identity before resuming. The local workflow gate cannot protect
+credentials copied to a different runner client.
 Compromised upstream tools or a Nix/kernel/runner vulnerability remain risks.
 Never place plaintext credentials in the Nix store or approve arbitrary workflows
 for this runner. GitHub's general guidance favors private repositories for
@@ -45,8 +57,8 @@ self-hosted runners; this public repository needs the additional runner-side gat
 
 ## Resource and cache policy
 
-The runner, its Nix daemon and retention workers share `config-ci.slice`: six
-logical CPUs of quota, 14 GiB memory high threshold, 16 GiB memory maximum, no
+The runner, its Nix daemon and retention workers share `config-ci.slice`: three
+logical CPUs of quota, 13 GiB memory high threshold, 14 GiB memory maximum, no
 swap, and low CPU/I/O priority. Nix builds at most two derivations with four cores
 each. Limiting only the runner service would not limit daemon-spawned builds.
 
@@ -110,6 +122,30 @@ a narrowly scoped GitHub App, preserving the policy and process cleanup.
 
 ## Verified on 2026-09-25
 
+- Config commit `6cce879` was published and its lint workflow passed. The live
+  [nightly test](https://github.com/teevik/Config/actions/runs/36130673992) exposed
+  missing upstream signing keys in the native client. After the client fix and
+  a failing-then-passing regression test, the retry verified all 74 bootstrap
+  paths and began building shared dependencies (58 builds required).
+- The retry was canceled after an unexpected whole-host reset at approximately
+  12:28 UTC / 14:28 Oslo time. No orderly shutdown, OOM event or crash dump was
+  recorded. Monitoring showed about 16 GiB available RAM and CPU temperature
+  around 90 degrees C shortly beforehand; the host had reached a similar
+  temperature earlier without rebooting. SSD SMART passed with zero media errors.
+  The cause remains unknown. Cache and Kubernetes recovered; the runner service
+  was stopped pending investigation or an explicitly approved monitored retry.
+- The approved monitored retry (attempt 3) passed the entire nightly workflow:
+  shared dependencies, both host builds, closure verification, security scans,
+  and the update PR step. It ran approximately 13:07–14:55 UTC with a two-CPU
+  quota and 12 GiB hard memory cap. The soft threshold was raised from 10 to
+  11 GiB during the run to reduce compiler reclaim pressure. Peak cgroup memory
+  was 11.002 GiB and sampled CPU temperature peaked at 82.625 degrees C; no
+  reboot, hard memory-limit hit, OOM, or kernel fault was observed. This does not
+  establish the original reset's cause.
+- After that successful test, the two-CPU quota, 11 GiB soft threshold and
+  12 GiB hard cap were deployed permanently. Temporary systemd overrides were
+  removed and the same effective limits verified from the persistent unit and
+  cgroup. The runner remained online and Kubernetes and cache services healthy.
 - Runner 2.337.0: 1,090 tests passed, including the nightly allowlist and rejection
   of PRs, `pull_request_target`, other refs, repositories and workflows.
 - Config's security/workflow check passed, including native publication and
@@ -127,8 +163,33 @@ a narrowly scoped GitHub App, preserving the policy and process cleanup.
   The old flagged VictoriaMetrics webhook secret no longer exists in the cluster.
   These checks do not establish that every historical third-party credential has
   been revoked, and do not cover unpublished local checkpoint/log contents.
+- GitHub reports 13 open dependency alerts (six high, seven moderate) in Config's
+  desktop agent lockfiles under `.omp` and `.pi`. These are separate from the
+  runner package and should be addressed in a dependency update.
 
 Sources: [GitHub self-hosted runners](https://docs.github.com/en/actions/concepts/runners/self-hosted-runners),
 [security guidance](https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions),
 [runner job initialization](https://github.com/actions/runner/blob/v2.337.0/src/Runner.Worker/JobExtension.cs),
 [runner updates](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/monitor-and-troubleshoot).
+
+## Resource adjustment on 2026-09-26
+
+The scheduled run `36222901777` passed in 3h21m with the two-CPU/12-GiB limits.
+It rebuilt Zed (38 minutes for the final crate), Gaze (34 minutes), and the
+Nix/plugin bootstrap (18 minutes). Each host fetched the same 278 Git sources
+again after the per-job workspace reset. Cache publication took seconds.
+Monitoring recorded a CPU peak of 82.375 degrees C, at least 8.24 GiB available
+system memory, and no OOM or reset. To give compilers more headroom, the quota
+is now three CPUs with a 13-GiB soft/14-GiB hard memory cap; max-jobs remains
+2 and cores remains 4. This is a modest increase, not evidence that the original
+reset is resolved. Config removes the shared planner and builds both hosts in
+one job without changing runner authorization or cleanup between jobs.
+
+The [live sequential test](https://github.com/teevik/Config/actions/runs/36240095273)
+passed in 18m40s. Desktop took 11m16s including 278 Git-source fetches; zenbook
+took 2m05s with zero Git-source fetches. Most package outputs were already cached,
+so this is not a like-for-like compiler benchmark. At the new limits, sampled
+CI memory peaked at 9.63 GiB and CPU temperature at 82.375 degrees C, with at
+least 10.65 GiB available system memory. No reset, OOM, new memory-high events,
+or kernel faults occurred. The permanent settings were verified with no runtime
+overrides; Kubernetes/cache services and the now-idle runner remained healthy.
