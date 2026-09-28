@@ -94,6 +94,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: victoria-metrics-k8s-stack
     app.kubernetes.io/version: v0.34.0
-    helm.sh/chart: victoria-metrics-k8s-stack-0.93.0
+    helm.sh/chart: victoria-metrics-k8s-stack-0.95.0
   name: vmalertmanager-vm-victoria-metrics-k8s-stack-monzo-tpl
   namespace: victoria-metrics
