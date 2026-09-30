@@ -2,3 +2,6 @@ result
 result-*
 .direnv
 .scratch/
+
+__pycache__/
+.mypy_cache/

@@ -1,0 +1,24 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  name: homelab-display-policy
+  namespace: victoria-metrics
+spec:
+  groups:
+    - name: homelab-display-policy
+      rules:
+        - alert: HomelabDisplayControlFailed
+          annotations:
+            description: Inspect homelab-display-policy.service and /run/homelab-display-policy/status.json over SSH; do not wake the panel to report this fault.
+            summary: Laptop display policy could not apply device controls
+          expr: homelab_display_policy_failure == 1
+          for: 1m
+          labels:
+            severity: warning
+        - alert: HomelabDisplayControllerUnavailable
+          annotations:
+            summary: Laptop display controller stopped reconciling
+          expr: time() - homelab_display_policy_reconciled_seconds > 30 or absent(homelab_display_policy_reconciled_seconds)
+          for: 1m
+          labels:
+            severity: warning

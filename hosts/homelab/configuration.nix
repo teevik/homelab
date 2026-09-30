@@ -14,6 +14,7 @@
     inputs.sops-nix.nixosModules.sops
     flake.nixosModules.standard
     flake.nixosModules.kubernetes
+    flake.nixosModules.display-policy
     flake.nixosModules.anime-matrix
     flake.nixosModules.nix-cache
   ];
@@ -160,8 +161,8 @@
             boot: [],
             wake: [],
             shutdown: [],
-            display_enabled: true,
-            display_brightness: Med,
+            display_enabled: false,
+            display_brightness: Off,
             builtin_anims_enabled: false,
             off_when_unplugged: true,
             off_when_suspended: true,
@@ -185,6 +186,7 @@
 
   # AniMe Matrix stats display
   homelab.animeMatrix.enable = true;
+  homelab.displayPolicy.enable = true;
 
   # Enable GPU driver/firmware support (needed for ROCm in containers)
   hardware.graphics.enable = true;

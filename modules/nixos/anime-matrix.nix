@@ -10,6 +10,8 @@ let
   cfg = config.homelab.animeMatrix;
 in
 {
+  imports = [ ./display-policy.nix ];
+
   options.homelab.animeMatrix = {
     enable = lib.mkEnableOption "AniMe Matrix server stats display";
 
@@ -26,7 +28,8 @@ in
       description = "Display server CPU, memory and disk stats on AniMe Matrix";
       after = [ "asusd.service" ];
       wants = [ "asusd.service" ];
-      wantedBy = [ "multi-user.target" ];
+      # Only the policy controller may start the producer on this host.
+      wantedBy = lib.optionals (!config.homelab.displayPolicy.enable) [ "multi-user.target" ];
 
       serviceConfig = {
         Type = "simple";
@@ -39,6 +42,10 @@ in
           "--interval=${cfg.interval}"
           "--asusctl=${pkgs.asusctl}/bin/asusctl"
         ];
+
+        ExecCondition = lib.mkIf config.homelab.displayPolicy.enable "${
+          flake.packages.${pkgs.system}.display-policy
+        }/bin/display-policy gate";
 
         # Run as root to access asusctl
         User = "root";

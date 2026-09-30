@@ -52,11 +52,7 @@ func main() {
 		os.Exit(0)
 	}()
 
-	// Enable the display on startup
-	if err := exec.Command(*asusctlPath, "anime", "--enable-display", "true").Run(); err != nil {
-		log.Printf("Warning: failed to enable anime display: %v", err)
-	}
-
+	// Display power and brightness belong to the independent host policy controller.
 	log.Printf("Starting anime-matrix-stats (interval=%s)", *interval)
 
 	for {

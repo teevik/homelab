@@ -24,6 +24,12 @@ is **Homelab validation**; this is the status to require on `main`.
 - `checks/k3s.nix`: boot the real Kubernetes NixOS module in a disposable VM;
   check Secret provisioning, cluster DNS, Service traffic, k3s restart, and
   reboot recovery. It uses fake secret files and preloaded container images.
+- `checks/display-policy.nix`: typecheck and exercise the approved deterministic
+  Oslo time/action/persisted-state and recording-device boundary.
+- `checks/display-policy-vm.nix`: run the independent controller, real fixed-action
+  hotkeys and producer gate in a disposable NixOS VM with simulated panel/ASUS
+  devices; verify authorization, reboot and service recovery. See
+  [display policy and physical acceptance](display-policy.md).
 - Changed custom image sources are built with Docker in separate CI jobs.
   `homelab.teevik.dev/image-builds` annotations on the BuildKit Jobs expose their
   source revisions. Local build contexts come from the rendered ConfigMaps.
