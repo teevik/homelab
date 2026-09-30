@@ -74,6 +74,19 @@ def request(config: dict, action: str) -> dict:
         return result
 
 
+def notify_ready() -> None:
+    """Release systemd startup ordering only once requests can be served."""
+    endpoint = os.environ.get("NOTIFY_SOCKET")
+    if endpoint is None:
+        return
+    # systemd also supports Linux abstract Unix sockets, written with an @ prefix.
+    if endpoint.startswith("@"):
+        endpoint = "\0" + endpoint[1:]
+    with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as notification:
+        notification.connect(endpoint)
+        notification.sendall(b"READY=1")
+
+
 def serve(config: dict) -> None:
     run = Path(config["run_dir"])
     run.mkdir(parents=True, exist_ok=True)
@@ -139,6 +152,7 @@ def serve(config: dict) -> None:
         last = time.monotonic()
         signature = None
         status = json.loads((run / "status.json").read_text())
+        notify_ready()
         while True:
             # Fast active-VT detection; periodic full recovery also handles missed lid/AC events.
             try:

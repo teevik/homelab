@@ -56,6 +56,14 @@ pkgs.testers.runNixOSTest {
         setterm = toString fakeConsole;
       };
     };
+    # Make socket initialization lag behind exec so readiness ordering is tested
+    # deterministically, including after controller restart and reboot.
+    systemd.services.homelab-display-policy.serviceConfig.ExecStart = lib.mkForce (
+      pkgs.writeShellScript "delayed-display-policy" ''
+        ${pkgs.coreutils}/bin/sleep 3
+        exec ${flake.packages.${pkgs.system}.display-policy}/bin/display-policy serve
+      ''
+    );
     # Preserve the actual service/gate, swapping only the external device command.
     systemd.services.anime-matrix-stats.serviceConfig.ExecStart = lib.mkForce "${
       flake.packages.${pkgs.system}.anime-matrix-stats
@@ -109,8 +117,10 @@ pkgs.testers.runNixOSTest {
         applied()
         assert not status()["screen_on"] and not status()["anime_on"]
         machine.succeed("grep -q '/dev/tty1 --blank force' /run/display-fixture/console-effects")
-        machine.succeed("systemctl start anime-matrix-stats.service")
-        machine.fail("systemctl is-active anime-matrix-stats.service")
+        # The gate can skip this forbidden start, or periodic reconciliation can
+        # cancel its job. Assert the producer stays inactive in either case.
+        machine.execute("systemctl start anime-matrix-stats.service")
+        machine.wait_until_succeeds("test $(systemctl show --value --property=ActiveState anime-matrix-stats.service) = inactive")
         machine.fail("su -s /bin/sh nobody -c 'display-policy wake'")
         machine.fail("su -s /bin/sh teevik -c 'display-policy reconcile'")
         machine.fail("display-policy suspend")

@@ -68,6 +68,8 @@ in
       ];
       wants = [ "asusd.service" ];
       serviceConfig = {
+        Type = "notify";
+        NotifyAccess = "main";
         ExecStart = "${command} serve";
         Restart = "always";
         RestartSec = "1s";
