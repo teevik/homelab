@@ -1,19 +1,55 @@
-# TTY dashboard: layout, type and palette study
+# TTY dashboard: layout, type, palette and health states
 
-Throwaway prototype for [Choose the final TTY layout, typography, and palette](https://github.com/teevik/homelab/issues/70), in [Create the final TTY dashboard visual design](https://github.com/teevik/homelab/issues/69). **All readings are illustrative fixtures, not live data.** Not production code. No host, cluster, getty, font or display state is touched.
+Throwaway prototype for [Choose the final TTY layout, typography, and palette](https://github.com/teevik/homelab/issues/70) and [Approve TTY health states and interaction details](https://github.com/teevik/homelab/issues/71), in [Create the final TTY dashboard visual design](https://github.com/teevik/homelab/issues/69). **All readings are illustrative fixtures, not live data.** Not production code. No host, cluster, getty, font or display state is touched.
 
 ## Run
 
 From this directory:
 
 ```sh
-nix shell nixpkgs#cargo nixpkgs#rustc nixpkgs#gcc -c cargo run --release              # interactive
-nix shell nixpkgs#cargo nixpkgs#rustc nixpkgs#gcc -c cargo run --release -- --png out # console-faithful PNGs
+nix shell nixpkgs#cargo nixpkgs#rustc nixpkgs#gcc -c cargo run --release                             # interactive
+nix shell nixpkgs#cargo nixpkgs#rustc nixpkgs#gcc -c cargo run --release -- --png screenshots/states  # console-faithful PNGs
 ```
 
-Interactive keys: `←`/`→` switch variant, `n`/`m` normal or mixed-attention fixture, `↑`/`↓` scroll, `Ctrl+C` or `q` quit. The lavender pill on the bottom row is the prototype switcher, not part of the design. The program loads the proposed palette into the terminal (OSC 4, or `ESC ] P` on `TERM=linux`) and resets it on exit. A graphical terminal preview shows neither the console font nor the console's colour rules. Use the PNGs for that.
+Interactive keys: `←`/`→` step through the 15 scenarios, `↑`/`↓` scroll, `Ctrl+C` closes. The header's centre label names the scenario; it is prototype-only. The program loads the palette (OSC 4, or `ESC ] P` on `TERM=linux`) and resets it on exit, then prints the shell handoff message. A graphical terminal shows neither the console font nor its colour rules. Use the PNGs for that.
 
-`--png` renders each variant and fixture at every console geometry into 2560×1600 images. It uses the real console glyph bitmaps and applies the Linux 6.18 VT colour rules. Any glyph missing from the font, any bright background or any bold/italic/underline/dim/reverse attribute is reported. The committed `screenshots/` report none.
+The code now draws only the selected **A · Instrument ledger at 160×50**. The B/C variants and the 106×33 layout are in commit `1011672`, with their PNGs still in `screenshots/`.
+
+## Health states and interaction (#71)
+
+`--png` writes `screenshots/states/NN-<scenario>.png` at 160×50 with the kernel TER16x32 font. Every render reports no missing glyphs, no bright backgrounds and no text attributes. Attention rows, counts and the status word are derived from the fixture's per-source freshness in `src/data.rs` (`derive`). They are not hand-written.
+
+| # | Scenario | Status |
+| --- | --- | --- |
+| 01 | normal | ALL CLEAR |
+| 02 | one HTTP failure | ATTENTION |
+| 03 | mixed attention | ATTENTION |
+| 04 | many HTTP failures, attention overflow | ATTENTION |
+| 05 | HTTP ok, deployment unhealthy / out of sync | ATTENTION |
+| 06 | active alerts only, including one on no service | ATTENTION |
+| 07 | cluster monitoring unavailable, host still current | UNKNOWN |
+| 08 | alerts unavailable while a known failure exists | ATTENTION |
+| 09 | expected endpoint and app missing | UNKNOWN |
+| 10 | http check samples stale (4m) | UNKNOWN |
+| 11 | recovery | ALL CLEAR |
+| 12 | no CPU temperature sensor | ALL CLEAR |
+| 13 | cold start | UNKNOWN |
+| 14 | woken in quiet hours | ALL CLEAR |
+| 15 | woken during bedtime | ALL CLEAR |
+
+Proposed rules, as drawn:
+
+- **Status word:** ATTENTION when any known signal exists; else UNKNOWN when any cluster source is waiting, stale or unavailable or a catalog entry has no data; else ALL CLEAR. UNKNOWN is yellow on base; ALL CLEAR green on base; ATTENTION text on the red-mix ground. The summary column is anchored to the ATTENTION width, so it never moves.
+- **Attention rows:** one per service (catalog identity), tiered by its worst signal: `■` red HTTP check failing, `!` yellow active alert, `▲` mauve deployment only (health, sync, restarts), `?` yellow expected but no data. Tier first, then stable catalog order, so rows don't reshuffle as durations change. A shared app's signals attach to its first endpoint (immich → Immich). Alerts that map to no app get a row with their label (`cluster`). `endpoint ok` is appended when the endpoint answers despite other signals. `since` is the oldest signal. Counts say "signals on n services (and the cluster)", never incidents; coverage gaps are not counted as signals.
+- **Overflow:** the slot is fixed at 4 rows. With more than 4 services, it shows 3 plus `+n more` with the remaining names. Failing rows are highlighted in the ledger. Signals that don't fit end in `+n more`, never mid-word.
+- **Empty attention slot:** "Nothing needs attention." (ALL CLEAR). "No known problems, but health cannot be confirmed until every source is current." (UNKNOWN). "Waiting for first readings…" (cold start). Recoveries show as `· Registry  recovered · was HTTP 503 for 14m · ok since 21:38` under it. They don't affect status (proposed retention: 15 minutes).
+- **Freshness:** each section header states its source: `every 30s · 21s ago`, `STALE · newest sample 4m old`, `UNAVAILABLE 6m · last results`, or `waiting for the first result`. Last-known *ok* values from a stale or unavailable source are dimmed to overlay1 and lose their green; known failures and Degraded stay at full strength. SOURCES lists each source's age and state, plus one reason line per distinct failure (e.g. HTTP 401 from the cluster API).
+- **Unknown is never zero:** "alerts: unknown, alertmanager unavailable", not "no active alerts"; "endpoints: no current results"; CPU shows `--` / "measuring" until a second sample; the temperature history starts empty ("no history yet, it builds from now"); an unsupported sensor reads "unavailable. This does not affect service health."
+- **Night:** the footer's right side shows the policy controller's state: `screen dark 23:00-08:00, in 1h 18m`, `quiet hours until 08:00 · woken, dark again at 02:24 (in 10m)` or `bedtime until 08:00 · woken, dark again at 22:16 (in 10m)`. The UI never controls power.
+- **Controls:** the footer shows `Ctrl+C close, monitoring keeps running`; `↑↓ scroll services` appears only when the ledger overflows. Ctrl+C is the only exit key. After it, the shell prints "Dashboard closed. Monitoring and the night schedule keep running. Run `dashboard` to open it again." Checked in a pty with `TERM=linux`: exit status 0, `ESC ] R` palette reset, alternate screen left, cursor shown.
+- **Redraw:** only on new data, freshness transitions, resize and input. Ages are recomputed on each redraw (at least every 5 s with host samples), not by a per-second timer. There is no animation or blinking.
+
+## Layout study (#70)
 
 ## Measured facts (read-only, 2026-09-30)
 

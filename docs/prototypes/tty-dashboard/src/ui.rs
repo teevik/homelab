@@ -1,38 +1,17 @@
-//! Three structurally different layouts of the chosen "A · Terminal instruments"
-//! direction. Only CP437 glyphs that the 256-glyph Terminus fonts carry are used, and
-//! only palette slots 0-15 (grounds 0-7). No bold/italic/underline/dim/reverse: the
-//! Linux VT turns those into colour changes.
+//! A · Instrument ledger at 160x50, with every health/data state from
+//! "Approve TTY health states and interaction details" (teevik/homelab#71).
+//!
+//! Only CP437 glyphs that the 256-glyph Terminus fonts carry are used, and only palette
+//! slots 0-15 (grounds 0-7). No bold/italic/underline/dim/reverse: the Linux VT turns
+//! those into colour changes. "Dimmed" means drawn in overlay1 (META).
+//!
+//! The B/C variants and the 106x33 layout from #70 are in commit 1011672.
 
 use crate::data::*;
 use crate::palette::*;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
-
-#[derive(Clone, Copy, PartialEq)]
-pub enum Variant {
-    A,
-    B,
-    C,
-}
-
-impl Variant {
-    pub const ALL: [Variant; 3] = [Variant::A, Variant::B, Variant::C];
-    pub fn name(self) -> &'static str {
-        match self {
-            Variant::A => "A · Instrument ledger",
-            Variant::B => "B · Attention first",
-            Variant::C => "C · Large type",
-        }
-    }
-    pub fn key(self) -> &'static str {
-        match self {
-            Variant::A => "a",
-            Variant::B => "b",
-            Variant::C => "c",
-        }
-    }
-}
 
 pub struct Canvas<'a> {
     pub buf: &'a mut Buffer,
@@ -77,6 +56,24 @@ impl Canvas<'_> {
     }
 }
 
+// ---------------------------------------------------------------- formatting
+
+/// Ages: seconds under a minute, then whole minutes. They are recomputed on each
+/// redraw (at least every 5s, when a host sample lands), not by a per-second timer.
+pub fn age(s: u32) -> String {
+    if s < 60 {
+        format!("{s}s")
+    } else if s < 3600 {
+        format!("{}m", s / 60)
+    } else {
+        format!("{}h {}m", s / 3600, s / 60 % 60)
+    }
+}
+
+fn mins(m: u32) -> String {
+    age(m * 60)
+}
+
 // ---------------------------------------------------------------- big status type
 
 fn glyph(c: char) -> (&'static [&'static str; 7], u16) {
@@ -84,38 +81,42 @@ fn glyph(c: char) -> (&'static [&'static str; 7], u16) {
     const C: [&str; 7] = [" ####", "#    ", "#    ", "#    ", "#    ", "#    ", " ####"];
     const E: [&str; 7] = ["#####", "#    ", "#    ", "#### ", "#    ", "#    ", "#####"];
     const I: [&str; 7] = ["###", " # ", " # ", " # ", " # ", " # ", "###"];
+    const K: [&str; 7] = ["#   #", "#  # ", "# #  ", "##   ", "# #  ", "#  # ", "#   #"];
     const L: [&str; 7] = ["#    ", "#    ", "#    ", "#    ", "#    ", "#    ", "#####"];
     const N: [&str; 7] = ["#   #", "##  #", "##  #", "# # #", "#  ##", "#  ##", "#   #"];
     const O: [&str; 7] = [" ### ", "#   #", "#   #", "#   #", "#   #", "#   #", " ### "];
     const R: [&str; 7] = ["#### ", "#   #", "#   #", "#### ", "# #  ", "#  # ", "#   #"];
     const T: [&str; 7] = ["#####", "  #  ", "  #  ", "  #  ", "  #  ", "  #  ", "  #  "];
+    const U: [&str; 7] = ["#   #", "#   #", "#   #", "#   #", "#   #", "#   #", " ### "];
+    const W: [&str; 7] = ["#   #", "#   #", "#   #", "# # #", "# # #", "## ##", "#   #"];
     const SP: [&str; 7] = ["  ", "  ", "  ", "  ", "  ", "  ", "  "];
     match c {
         'A' => (&A, 5),
         'C' => (&C, 5),
         'E' => (&E, 5),
         'I' => (&I, 3),
+        'K' => (&K, 5),
         'L' => (&L, 5),
         'N' => (&N, 5),
         'O' => (&O, 5),
         'R' => (&R, 5),
         'T' => (&T, 5),
+        'U' => (&U, 5),
+        'W' => (&W, 5),
         _ => (&SP, 2),
     }
 }
 
-/// Width in cells of `word` at `scale`.
 fn big_width(word: &str, scale: u16) -> u16 {
     let px: u16 = word.chars().map(|c| glyph(c).1 + 1).sum::<u16>() - 1;
     px * scale
 }
 
-/// Draw `word` from a 5x7 pixel font. One pixel is `scale` cells wide and `scale`
-/// half-cells tall; a 16x32 cell makes a half-cell square, so pixels stay square.
-/// Returns the height in rows.
-fn big(c: &mut Canvas, x: u16, y: u16, word: &str, scale: u16, fg: u8, bg: u8) -> u16 {
+/// Draw `word` from a 5x7 pixel font; one pixel is `scale` cells wide and `scale`
+/// half-cells tall, so pixels stay square in a 16x32 cell.
+fn big(c: &mut Canvas, x: u16, y: u16, word: &str, scale: u16, fg: u8, bg: u8) {
     let w = big_width(word, scale) as usize;
-    let hh = (7 * scale) as usize; // half-rows
+    let hh = (7 * scale) as usize;
     let mut on = vec![vec![false; w]; hh + 1];
     let mut px = 0usize;
     for ch in word.chars() {
@@ -133,11 +134,9 @@ fn big(c: &mut Canvas, x: u16, y: u16, word: &str, scale: u16, fg: u8, bg: u8) -
         }
         px += gw as usize + 1;
     }
-    let rows = (hh + 1) / 2;
-    for r in 0..rows {
+    for r in 0..(hh + 1) / 2 {
         for col in 0..w {
-            let (t, b) = (on[2 * r][col], on[2 * r + 1][col]);
-            let ch = match (t, b) {
+            let ch = match (on[2 * r][col], on[2 * r + 1][col]) {
                 (true, true) => "█",
                 (true, false) => "▀",
                 (false, true) => "▄",
@@ -146,46 +145,218 @@ fn big(c: &mut Canvas, x: u16, y: u16, word: &str, scale: u16, fg: u8, bg: u8) -
             c.put(x + col as u16, y + r as u16, ch, fg, bg);
         }
     }
-    rows as u16
 }
 
-// ---------------------------------------------------------------- shared pieces
+// ---------------------------------------------------------------- vocabulary
 
-fn header(c: &mut Canvas, s: &Snapshot, short: bool) {
-    c.ground(0, 1, BAR);
-    let x = c.put(1, 0, "HOMELAB", BRAND, BAR);
-    if !short {
-        c.put(x + 2, 0, "host health", META, BAR);
+fn status_word(st: Status) -> (&'static str, u8, u8) {
+    match st {
+        Status::AllClear => ("ALL CLEAR", OK, GROUND),
+        Status::Attention => ("ATTENTION", TEXT, ALERT_GROUND),
+        Status::Unknown => ("UNKNOWN", WARM, GROUND),
     }
-    let tag = if short { "ILLUSTRATIVE" } else { "PROTOTYPE - ILLUSTRATIVE DATA, NOT LIVE" };
-    let w = c.w();
-    c.put(w / 2 - tag.len() as u16 / 2, 0, tag, WARM, BAR);
-    let clock = format!("{}  {} ", s.date, s.clock);
-    let clock = if short { format!("{} ", s.clock) } else { clock };
-    c.right(w, 0, &clock, TEXT, BAR);
 }
 
-fn footer(c: &mut Canvas, short: bool) {
-    let y = c.h() - 1;
-    c.ground(y, y + 1, BAR);
-    let mut x = c.put(1, y, "Ctrl+C", TEXT, BAR);
-    x = c.put(x + 1, y, "shell", META, BAR);
-    if !short {
-        x = c.put(x + 3, y, "dashboard", TEXT, BAR);
-        c.put(x + 1, y, "relaunch", META, BAR);
+fn tier_marker(t: Tier) -> (&'static str, u8) {
+    match t {
+        Tier::Fault => ("■", FAIL),
+        Tier::Alert => ("!", WARM),
+        Tier::Deploy => ("▲", DEPLOY_HI),
+        Tier::Unknown => ("?", WARM),
     }
-    let night = if short { "dark 23-08 " } else { "screen dark 23:00-08:00, in 1h 18m " };
-    let w = c.w();
-    c.right(w, y, night, COOL, BAR);
 }
 
-fn meter(c: &mut Canvas, x: u16, y: u16, cells: u16, pct: u8) -> u16 {
-    let fill = ((pct as u32 * cells as u32 + 50) / 100) as u16;
-    let col = heat(pct, 80, 90);
-    c.fill(y, x, x + fill, '█', col, GROUND);
-    c.fill(y, x + fill, x + cells, '░', RULE, GROUND);
-    x + cells
+fn signal_colour(k: Kind) -> u8 {
+    match k {
+        Kind::Http => FAIL,
+        Kind::AppHealth | Kind::AppSync | Kind::Restarts => DEPLOY_HI,
+        Kind::Alert | Kind::NoResult => WARM,
+        Kind::EndpointOk => OK,
+    }
 }
+
+/// How a source reads in a section header: text and colour.
+fn freshness(src: Src, every: &str) -> (String, u8) {
+    match src {
+        Src::Waiting => ("waiting for the first result".into(), META),
+        Src::Current { age_s } => (format!("every {every} · {} ago", age(age_s)), META),
+        Src::Stale { age_s } => (format!("STALE · newest sample {} old", age(age_s)), WARM),
+        Src::Unavailable { for_s, .. } => (format!("UNAVAILABLE {} · last results", age(for_s)), WARM),
+    }
+}
+
+// ---------------------------------------------------------------- status band
+
+fn summary(s: &Snapshot, d: &Derived) -> Vec<(String, u8)> {
+    let ne = s.endpoints.len();
+    let na = s.apps.len();
+    let mut lines = vec![];
+
+    // headline
+    let known: Vec<&Attention> = d.attention.iter().filter(|r| r.tier != Tier::Unknown).collect();
+    let cluster = known.iter().any(|r| r.service == "cluster");
+    let services = known.len() - cluster as usize;
+    let on = match (services, cluster) {
+        (0, _) => "on the cluster".to_string(),
+        (1, false) => "on 1 service".into(),
+        (n, false) => format!("on {n} services"),
+        (1, true) => "on 1 service and the cluster".into(),
+        (n, true) => format!("on {n} services and the cluster"),
+    };
+    let cluster_down = [s.http, s.argo, s.alerts_src].iter().all(|x| matches!(x, Src::Unavailable { .. }));
+    let headline = match d.status {
+        Status::Attention => format!("{} {} {on}", d.signals, if d.signals == 1 { "signal" } else { "signals" }),
+        Status::AllClear => "every check passes".into(),
+        Status::Unknown => {
+            if let Some(t) = s.started_s {
+                format!("starting, waiting for first readings ({})", age(t))
+            } else if cluster_down {
+                if let Src::Unavailable { for_s, .. } = s.http {
+                    format!("cluster monitoring unavailable for {}", age(for_s))
+                } else {
+                    unreachable!()
+                }
+            } else if let Src::Stale { age_s } = s.http {
+                format!("http checks stale, newest sample {} old", age(age_s))
+            } else if d.gaps_endpoints + d.gaps_apps > 0 {
+                "inventory incomplete, health cannot be confirmed".into()
+            } else {
+                "health cannot be confirmed".into()
+            }
+        }
+    };
+    lines.push((headline, TEXT));
+
+    // endpoints
+    let failing = s.endpoints.iter().filter(|e| matches!(e.check, Check::Fail { .. })).count();
+    let ok = s.endpoints.iter().filter(|e| matches!(e.check, Check::Ok { .. })).count();
+    lines.push(match s.http {
+        Src::Waiting => ("endpoints: waiting for the first check".into(), META),
+        Src::Stale { .. } => ("endpoints: no current results".into(), WARM),
+        Src::Unavailable { .. } => ("endpoints: no current results".into(), WARM),
+        Src::Current { .. } if failing > 0 => (format!("{failing} of {ne} endpoints failing"), TEXT),
+        Src::Current { .. } if d.gaps_endpoints > 0 => {
+            (format!("{ok} of {ne} endpoints respond, {} without a result", d.gaps_endpoints), TEXT)
+        }
+        Src::Current { .. } => (format!("{ok} of {ne} endpoints respond"), TEXT),
+    });
+
+    // apps
+    let known: Vec<(Sync, Health)> = s
+        .apps
+        .iter()
+        .filter_map(|a| match a.state {
+            AppState::Known { sync, health, .. } => Some((sync, health)),
+            _ => None,
+        })
+        .collect();
+    let unhealthy = known.iter().filter(|k| k.1 != Health::Healthy).count();
+    let oos = known.iter().filter(|k| k.0 != Sync::Synced).count();
+    lines.push(match s.argo {
+        Src::Waiting => ("apps: waiting for argo cd".into(), META),
+        Src::Stale { .. } | Src::Unavailable { .. } => ("apps: no current status".into(), WARM),
+        Src::Current { .. } if unhealthy + oos > 0 => (format!("{unhealthy} of {na} apps unhealthy, {oos} out of sync"), TEXT),
+        Src::Current { .. } if d.gaps_apps > 0 => {
+            (format!("{} of {na} apps healthy, {} not reported", known.len(), d.gaps_apps), TEXT)
+        }
+        Src::Current { .. } => (format!("{na} of {na} apps synced and healthy"), TEXT),
+    });
+
+    // alerts: "no active alerts" only from a current source; never a zero from nothing
+    lines.push(match s.alerts_src {
+        Src::Waiting => ("alerts: waiting for alertmanager".into(), META),
+        Src::Stale { .. } | Src::Unavailable { .. } => ("alerts: unknown, alertmanager unavailable".into(), WARM),
+        Src::Current { .. } if s.alerts.is_empty() => ("no active alerts".into(), TEXT),
+        Src::Current { .. } if s.alerts.len() == 1 => ("1 active alert".into(), TEXT),
+        Src::Current { .. } => (format!("{} active alerts", s.alerts.len()), TEXT),
+    });
+
+    // coverage
+    let bad: Vec<String> = s
+        .sources()
+        .iter()
+        .filter_map(|(n, x)| match x {
+            Src::Stale { .. } => Some(format!("{n} stale")),
+            Src::Unavailable { .. } => Some(format!("{n} unavailable")),
+            _ => None,
+        })
+        .collect();
+    let coverage = if s.started_s.is_some() {
+        ("host readings current".into(), META)
+    } else if cluster_down {
+        ("host readings still current".into(), WARM)
+    } else if !bad.is_empty() {
+        (format!("partial coverage: {}", bad.join(", ")), WARM)
+    } else if d.gaps_endpoints + d.gaps_apps > 0 {
+        ("partial coverage: catalog entries without data".into(), WARM)
+    } else {
+        let oldest = s.sources().iter().filter_map(|(_, x)| if let Src::Current { age_s } = x { Some(*age_s) } else { None }).max().unwrap_or(0);
+        (format!("all sources current, oldest {}", age(oldest)), META)
+    };
+    lines.push(coverage);
+    lines
+}
+
+/// The fixed 4-row attention slot. Never scrolls; overflow collapses into the last row.
+fn attention_slot(c: &mut Canvas, s: &Snapshot, d: &Derived, y0: u16) {
+    let w = c.w();
+    let rows = &d.attention;
+    if rows.is_empty() {
+        let (text, col) = match d.status {
+            Status::AllClear => ("Nothing needs attention.".to_string(), META),
+            Status::Unknown if s.started_s.is_some() => ("Waiting for first readings. Nothing is known to need attention yet.".into(), META),
+            _ => ("No known problems, but health cannot be confirmed until every source is current.".into(), WARM),
+        };
+        c.put(3, y0, &text, col, GROUND);
+        for (i, r) in s.recovered.iter().take(3).enumerate() {
+            let y = y0 + 1 + i as u16;
+            c.put(3, y, "·", OK, GROUND);
+            c.put(5, y, r.service, BODY, GROUND);
+            let x = c.put(25, y, "recovered", OK, GROUND);
+            c.put(x, y, &format!("  ·  was {} for {}  ·  ok since {}", r.what, r.lasted, r.ok_since), META, GROUND);
+        }
+        return;
+    }
+    let slots = 4usize;
+    let shown = if rows.len() > slots { slots - 1 } else { rows.len() };
+    for (i, a) in rows.iter().take(shown).enumerate() {
+        let y = y0 + i as u16;
+        let (m, mc) = tier_marker(a.tier);
+        c.put(3, y, m, mc, GROUND);
+        c.put(5, y, &a.service, TEXT, GROUND);
+        // signals, truncated with "+n more" rather than cut mid-word
+        let limit = w - 16;
+        let mut x = 25;
+        for (j, g) in a.signals.iter().enumerate() {
+            let sep = if j > 0 { 5 } else { 0 };
+            let rest = a.signals.len() - j;
+            let need = sep + g.text.chars().count() as u16 + if rest > 1 { 12 } else { 0 };
+            if x + need > limit {
+                c.put(x + 2, y, &format!("+{rest} more"), META, GROUND);
+                break;
+            }
+            if j > 0 {
+                x = c.put(x, y, "  ·  ", RULE, GROUND);
+            }
+            let col = if g.text.contains("Degraded") { FAIL } else { signal_colour(g.kind) };
+            x = c.put(x, y, &g.text, col, GROUND);
+        }
+        match a.since_m {
+            Some(m) => c.right(w - 2, y, &format!("since {}", mins(m)), META, GROUND),
+            None => c.right(w - 2, y, "expected by catalog", META, GROUND),
+        }
+    }
+    if rows.len() > slots {
+        let y = y0 + slots as u16 - 1;
+        let more = &rows[shown..];
+        let x = c.put(5, y, &format!("+{} more", more.len()), WARM, GROUND);
+        let names: Vec<&str> = more.iter().map(|r| r.service.as_str()).collect();
+        let x = c.put(25.max(x + 2), y, &names.join(", "), BODY, GROUND);
+        c.put(x + 2, y, "(highlighted below)", META, GROUND);
+    }
+}
+
+// ---------------------------------------------------------------- instruments
 
 fn heat(v: u8, warm: u8, hot: u8) -> u8 {
     if v >= hot {
@@ -201,12 +372,22 @@ fn temp_colour(t: u8) -> u8 {
     heat(t, 70, 80)
 }
 
+fn meter(c: &mut Canvas, x: u16, y: u16, cells: u16, pct: Option<u8>) -> u16 {
+    let Some(pct) = pct else {
+        c.fill(y, x, x + cells, '░', RULE, GROUND);
+        return x + cells;
+    };
+    let fill = ((pct as u32 * cells as u32 + 50) / 100) as u16;
+    c.fill(y, x, x + fill, '█', heat(pct, 80, 90), GROUND);
+    c.fill(y, x + fill, x + cells, '░', RULE, GROUND);
+    x + cells
+}
+
 /// Temperature history, one column per minute, half-block resolution, 40-95 °C.
 fn chart(c: &mut Canvas, x: u16, y: u16, cols: u16, rows: u16, hist: &[Option<u8>]) {
     let (lo, hi) = (40.0, 95.0);
     let levels = (rows * 2) as f32;
-    let start = hist.len().saturating_sub(cols as usize);
-    let shown = &hist[start..];
+    let shown = &hist[hist.len().saturating_sub(cols as usize)..];
     let x0 = x + cols - shown.len() as u16;
     for (i, v) in shown.iter().enumerate() {
         let cx = x0 + i as u16;
@@ -231,153 +412,162 @@ fn chart(c: &mut Canvas, x: u16, y: u16, cols: u16, rows: u16, hist: &[Option<u8
         }
     }
     c.fill(y + rows, x, x + cols, '─', RULE, GROUND);
-    c.put(x, y + rows + 1, &format!("-{}m", shown.len()), META, GROUND);
+    if shown.is_empty() {
+        c.put(x, y + rows + 1, "no history yet, it builds from now", META, GROUND);
+    } else {
+        c.put(x, y + rows + 1, &format!("-{}m", shown.len()), META, GROUND);
+    }
     c.right(x + cols, y + rows + 1, "now", META, GROUND);
 }
 
-fn marker(check: &Check) -> (&'static str, u8) {
-    match check {
-        Check::Ok { .. } => ("·", OK),
-        Check::Fail { .. } => ("■", FAIL),
+fn host(c: &mut Canvas, s: &Snapshot, hx: u16) {
+    for y in 17..c.h() - 2 {
+        c.put(hx - 3, y, "│", RULE, GROUND);
     }
-}
-
-fn sync_text(a: &App) -> (&'static str, u8) {
-    match a.sync {
-        Sync::Synced => ("synced", DEPLOY),
-        Sync::OutOfSync => ("OutOfSync", DEPLOY_HI),
-    }
-}
-
-fn health_text(a: &App) -> (&'static str, u8) {
-    match a.health {
-        Health::Healthy => ("healthy", DEPLOY),
-        Health::Progressing => ("Progressing", DEPLOY_HI),
-        Health::Degraded => ("Degraded", FAIL),
-    }
-}
-
-fn app_problem(a: &App) -> bool {
-    a.sync != Sync::Synced || a.health != Health::Healthy || a.restarts.is_some()
-}
-
-fn status(s: &Snapshot) -> (&'static str, u8, u8) {
-    if s.attention.is_empty() {
-        ("ALL CLEAR", OK, GROUND)
-    } else {
-        ("ATTENTION", TEXT, ALERT_GROUND)
-    }
-}
-
-fn summary(s: &Snapshot) -> Vec<(String, u8)> {
-    let (ne, na) = (s.endpoints.len(), s.apps.len());
-    if s.attention.is_empty() {
-        vec![
-            (format!("{} of {ne} endpoints respond", s.endpoints_ok()), TEXT),
-            (format!("{} of {na} apps synced and healthy", s.apps_healthy()), TEXT),
-            ("no active alerts".into(), TEXT),
-            (String::new(), META),
-            ("all sources current, oldest 21s".into(), META),
-        ]
-    } else {
-        let services = s.attention.len();
-        vec![
-            (format!("{} signals on {services} services", s.signals), TEXT),
-            (format!("{} of {ne} endpoints failing", ne - s.endpoints_ok()), TEXT),
-            (
-                format!(
-                    "{} of {na} apps unhealthy, {} out of sync",
-                    na - s.apps_healthy(),
-                    na - s.apps_synced()
-                ),
-                TEXT,
-            ),
-            (format!("{} active alerts", s.alerts.len()), TEXT),
-            ("all sources current, oldest 21s".into(), BODY),
-        ]
-    }
-}
-
-fn attention_line(c: &mut Canvas, x: u16, y: u16, a: &Attention, name_w: u16, bg: u8) -> u16 {
-    let (m, col) = match a.severity {
-        Severity::Fault => ("■", FAIL),
-        Severity::Deploy => ("▲", DEPLOY_HI),
-    };
-    c.put(x, y, m, col, bg);
-    c.put(x + 2, y, a.service, TEXT, bg);
-    let mut cx = x + 2 + name_w;
-    for (i, p) in a.parts.iter().enumerate() {
-        if i > 0 {
-            cx = c.put(cx, y, "  ·  ", RULE, bg);
+    c.put(hx, 17, "HOST", LABEL, GROUND);
+    let (f, fc) = freshness(s.host_src, "5s");
+    c.put(hx + 5, 17, &f, fc, GROUND);
+    let h = &s.host;
+    let mw = 26;
+    let cpu_detail = if h.cpu.is_some() { format!("{} threads", h.threads) } else { "measuring".into() };
+    for (i, (label, pct, detail)) in [
+        ("cpu", h.cpu, cpu_detail),
+        ("mem", Some(h.mem), h.mem_detail.to_string()),
+        ("root", Some(h.root), h.root_detail.to_string()),
+    ]
+    .iter()
+    .enumerate()
+    {
+        let y = 19 + i as u16 * 2;
+        c.put(hx, y, label, BODY, GROUND);
+        let x = meter(c, hx + 5, y, mw, *pct);
+        match pct {
+            Some(p) => c.right(x + 5, y, &format!("{p}%"), TEXT, GROUND),
+            None => c.right(x + 5, y, "--", META, GROUND),
         }
-        let pc = if p.starts_with("app") || p.contains("restarts") {
-            DEPLOY_HI
-        } else if p.starts_with("alert") {
-            WARM
-        } else if *p == "endpoint ok" {
-            OK
-        } else {
-            FAIL
+        c.put(x + 7, y, detail, META, GROUND);
+    }
+    let ty = 26;
+    c.put(hx, ty, "cpu temp", BODY, GROUND);
+    let cols = (c.w() - hx - 6).min(60);
+    match h.temp {
+        Temp::Reading(t) => {
+            let x = c.put(hx + 10, ty, &format!("{t}°C"), if t < 70 { TEXT } else { temp_colour(t) }, GROUND);
+            c.put(x + 2, ty, "Tctl, last hour", META, GROUND);
+            for (lbl, r) in [("90°", 0u16), ("70°", 3), ("50°", 6)] {
+                c.put(hx, ty + 2 + r, lbl, META, GROUND);
+            }
+            chart(c, hx + 5, ty + 2, cols, 8, &h.temp_history);
+        }
+        Temp::Unsupported => {
+            c.put(hx + 10, ty, "unavailable", META, GROUND);
+            c.put(hx + 10, ty + 2, "No CPU package sensor was found.", META, GROUND);
+            c.put(hx + 10, ty + 3, "This does not affect service health.", META, GROUND);
+        }
+    }
+
+    let sy = ty + 13;
+    c.put(hx, sy, "SOURCES", LABEL, GROUND);
+    c.put(hx + 8, sy, "age of the newest sample", META, GROUND);
+    let mut y = sy + 1;
+    for (name, src) in s.sources() {
+        let (dot, dc, a, word, wc) = match src {
+            Src::Waiting => ("·", META, "--".to_string(), "waiting", META),
+            Src::Current { age_s } => ("·", OK, age(age_s), "current", OK),
+            Src::Stale { age_s } => ("?", WARM, age(age_s), "stale", WARM),
+            Src::Unavailable { for_s, .. } => ("?", WARM, age(for_s), "unavailable", WARM),
         };
-        cx = c.put(cx, y, p, pc, bg);
+        c.put(hx, y, dot, dc, GROUND);
+        c.put(hx + 2, y, name, BODY, GROUND);
+        c.right(hx + 22, y, &a, META, GROUND);
+        c.put(hx + 24, y, word, wc, GROUND);
+        y += 1;
     }
-    cx
+    // one reason line per distinct failure cause
+    let mut reasons: Vec<&str> = vec![];
+    for (_, src) in s.sources() {
+        if let Src::Unavailable { reason, .. } = src {
+            if !reasons.contains(&reason) {
+                reasons.push(reason);
+            }
+        }
+    }
+    for r in reasons {
+        c.put(hx + 2, y, r, META, GROUND);
+        y += 1;
+    }
 }
 
-// ---------------------------------------------------------------- A · Instrument ledger
+// ---------------------------------------------------------------- header, footer
 
-pub fn draw(v: Variant, c: &mut Canvas, s: &Snapshot, scroll: u16) {
+fn header(c: &mut Canvas, s: &Snapshot, proto: &str) {
+    c.ground(0, 1, BAR);
+    let x = c.put(1, 0, "HOMELAB", BRAND, BAR);
+    c.put(x + 2, 0, "host health", META, BAR);
+    let w = c.w();
+    c.put(w / 2 - proto.chars().count() as u16 / 2, 0, proto, WARM, BAR);
+    c.right(w, 0, &format!("{}  {} ", s.date, s.clock), TEXT, BAR);
+}
+
+fn footer(c: &mut Canvas, s: &Snapshot, overflow: bool) {
+    let y = c.h() - 1;
+    c.ground(y, y + 1, BAR);
+    let mut x = c.put(1, y, "Ctrl+C", TEXT, BAR);
+    x = c.put(x + 1, y, "close, monitoring keeps running", META, BAR);
+    if overflow {
+        x = c.put(x + 4, y, "↑↓", TEXT, BAR);
+        c.put(x + 1, y, "scroll services", META, BAR);
+    }
+    let w = c.w();
+    match s.night {
+        Night::Day { dark_in } => {
+            c.right(w, y, &format!("screen dark 23:00-08:00, in {dark_in} "), COOL, BAR);
+        }
+        Night::QuietWake { dark_at, left } => {
+            let t = format!("quiet hours until 08:00 · woken, dark again at {dark_at} (in {left}) ");
+            c.right(w, y, &t, COOL, BAR);
+        }
+        Night::BedtimeWake { dark_at, left } => {
+            let t = format!("bedtime until 08:00 · woken, dark again at {dark_at} (in {left}) ");
+            c.right(w, y, &t, COOL, BAR);
+        }
+    }
+}
+
+// ---------------------------------------------------------------- the ledger
+
+pub fn draw(c: &mut Canvas, s: &Snapshot, scroll: u16, proto: &str) {
     c.ground(0, c.h(), GROUND);
-    let fallback = match v {
-        Variant::A => c.w() < 100 || c.h() < 30,
-        Variant::B => c.w() < 100 || c.h() < 30,
-        Variant::C => false,
-    };
-    if c.w() < 60 || c.h() < 20 {
-        tiny(c, s);
-    } else if fallback || v == Variant::C {
-        large(c, s, scroll, fallback);
-    } else if v == Variant::A && (c.w() < 150 || c.h() < 45) {
-        ledger_medium(c, s, scroll);
-    } else if v == Variant::A {
-        ledger(c, s, scroll);
-    } else {
-        attention_first(c, s, scroll);
+    let d = derive(s);
+    if c.w() < 150 || c.h() < 45 {
+        return compact(c, s, &d);
     }
-}
+    header(c, s, proto);
 
-fn ledger(c: &mut Canvas, s: &Snapshot, scroll: u16) {
-    header(c, s, false);
-    let (word, wc, ground) = status(s);
+    let (word, wc, ground) = status_word(d.status);
     c.ground(2, 11, ground);
     big(c, 3, 3, word, 2, wc, ground);
-    let sx = 3 + big_width(word, 2) + 6;
-    for (i, (t, col)) in summary(s).iter().enumerate() {
-        c.put(sx, 3 + i as u16 + (i >= 3) as u16, t, *col, ground);
+    // summary column is anchored to the widest word so it never moves between states
+    let sx = 3 + big_width("ATTENTION", 2) + 6;
+    for (i, (t, col)) in summary(s, &d).iter().enumerate() {
+        let col = if ground == ALERT_GROUND && *col == WARM { TEXT } else { *col };
+        c.put(sx, 3 + i as u16 + (i >= 3) as u16, t, col, ground);
     }
-
-    // attention: fixed 4-row slot so the ledger never moves
-    if s.attention.is_empty() {
-        c.put(3, 12, "Nothing needs attention.", META, GROUND);
-    }
-    for (i, a) in s.attention.iter().take(4).enumerate() {
-        attention_line(c, 3, 12 + i as u16, a, 18, GROUND);
-        c.right(c.w() - 2, 12 + i as u16, &format!("since {}", a.since), META, GROUND);
-    }
+    attention_slot(c, s, &d, 12);
     c.fill(16, 1, c.w() - 1, '─', RULE, GROUND);
 
-    // ledger: endpoints | deployment ; host on the right
     let (xm, xn, xc, xl, xd, xa, xs, xh) = (3, 5, 24, 40, 49, 51, 71, 83);
     let hx = 101;
     c.put(xm, 17, "ENDPOINTS", LABEL, GROUND);
-    c.put(xm + 10, 17, "internal HTTP checks, every 30s", META, GROUND);
-    c.put(xa, 17, "DEPLOYMENT", LABEL, GROUND);
-    c.put(xa + 11, 17, "argo cd", META, GROUND);
+    let (f, fc) = freshness(s.http, "30s");
+    c.put(xm + 10, 17, &f, fc, GROUND);
     for (x, t) in [(xn, "service"), (xc, "check"), (xl, "latency"), (xa, "app"), (xs, "sync"), (xh, "health")] {
         c.put(x, 18, t, META, GROUND);
     }
+    c.put(xa, 17, "DEPLOYMENT", LABEL, GROUND);
+    let (f, fc) = freshness(s.argo, "30s");
+    c.put(xa + 11, 17, &f, fc, GROUND);
 
-    // build rows: 16 endpoints in catalog order (gap every 4), then apps without endpoint
     enum Row<'a> {
         Gap,
         Label(&'a str),
@@ -400,15 +590,36 @@ fn ledger(c: &mut Canvas, s: &Snapshot, scroll: u16) {
     let bottom = c.h() - 3;
     let avail = (bottom - top) as usize;
     let scroll = (scroll as usize).min(rows.len().saturating_sub(avail));
+    let http_live = s.http.current();
+    let argo_live = s.argo.current();
     for (i, r) in rows.iter().skip(scroll).take(avail).enumerate() {
         let y = top + i as u16;
-        let app_cols = |c: &mut Canvas, a: &App, bg: u8| {
-            let (st_, sc) = sync_text(a);
-            let (ht, hc) = health_text(a);
-            let idc = if app_problem(a) { TEXT } else { BODY };
-            c.put(xa, y, a.id, idc, bg);
-            c.put(xs, y, st_, sc, bg);
-            c.put(xh, y, ht, hc, bg);
+        let app_cols = |c: &mut Canvas, a: &App| match a.state {
+            AppState::Waiting => {
+                c.put(xa, y, a.id, BODY, GROUND);
+                c.put(xs, y, "waiting", META, GROUND);
+            }
+            AppState::Missing => {
+                c.put(xa, y, a.id, TEXT, GROUND);
+                c.put(xs, y, "?", WARM, GROUND);
+                c.put(xh, y, "not reported", WARM, GROUND);
+            }
+            AppState::Known { sync, health, restarts, .. } => {
+                let problem = sync != Sync::Synced || health != Health::Healthy || restarts.is_some();
+                let (st_, sc) = match sync {
+                    Sync::Synced => ("synced", DEPLOY),
+                    Sync::OutOfSync => ("OutOfSync", DEPLOY_HI),
+                };
+                let (ht, hc) = match health {
+                    Health::Healthy => ("healthy", DEPLOY),
+                    Health::Progressing => ("Progressing", DEPLOY_HI),
+                    Health::Degraded => ("Degraded", FAIL),
+                };
+                let dim = |col: u8| if argo_live || col == FAIL { col } else { META };
+                c.put(xa, y, a.id, dim(if problem { TEXT } else { BODY }), GROUND);
+                c.put(xs, y, st_, dim(sc), GROUND);
+                c.put(xh, y, ht, dim(hc), GROUND);
+            }
         };
         match r {
             Row::Gap => {}
@@ -421,22 +632,36 @@ fn ledger(c: &mut Canvas, s: &Snapshot, scroll: u16) {
                 if failing {
                     c.fill(y, xm - 1, xd, ' ', BODY, bg);
                 }
-                let (m, mc) = marker(&e.check);
-                c.put(xm, y, m, mc, bg);
-                c.put(xn, y, e.name, if failing { TEXT } else { BODY }, bg);
-                match &e.check {
+                match e.check {
+                    Check::Waiting => {
+                        c.put(xn, y, e.name, BODY, bg);
+                        c.put(xc, y, "waiting", META, bg);
+                    }
+                    Check::Missing => {
+                        c.put(xm, y, "?", WARM, bg);
+                        c.put(xn, y, e.name, TEXT, bg);
+                        c.put(xc, y, "no result", WARM, bg);
+                        c.right(xl + 6, y, "--", META, bg);
+                    }
                     Check::Ok { ms } => {
-                        c.put(xc, y, "ok", OK, bg);
+                        // last-known ok from a stale/unavailable source is dimmed, never green
+                        let (mc, oc, nc) = if http_live { (OK, OK, BODY) } else { (META, META, META) };
+                        c.put(xm, y, "·", mc, bg);
+                        c.put(xn, y, e.name, nc, bg);
+                        c.put(xc, y, "ok", oc, bg);
                         c.right(xl + 6, y, &format!("{ms} ms"), META, bg);
                     }
-                    Check::Fail { what, for_ } => {
+                    Check::Fail { what, for_m } => {
+                        // known failures stay at full strength
+                        c.put(xm, y, "■", FAIL, bg);
+                        c.put(xn, y, e.name, TEXT, bg);
                         c.put(xc, y, what, FAIL, bg);
-                        c.right(xl + 6, y, &format!("for {for_}"), TEXT, bg);
+                        c.right(xl + 6, y, &format!("for {}", mins(for_m)), TEXT, bg);
                     }
                 }
                 c.put(xd, y, "│", RULE, GROUND);
                 match e.app.and_then(|id| s.app(id)) {
-                    Some(a) => app_cols(c, a, GROUND),
+                    Some(a) => app_cols(c, a),
                     None => {
                         c.put(xa, y, "no app (host)", META, GROUND);
                     }
@@ -444,374 +669,28 @@ fn ledger(c: &mut Canvas, s: &Snapshot, scroll: u16) {
             }
             Row::App(a) => {
                 c.put(xd, y, "│", RULE, GROUND);
-                app_cols(c, a, GROUND);
+                app_cols(c, a);
             }
         }
     }
+    let overflow = rows.len() > avail;
     if scroll + avail < rows.len() {
         c.put(xn, bottom, &format!("↓ {} more rows", rows.len() - scroll - avail), WARM, GROUND);
     }
     if scroll > 0 {
         c.right(xd - 1, 18, &format!("↑ {scroll} above"), WARM, GROUND);
     }
-
-    // host instruments
-    c.fill(17, hx - 3, hx - 2, ' ', RULE, GROUND);
-    for y in 17..c.h() - 2 {
-        c.put(hx - 3, y, "│", RULE, GROUND);
-    }
-    c.put(hx, 17, "HOST", LABEL, GROUND);
-    c.put(hx + 5, 17, "every 5s", META, GROUND);
-    let h = &s.host;
-    let mw = 26;
-    for (i, (label, pct, detail)) in [
-        ("cpu", h.cpu, format!("{} threads", h.threads)),
-        ("mem", h.mem, h.mem_detail.to_string()),
-        ("root", h.root, h.root_detail.to_string()),
-    ]
-    .iter()
-    .enumerate()
-    {
-        let y = 19 + i as u16 * 2;
-        c.put(hx, y, label, BODY, GROUND);
-        let x = meter(c, hx + 5, y, mw, *pct);
-        c.right(x + 5, y, &format!("{pct}%"), TEXT, GROUND);
-        c.put(x + 7, y, detail, META, GROUND);
-    }
-    let ty = 26;
-    c.put(hx, ty, "cpu temp", BODY, GROUND);
-    match h.temp {
-        Some(t) => {
-            let x = c.put(hx + 10, ty, &format!("{t}°C"), if t < 70 { TEXT } else { temp_colour(t) }, GROUND);
-            c.put(x + 2, ty, "Tctl, last hour", META, GROUND);
-        }
-        None => {
-            c.put(hx + 10, ty, "unavailable", META, GROUND);
-        }
-    }
-    let cols = (c.w() - hx - 6).min(60);
-    for (lbl, r) in [("90°", 0u16), ("70°", 3), ("50°", 6)] {
-        c.put(hx, ty + 2 + r, lbl, META, GROUND);
-    }
-    chart(c, hx + 5, ty + 2, cols, 8, &h.temp_history);
-
-    let sy = ty + 13;
-    c.put(hx, sy, "SOURCES", LABEL, GROUND);
-    for (i, src) in s.sources.iter().enumerate() {
-        let y = sy + 1 + i as u16;
-        c.put(hx, y, "·", OK, GROUND);
-        c.put(hx + 2, y, src.name, BODY, GROUND);
-        c.right(hx + 22, y, src.age, META, GROUND);
-        c.put(hx + 24, y, "current", OK, GROUND);
-    }
-    footer(c, false);
+    host(c, s, hx);
+    footer(c, s, overflow);
 }
 
-// ------------------------------------------- A at 106x33 (24x48 font): same ledger, host strip
-
-fn ledger_medium(c: &mut Canvas, s: &Snapshot, scroll: u16) {
-    header(c, s, false);
-    let w = c.w();
-    let (word, wc, ground) = status(s);
-    c.ground(1, 7, ground);
-    big(c, 2, 2, word, 1, wc, ground);
-    let sx = 2 + big_width(word, 1) + 5;
-    let lines: Vec<(String, u8)> = summary(s).into_iter().filter(|(t, _)| !t.is_empty()).take(4).collect();
-    for (i, (t, col)) in lines.iter().enumerate() {
-        c.put(sx, 2 + i as u16, t, *col, ground);
-    }
-
-    // attention: fixed 3-row slot
-    if s.attention.is_empty() {
-        c.put(2, 7, "Nothing needs attention.", META, GROUND);
-    }
-    for (i, a) in s.attention.iter().take(3).enumerate() {
-        attention_line(c, 2, 7 + i as u16, a, 17, GROUND);
-        c.right(w - 2, 7 + i as u16, &format!("since {}", a.since), META, GROUND);
-    }
-    if s.attention.len() > 3 {
-        c.right(w - 2, 10, &format!("+{} more", s.attention.len() - 3), WARM, GROUND);
-    }
-    c.fill(10, 1, w - 1, '─', RULE, GROUND);
-
-    let (xm, xn, xc, xl, xd, xa, xs, xh) = (2, 4, 22, 36, 46, 48, 67, 79);
-    c.put(xm, 11, "ENDPOINTS", LABEL, GROUND);
-    c.put(xm + 10, 11, "http, every 30s", META, GROUND);
-    c.put(xa, 11, "DEPLOYMENT", LABEL, GROUND);
-    c.put(xa + 11, 11, "argo cd", META, GROUND);
-    for (x, t) in [(xn, "service"), (xc, "check"), (xl, "latency"), (xa, "app"), (xs, "sync"), (xh, "health")] {
-        c.put(x, 12, t, META, GROUND);
-    }
-    let top = 13;
-    let avail = (c.h() - 4 - top) as usize;
-    let n = s.endpoints.len();
-    let scroll = (scroll as usize).min(n.saturating_sub(avail));
-    for (i, e) in s.endpoints.iter().skip(scroll).take(avail).enumerate() {
-        let y = top + i as u16;
-        let failing = matches!(e.check, Check::Fail { .. });
-        let bg = if failing { ALERT_GROUND } else { GROUND };
-        if failing {
-            c.fill(y, xm - 1, xd, ' ', BODY, bg);
-        }
-        let (m, mc) = marker(&e.check);
-        c.put(xm, y, m, mc, bg);
-        c.put(xn, y, e.name, if failing { TEXT } else { BODY }, bg);
-        match &e.check {
-            Check::Ok { ms } => {
-                c.put(xc, y, "ok", OK, bg);
-                c.right(xl + 7, y, &format!("{ms} ms"), META, bg);
-            }
-            Check::Fail { what, for_ } => {
-                c.put(xc, y, what, FAIL, bg);
-                c.right(xl + 7, y, &format!("for {for_}"), TEXT, bg);
-            }
-        }
-        c.put(xd, y, "│", RULE, GROUND);
-        match e.app.and_then(|id| s.app(id)) {
-            Some(a) => {
-                let (st_, sc) = sync_text(a);
-                let (ht, hc) = health_text(a);
-                c.put(xa, y, a.id, if app_problem(a) { TEXT } else { BODY }, GROUND);
-                c.put(xs, y, st_, sc, GROUND);
-                c.put(xh, y, ht, hc, GROUND);
-            }
-            None => {
-                c.put(xa, y, "no app (host)", META, GROUND);
-            }
-        }
-    }
-    let ny = top + avail as u16;
-    if scroll + avail < n {
-        c.put(xn, ny - 1, &format!("↓ {} more", n - scroll - avail), WARM, GROUND);
-    }
-    let rest = s.apps_without_endpoint();
-    let ids: Vec<&str> = rest.iter().map(|a| a.id).collect();
-    let x = c.put(xm, ny, "no endpoint", META, GROUND);
-    let x = c.put(x + 2, ny, &ids.join(" "), BODY, GROUND);
-    if rest.iter().all(|a| !app_problem(a)) {
-        c.put(x + 3, ny, "synced, healthy", DEPLOY, GROUND);
-    }
-
-    // host strip: meters left, temperature history right
-    let h = &s.host;
-    let (y1, y2) = (c.h() - 3, c.h() - 2);
-    let mut x = c.put(2, y1, "cpu  ", BODY, GROUND);
-    x = meter(c, x, y1, 14, h.cpu);
-    x = c.put(x + 1, y1, &format!("{:>3}%", h.cpu), TEXT, GROUND);
-    x = c.put(x + 3, y1, "mem  ", BODY, GROUND);
-    x = meter(c, x, y1, 14, h.mem);
-    c.put(x + 1, y1, &format!("{:>3}%", h.mem), TEXT, GROUND);
-    let mut x = c.put(2, y2, "root ", BODY, GROUND);
-    x = meter(c, x, y2, 14, h.root);
-    x = c.put(x + 1, y2, &format!("{:>3}%", h.root), TEXT, GROUND);
-    c.put(x + 3, y2, "sources current", OK, GROUND);
-    let tx = 66;
-    c.put(tx, y1, "temp", BODY, GROUND);
-    if let Some(t) = h.temp {
-        c.put(tx, y2, &format!("{t}°C"), if t < 70 { TEXT } else { temp_colour(t) }, GROUND);
-    }
-    mini_chart(c, tx + 6, y1, w - 2 - (tx + 6), 2, &h.temp_history);
-    footer(c, false);
-}
-
-/// Chart without axis rows, for the host strip.
-fn mini_chart(c: &mut Canvas, x: u16, y: u16, cols: u16, rows: u16, hist: &[Option<u8>]) {
-    let (lo, hi) = (40.0, 95.0);
-    let levels = (rows * 2) as f32;
-    let shown = &hist[hist.len().saturating_sub(cols as usize)..];
-    let x0 = x + cols - shown.len() as u16;
-    for (i, v) in shown.iter().enumerate() {
-        let cx = x0 + i as u16;
-        match v {
-            None => {
-                c.put(cx, y + rows - 1, "·", META, GROUND);
-            }
-            Some(t) => {
-                let lvl = (((*t as f32 - lo) / (hi - lo)).clamp(0.0, 1.0) * levels).round() as u16;
-                for r in 0..rows {
-                    let rb = rows - 1 - r;
-                    let ch = if lvl >= 2 * (rb + 1) { "█" } else if lvl == 2 * rb + 1 { "▄" } else { "░" };
-                    let col = if ch == "░" { RULE } else { temp_colour(*t) };
-                    c.put(cx, y + r, ch, col, GROUND);
-                }
-            }
-        }
-    }
-}
-
-// ---------------------------------------------------------------- B · Attention first
-
-fn attention_first(c: &mut Canvas, s: &Snapshot, scroll: u16) {
-    header(c, s, false);
-    let (word, wc, ground) = status(s);
-    c.ground(1, 7, ground);
-    big(c, 2, 2, word, 1, wc, ground);
-    let sx = 2 + big_width(word, 1) + 4;
-    for (i, (t, col)) in summary(s).iter().take(4).enumerate() {
-        c.put(sx, 2 + i as u16, t, *col, ground);
-    }
-    let w = c.w();
-    let mut y = 8;
-    if s.attention.is_empty() {
-        c.put(2, y, "Nothing needs attention.", META, GROUND);
-        y += 2;
-    } else {
-        c.put(2, y, "NEEDS ATTENTION", LABEL, GROUND);
-        c.put(18, y, "worst first", META, GROUND);
-        y += 1;
-        for a in &s.attention {
-            attention_line(c, 2, y, a, 17, GROUND);
-            c.right(w - 2, y, &format!("since {}", a.since), META, GROUND);
-            y += 1;
-        }
-        y += 1;
-    }
-
-    // healthy endpoints collapse to a name grid
-    let ok: Vec<&Endpoint> = s.endpoints.iter().filter(|e| matches!(e.check, Check::Ok { .. })).collect();
-    c.put(2, y, "ENDPOINTS", LABEL, GROUND);
-    c.put(12, y, &format!("{} of {} respond", ok.len(), s.endpoints.len()), META, GROUND);
-    y += 1;
-    let colw = (w - 4) / 4;
-    let rows_needed = (ok.len() as u16 + 3) / 4;
-    for (i, e) in ok.iter().enumerate() {
-        let (col, row) = (i as u16 / rows_needed, i as u16 % rows_needed);
-        let x = 2 + col * colw;
-        c.put(x, y + row, "·", OK, GROUND);
-        c.put(x + 2, y + row, e.name, BODY, GROUND);
-        if let Check::Ok { ms } = e.check {
-            c.right(x + colw - 1, y + row, &format!("{ms}ms"), META, GROUND);
-        }
-    }
-    y += rows_needed + 1;
-    let quiet: Vec<&str> = s.apps.iter().filter(|a| !app_problem(a)).map(|a| a.id).collect();
-    c.put(2, y, "APPS", LABEL, GROUND);
-    c.put(7, y, &format!("{} of {} synced and healthy", quiet.len(), s.apps.len()), META, GROUND);
-    y += 1;
-    let no_ep: Vec<&str> = s.apps_without_endpoint().iter().map(|a| a.id).collect();
-    let x = c.put(2, y, "no endpoint: ", META, GROUND);
-    c.put(x, y, &no_ep.join(", "), DEPLOY, GROUND);
-    let _ = scroll;
-
-    // instrument band along the bottom
-    let by = c.h() - 9;
-    c.fill(by - 1, 1, w - 1, '─', RULE, GROUND);
-    let h = &s.host;
-    for (i, (label, pct)) in [("cpu", h.cpu), ("mem", h.mem), ("root", h.root)].iter().enumerate() {
-        let yy = by + 1 + i as u16 * 2;
-        c.put(2, yy, label, BODY, GROUND);
-        let x = meter(c, 7, yy, 20, *pct);
-        c.right(x + 5, yy, &format!("{pct}%"), TEXT, GROUND);
-    }
-    let tx = 38;
-    c.put(tx, by, "cpu temp", BODY, GROUND);
-    if let Some(t) = h.temp {
-        c.put(tx + 9, by, &format!("{t}°C"), if t < 70 { TEXT } else { temp_colour(t) }, GROUND);
-    }
-    let cols = (w - tx - 2).min(60);
-    chart(c, w - 2 - cols, by + 1, cols, 5, &h.temp_history);
-    footer(c, false);
-}
-
-// ---------------------------------------------------------------- C · Large type
-
-fn large(c: &mut Canvas, s: &Snapshot, scroll: u16, fallback: bool) {
-    header(c, s, true);
-    let (word, wc, ground) = status(s);
-    c.ground(1, 7, ground);
-    big(c, 2, 2, word, 1, wc, ground);
-    let sx = 2 + big_width(word, 1) + 3;
-    let lines: Vec<(String, u8)> = if s.attention.is_empty() {
-        vec![
-            (format!("{}/{} up", s.endpoints_ok(), s.endpoints.len()), TEXT),
-            (format!("{}/{} apps ok", s.apps_healthy(), s.apps.len()), TEXT),
-            ("0 alerts".into(), TEXT),
-        ]
-    } else {
-        vec![
-            (format!("{} signals", s.signals), TEXT),
-            (format!("{} services", s.attention.len()), TEXT),
-            (format!("{} alerts", s.alerts.len()), TEXT),
-        ]
-    };
-    for (i, (t, col)) in lines.iter().enumerate() {
-        c.put(sx, 2 + i as u16, t, *col, ground);
-    }
-    let w = c.w();
-    let mut y = 8;
-    for a in s.attention.iter().take(3) {
-        let (m, col) = match a.severity {
-            Severity::Fault => ("■", FAIL),
-            Severity::Deploy => ("▲", DEPLOY_HI),
-        };
-        c.put(2, y, m, col, GROUND);
-        c.put(4, y, a.service, TEXT, GROUND);
-        c.put(21, y, a.parts[0], col, GROUND);
-        if a.parts.len() > 1 {
-            c.put(35, y, &format!("+{}", a.parts.len() - 1), META, GROUND);
-        }
-        c.right(w - 2, y, a.since, META, GROUND);
-        y += 1;
-    }
-    if s.attention.is_empty() {
-        c.put(2, y, "Nothing needs attention.", META, GROUND);
-        y += 1;
-    }
-    c.fill(y, 1, w - 1, '─', RULE, GROUND);
-    y += 1;
-
-    // endpoints: two columns in catalog order, scrolls if the console is short
-    let bottom = c.h() - 4;
-    let per_col = ((s.endpoints.len() as u16) + 1) / 2;
-    let avail = bottom.saturating_sub(y);
-    let scroll = scroll.min(per_col.saturating_sub(avail));
-    let colw = (w - 4) / 2;
-    for (i, e) in s.endpoints.iter().enumerate() {
-        let (col, row) = (i as u16 / per_col, i as u16 % per_col);
-        if row < scroll || row - scroll >= avail {
-            continue;
-        }
-        let (x, yy) = (2 + col * colw, y + row - scroll);
-        let (m, mc) = marker(&e.check);
-        let failing = matches!(e.check, Check::Fail { .. });
-        c.put(x, yy, m, mc, GROUND);
-        c.put(x + 2, yy, e.name, if failing { TEXT } else { BODY }, GROUND);
-        if let Check::Fail { what, .. } = e.check {
-            c.right(x + colw - 2, yy, what.split(' ').last().unwrap_or(what), FAIL, GROUND);
-        }
-    }
-    if scroll + avail < per_col {
-        c.right(w - 2, bottom - 1, &format!("↓ {}", per_col - scroll - avail), WARM, GROUND);
-    }
-    let bad = s.apps.iter().filter(|a| app_problem(a)).count();
-    let x = c.put(2, bottom, "apps", BODY, GROUND);
-    c.put(x + 1, bottom, &format!("{} of {} synced and healthy", s.apps.len() - bad, s.apps.len()), DEPLOY, GROUND);
-    let h = &s.host;
-    let iy = c.h() - 3;
-    let mut x = c.put(2, iy, "cpu  ", BODY, GROUND);
-    x = meter(c, x, iy, 10, h.cpu);
-    x = c.put(x + 1, iy, &format!("{}%", h.cpu), TEXT, GROUND);
-    x = c.put(x + 3, iy, "mem ", BODY, GROUND);
-    x = meter(c, x, iy, 10, h.mem);
-    c.put(x + 1, iy, &format!("{}%", h.mem), TEXT, GROUND);
-    let iy = iy + 1;
-    let mut x = c.put(2, iy, "root ", BODY, GROUND);
-    x = meter(c, x, iy, 10, h.root);
-    x = c.put(x + 1, iy, &format!("{}%", h.root), TEXT, GROUND);
-    x = c.put(x + 3, iy, "temp ", BODY, GROUND);
-    if let Some(t) = h.temp {
-        c.put(x, iy, &format!("{t}°C"), if t < 70 { TEXT } else { temp_colour(t) }, GROUND);
-    }
-    if fallback {
-        c.right(w, 0, "compact ", META, BAR);
-    }
-    footer(c, true);
-}
-
-fn tiny(c: &mut Canvas, s: &Snapshot) {
-    let (word, wc, ground) = status(s);
-    c.ground(0, c.h(), ground);
+/// Below 150x45 (a different font or a resized terminal). Not part of this review:
+/// the compact fallback was settled in #70 and is not re-prototyped here.
+fn compact(c: &mut Canvas, s: &Snapshot, d: &Derived) {
+    let (word, wc, ground) = status_word(d.status);
+    c.ground(0, 3, ground);
     c.put(1, 0, word, wc, ground);
-    c.put(1, 1, &summary(s)[0].0, TEXT, ground);
-    c.put(1, 2, "console too small for the dashboard", META, ground);
+    c.put(1, 1, &summary(s, d)[0].0, TEXT, ground);
+    c.put(1, 3, &format!("Console is {}x{}; this prototype draws the full layout at 150x45 or more.", c.w(), c.h()), META, GROUND);
+    c.put(1, 4, "Ctrl+C close", META, GROUND);
 }
