@@ -54,6 +54,7 @@
           "--collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)"
           "--collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|erofs|sysfs|tracefs)$"
           "--collector.hwmon.chip-exclude=^platform_asus_nb_wmi$"
+          "--collector.textfile.directory=/host/root/var/lib/homelab-display-metrics"
         ];
 
         # Give vmagent enough CPU headroom to avoid CPUThrottlingHigh alerts
@@ -114,7 +115,8 @@
         # With logs enabled the chart puts an internal vmauth in front of vmalert
         # so LogsQL rules reach vlsingle and PromQL rules reach vmsingle.
         # renovate: datasource=docker depName=victoriametrics/vmauth
-        internal.vmauth.spec.image.tag = "v1.150.0@sha256:18501bc13770dbb921fc999b6ae15ddb5054b5147bab027b5d459662855c172d";
+        internal.vmauth.spec.image.tag =
+          "v1.150.0@sha256:18501bc13770dbb921fc999b6ae15ddb5054b5147bab027b5d459662855c172d";
 
         vlagent.enabled = true;
         vlagent.spec.resources = {
@@ -334,6 +336,39 @@
         targetPort = 8000;
       };
     };
+
+    yamls = [
+      (builtins.toJSON {
+        apiVersion = "operator.victoriametrics.com/v1beta1";
+        kind = "VMRule";
+        metadata = {
+          name = "homelab-display-policy";
+          namespace = "victoria-metrics";
+        };
+        spec.groups = [
+          {
+            name = "homelab-display-policy";
+            rules = [
+              {
+                alert = "HomelabDisplayControlFailed";
+                expr = "homelab_display_policy_failure == 1";
+                for = "1m";
+                labels.severity = "warning";
+                annotations.summary = "Laptop display policy could not apply device controls";
+                annotations.description = "Inspect homelab-display-policy.service and /run/homelab-display-policy/status.json over SSH; do not wake the panel to report this fault.";
+              }
+              {
+                alert = "HomelabDisplayControllerUnavailable";
+                expr = "time() - homelab_display_policy_reconciled_seconds > 30 or absent(homelab_display_policy_reconciled_seconds)";
+                for = "1m";
+                labels.severity = "warning";
+                annotations.summary = "Laptop display controller stopped reconciling";
+              }
+            ];
+          }
+        ];
+      })
+    ];
 
     # Custom homelab overview dashboard
     resources.configMaps.homelab-overview = {
