@@ -6,9 +6,10 @@
   "timezone": "Europe/Oslo",
 
   // Regex managers handle Nix-embedded images and local Helm charts. Native
-  // managers update workflow actions, flake inputs, and the custom images
-  // under images/ (Dockerfile FROM lines and pinned pip requirements).
-  "enabledManagers": ["custom.regex", "github-actions", "nix", "dockerfile", "pip_requirements"],
+  // managers update workflow actions, flake inputs, the custom images under
+  // images/ (Dockerfile FROM lines and pinned pip requirements), and the Rust
+  // packages' Cargo.lock (buildRustPackage reads it directly, no hash to refresh).
+  "enabledManagers": ["custom.regex", "github-actions", "nix", "dockerfile", "pip_requirements", "cargo"],
   "nix": {
     "enabled": true
   },

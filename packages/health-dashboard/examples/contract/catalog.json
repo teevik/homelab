@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "endpoints": [
+    { "id": "immich", "name": "Immich", "app": "immich" },
+    { "id": "grafana", "name": "Grafana", "app": "victoria-metrics" },
+    { "id": "nix-cache", "name": "Nix Cache" },
+    { "id": "immich-share", "name": "Immich Share", "app": "immich" }
+  ],
+  "apps": ["cloudflare-tunnel", "immich", "victoria-metrics"]
+}
