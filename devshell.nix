@@ -8,5 +8,10 @@ pkgs.mkShell {
     pkgs.argocd
     pkgs.sops
     pkgs.age
+    # packages/health-dashboard
+    pkgs.cargo
+    pkgs.rustc
+    pkgs.clippy
+    pkgs.rustfmt
   ];
 }

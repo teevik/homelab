@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "collector_started_at": "2026-09-30T08:00:00Z",
+  "sources": {
+    "host": { "newest_sample_at": "2026-09-30T19:41:57Z" },
+    "http": { "newest_sample_at": "2026-09-30T19:41:39Z" },
+    "argo": { "newest_sample_at": "2026-09-30T19:41:48Z" },
+    "alerts": {
+      "newest_sample_at": "2026-09-30T19:39:30Z",
+      "failure": { "since": "2026-09-30T19:39:50Z", "reason": "alertmanager request timed out (5s)" }
+    }
+  },
+  "host": {
+    "cpu_percent": 28.4,
+    "cpu_threads": 16,
+    "memory": { "total_bytes": 32856499814, "available_bytes": 18683355955 },
+    "root": { "total_bytes": 1932735283200, "available_bytes": 908385484800 },
+    "temperature": { "state": "reading", "celsius": 54.0, "sensor": "Tctl" },
+    "temperature_history": { "end": "2026-09-30T19:41:00Z", "celsius": [53.0, 54.5, null, 55.0] }
+  },
+  "endpoints": {
+    "immich": { "observed_at": "2026-09-30T19:41:39Z", "result": "ok", "latency_ms": 58 },
+    "grafana": { "observed_at": "2026-09-30T19:41:39Z", "result": "fail", "reason": "HTTP 503", "since": "2026-09-30T19:38:00Z" },
+    "immich-share": { "observed_at": "2026-09-30T19:41:39Z", "result": "ok", "latency_ms": 31 }
+  },
+  "apps": {
+    "immich": { "observed_at": "2026-09-30T19:41:48Z", "sync": "Synced", "health": "Degraded", "health_since": "2026-09-30T19:35:00Z" },
+    "victoria-metrics": { "observed_at": "2026-09-30T19:41:48Z", "sync": "Synced", "health": "Healthy" }
+  },
+  "workloads": [
+    { "app": "immich", "problem": "restarts", "count": 2, "since": "2026-09-30T19:35:00Z" },
+    { "label": "kube-system", "problem": "unready", "count": 1, "since": "2026-09-30T19:40:00Z" }
+  ],
+  "alerts": [
+    { "name": "KubePersistentVolumeFillingUp", "app": "immich", "since": "2026-09-30T19:01:00Z" },
+    { "name": "NodeClockNotSynchronising", "label": "cluster", "since": "2026-09-30T19:24:00Z" }
+  ],
+  "recoveries": [
+    { "service": "nix-cache", "problem": "timeout 3.0s", "began_at": "2026-09-30T19:20:00Z", "cleared_at": "2026-09-30T19:34:00Z" }
+  ]
+}

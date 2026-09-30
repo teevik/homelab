@@ -17,6 +17,10 @@ is **Homelab validation**; this is the status to require on `main`.
   manifest tree; validate every resource with pinned Kubernetes schemas and
   schemas extracted from the rendered CRDs; enforce the deployment invariants
   in `tests/manifest-policy.json`. No missing schemas are silently skipped.
+- `pkgs-health-dashboard`: build the laptop dashboard renderer and run its tests:
+  the 15 approved scenarios and freshness/coverage boundaries rendered through
+  Ratatui's TestBackend, and the binary's Ctrl+C terminal restoration in a PTY.
+  See [health-dashboard.md](health-dashboard.md).
 - `checks/k3s.nix`: boot the real Kubernetes NixOS module in a disposable VM;
   check Secret provisioning, cluster DNS, Service traffic, k3s restart, and
   reboot recovery. It uses fake secret files and preloaded container images.
