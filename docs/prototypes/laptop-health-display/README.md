@@ -1,6 +1,6 @@
 # Laptop health display: visual studies
 
-Throwaway primary source for [Choose the laptop display’s visual direction](https://github.com/teevik/homelab/issues/65), within [Design a distinctive laptop health display](https://github.com/teevik/homelab/issues/62). **Awaiting the owner's reaction; no visual decision has been made.**
+Throwaway primary source for [Choose the laptop display’s visual direction](https://github.com/teevik/homelab/issues/65), within [Design a distinctive laptop health display](https://github.com/teevik/homelab/issues/62). **The owner has selected a direction; the canonical decision is recorded in the [resolution comment](https://github.com/teevik/homelab/issues/65#issuecomment-5911276278).** All three concepts remain preserved as comparison evidence.
 
 Run from the repository root:
 
@@ -43,11 +43,9 @@ Relevant research: [custom runtimes and health data](https://github.com/teevik/h
 
 **A is an HTML TUI mockup, not a working terminal or evidence of virtual-console compatibility.** No production code is to be promoted from this branch. After selection, preserve this study as evidence and record the decision in the ticket, following the planning-only map.
 
-## Feedback still needed
+## Decision and handoff
 
-- Preferred direction, or a specific combination of elements.
-- Viewing distance and which information must remain legible there.
-- Content priority: service failures/alerts, temperature, history, resource usage.
+The owner's selected direction, content hierarchy, viewing-distance requirement and resource-use preference live in the [visual resolution](https://github.com/teevik/homelab/issues/65#issuecomment-5911276278). The remaining architecture and behavior choices belong to [Settle startup, data freshness, and night-mode behavior](https://github.com/teevik/homelab/issues/66).
 
 The optional larger-text control permits an initial readability comparison. Actual laptop resolution, desktop scaling and physical readability still require implementation acceptance.
 
