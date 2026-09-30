@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dashboard-collector
+  namespace: victoria-metrics
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dashboard-collector
+subjects:
+  - kind: ServiceAccount
+    name: dashboard-collector
+    namespace: victoria-metrics

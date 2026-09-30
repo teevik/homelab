@@ -17,6 +17,7 @@
     flake.nixosModules.display-policy
     flake.nixosModules.anime-matrix
     flake.nixosModules.nix-cache
+    flake.nixosModules.health-dashboard
   ];
 
   # Disk configuration
@@ -187,6 +188,7 @@
   # AniMe Matrix stats display
   homelab.animeMatrix.enable = true;
   homelab.displayPolicy.enable = true;
+  homelab.healthDashboard.enable = true;
 
   # Enable GPU driver/firmware support (needed for ROCm in containers)
   hardware.graphics.enable = true;

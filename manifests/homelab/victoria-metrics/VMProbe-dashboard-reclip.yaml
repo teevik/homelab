@@ -1,0 +1,21 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMProbe
+metadata:
+  labels:
+    homelab.teevik.dev/dashboard: "true"
+  name: dashboard-reclip
+  namespace: victoria-metrics
+spec:
+  interval: 30s
+  jobName: dashboard-http
+  module: reclip
+  scrapeTimeout: 5s
+  targets:
+    staticConfig:
+      labels:
+        catalog_app: reclip
+        service_id: reclip
+      targets:
+        - http://reclip-tailscale.reclip.svc
+  vmProberSpec:
+    url: dashboard-blackbox.victoria-metrics.svc:9115

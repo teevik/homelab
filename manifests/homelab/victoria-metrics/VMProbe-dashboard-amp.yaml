@@ -1,0 +1,21 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMProbe
+metadata:
+  labels:
+    homelab.teevik.dev/dashboard: "true"
+  name: dashboard-amp
+  namespace: victoria-metrics
+spec:
+  interval: 30s
+  jobName: dashboard-http
+  module: amp
+  scrapeTimeout: 5s
+  targets:
+    staticConfig:
+      labels:
+        catalog_app: amp
+        service_id: amp
+      targets:
+        - http://amp.amp.svc
+  vmProberSpec:
+    url: dashboard-blackbox.victoria-metrics.svc:9115

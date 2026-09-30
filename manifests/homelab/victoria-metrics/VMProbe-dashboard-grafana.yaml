@@ -1,0 +1,21 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMProbe
+metadata:
+  labels:
+    homelab.teevik.dev/dashboard: "true"
+  name: dashboard-grafana
+  namespace: victoria-metrics
+spec:
+  interval: 30s
+  jobName: dashboard-http
+  module: grafana
+  scrapeTimeout: 5s
+  targets:
+    staticConfig:
+      labels:
+        catalog_app: victoria-metrics
+        service_id: grafana
+      targets:
+        - http://grafana-tailscale.victoria-metrics.svc
+  vmProberSpec:
+    url: dashboard-blackbox.victoria-metrics.svc:9115

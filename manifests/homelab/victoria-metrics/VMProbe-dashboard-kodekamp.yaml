@@ -1,0 +1,21 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMProbe
+metadata:
+  labels:
+    homelab.teevik.dev/dashboard: "true"
+  name: dashboard-kodekamp
+  namespace: victoria-metrics
+spec:
+  interval: 30s
+  jobName: dashboard-http
+  module: kodekamp
+  scrapeTimeout: 5s
+  targets:
+    staticConfig:
+      labels:
+        catalog_app: kodekamp
+        service_id: kodekamp
+      targets:
+        - http://kodekamp-web.kodekamp.svc:3000
+  vmProberSpec:
+    url: dashboard-blackbox.victoria-metrics.svc:9115

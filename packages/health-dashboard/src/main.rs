@@ -24,6 +24,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::mpsc;
 use std::time::Duration;
+use std::time::Instant;
 
 const USAGE: &str = "usage:
   health-dashboard --catalog PATH --snapshot PATH --night PATH
@@ -99,8 +100,10 @@ fn live(args: &[String]) -> Result<(), Exit> {
     let tz = TimeZone::system();
     let dashboard = Dashboard::new(catalog, tz, Timestamp::now());
     run(dashboard, Some(paths), None)?;
-    println!("Dashboard closed. Monitoring and the night schedule keep running.");
-    println!("Run `dashboard` to open it again.");
+    if std::env::var_os("DASHBOARD_LAUNCHER").is_none() {
+        println!("Dashboard closed. Monitoring and the night schedule keep running.");
+        println!("Run `dashboard` to open it again.");
+    }
     Ok(())
 }
 
@@ -151,6 +154,7 @@ struct Inputs {
     snapshot: Stamp,
     night: Stamp,
     first: bool,
+    last_snapshot_change: Instant,
 }
 
 impl Inputs {
@@ -159,12 +163,16 @@ impl Inputs {
         let mut changed = false;
         let s = stamp(&self.paths.snapshot);
         if self.first || s != self.snapshot {
+            self.last_snapshot_change = Instant::now();
             self.snapshot = s;
             changed |= match (s, read::<Snapshot>(&self.paths.snapshot)) {
                 (_, Ok(snapshot)) => d.set_snapshot(snapshot),
                 (None, _) => d.snapshot_lost(now, "no collector snapshot; is the collector running?"),
                 (Some(_), Err(e)) => d.snapshot_lost(now, &format!("collector snapshot unreadable: {e}")),
             };
+        }
+        if s.is_some() && self.last_snapshot_change.elapsed() > Duration::from_secs(15) {
+            changed |= d.snapshot_lost(now, "collector heartbeat stopped; awaiting reconnect");
         }
         let n = stamp(&self.paths.night);
         if self.first || n != self.night {
@@ -231,7 +239,7 @@ enum Wake {
 
 fn run(mut d: Dashboard, paths: Option<Paths>, fixed_now: Option<Timestamp>) -> Result<(), Exit> {
     let now = || fixed_now.unwrap_or_else(Timestamp::now);
-    let mut inputs = paths.map(|paths| Inputs { paths, snapshot: None, night: None, first: true });
+    let mut inputs = paths.map(|paths| Inputs { paths, snapshot: None, night: None, first: true, last_snapshot_change: Instant::now() });
     if let Some(i) = &mut inputs {
         i.refresh(&mut d, now());
     }

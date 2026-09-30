@@ -1,0 +1,21 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMProbe
+metadata:
+  labels:
+    homelab.teevik.dev/dashboard: "true"
+  name: dashboard-argocd
+  namespace: victoria-metrics
+spec:
+  interval: 30s
+  jobName: dashboard-http
+  module: argocd
+  scrapeTimeout: 5s
+  targets:
+    staticConfig:
+      labels:
+        catalog_app: argocd
+        service_id: argocd
+      targets:
+        - http://argocd-tailscale.argocd.svc
+  vmProberSpec:
+    url: dashboard-blackbox.victoria-metrics.svc:9115
