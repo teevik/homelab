@@ -30,6 +30,9 @@ pkgs.testers.runNixOSTest {
       isNormalUser = true;
       uid = 1000;
     };
+    # Force the late RTC registration that reset the fixture clock in CI.
+    # An explicit modprobe still works; udev must not win this ordering race.
+    boot.blacklistedKernelModules = [ "rtc_cmos" ];
     services.asusd.enable = true;
     services.logind.settings.Login.HandleLidSwitch = "ignore";
     # Stub only device/time boundaries; controller, producer gate and hotkeys are real.
@@ -76,6 +79,9 @@ pkgs.testers.runNixOSTest {
         echo tty1 > /run/display-fixture/sys/class/tty/tty0/active
         echo 'b false' > /run/display-fixture/lid
         echo 'b true' > /run/display-fixture/ac
+        # RTC registration calls rtc_hctosys and can overwrite an earlier date.
+        # Complete it before installing the deterministic night clock.
+        ${pkgs.kmod}/bin/modprobe rtc_cmos
         date -s '2026-10-01 00:00:00 UTC'
       '';
     };
@@ -97,6 +103,9 @@ pkgs.testers.runNixOSTest {
     def applied():
         machine.wait_until_succeeds("grep -q '\"application\": \"applied\"' /run/homelab-display-policy/status.json")
     with subtest("dark boot, fixed authorization, gated producer and console ordering"):
+        # If the fixture did not initialize RTC before setting night, this
+        # registration restores host daytime and the dark-boot assertion fails.
+        machine.succeed("modprobe rtc_cmos; display-policy reconcile")
         applied()
         assert not status()["screen_on"] and not status()["anime_on"]
         machine.succeed("grep -q '/dev/tty1 --blank force' /run/display-fixture/console-effects")
@@ -107,10 +116,17 @@ pkgs.testers.runNixOSTest {
         machine.fail("display-policy suspend")
     with subtest("same boot recovery preserves remaining wake, latest bedtime wins"):
         bedtime = action("bedtime")["bedtime_until"]
-        expiry = action("wake")["wake_until"]
+        wake = action("wake")
+        expiry = wake["wake_until"]
+        deadline = wake["persisted"]["wake_deadline"]
         machine.succeed("systemctl restart homelab-display-policy.service")
         applied()
-        assert status()["screen_on"] and status()["wake_until"] == expiry
+        recovered = status()
+        assert recovered["screen_on"]
+        assert recovered["persisted"]["wake_deadline"] == deadline
+        # Wall/boot clocks are sampled separately; preserve the exact boot
+        # deadline and allow subsecond sampling skew in the displayed expiry.
+        assert abs(recovered["wake_until"] - expiry) < 1
         assert not status()["anime_on"]
         action("bedtime")
         assert not status()["screen_on"] and status()["wake_until"] is None
