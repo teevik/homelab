@@ -24,7 +24,7 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@v23
 
       - name: Cache Nix store
-        uses: DeterminateSystems/magic-nix-cache-action@v15
+        uses: ./.github/actions/nix-cache
 
       - name: Refresh pinned Helm chart hashes
         run: nix develop --command python3 scripts/update-chart-hashes.py charts
