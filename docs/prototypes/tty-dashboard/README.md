@@ -11,7 +11,7 @@ nix shell nixpkgs#cargo nixpkgs#rustc nixpkgs#gcc -c cargo run --release        
 nix shell nixpkgs#cargo nixpkgs#rustc nixpkgs#gcc -c cargo run --release -- --png out # console-faithful PNGs
 ```
 
-Interactive keys: `←`/`→` switch variant, `n`/`m` normal or mixed-attention fixture, `↑`/`↓` scroll, `Ctrl+C` or `q` quit. The amber pill on the bottom row is the prototype switcher, not part of the design. The program loads the proposed palette into the terminal (OSC 4, or `ESC ] P` on `TERM=linux`) and resets it on exit. A graphical terminal preview shows neither the console font nor the console's colour rules. Use the PNGs for that.
+Interactive keys: `←`/`→` switch variant, `n`/`m` normal or mixed-attention fixture, `↑`/`↓` scroll, `Ctrl+C` or `q` quit. The lavender pill on the bottom row is the prototype switcher, not part of the design. The program loads the proposed palette into the terminal (OSC 4, or `ESC ] P` on `TERM=linux`) and resets it on exit. A graphical terminal preview shows neither the console font nor the console's colour rules. Use the PNGs for that.
 
 `--png` renders each variant and fixture at every console geometry into 2560×1600 images. It uses the real console glyph bitmaps and applies the Linux 6.18 VT colour rules. Any glyph missing from the font, any bright background or any bold/italic/underline/dim/reverse attribute is reported. The committed `screenshots/` report none.
 
@@ -27,7 +27,8 @@ Interactive keys: `←`/`→` switch variant, `n`/`m` normal or mixed-attention 
 - A **512-glyph font drops the console to 8 foreground colours**, because the bright bit becomes a glyph-index bit. That rules out Spleen (all sizes) and Terminus `ter-v*`. Terminus `ter-1*`/`ter-u*`/`ter-i*` are 256 glyphs.
 - Only `ter-i*`, `ter-k*`, `ter-m*` and `ter-u*` at 12×24 carry `▀▄`. `ter-124b` lacks them. The prototype uses **`ter-i24b`** (CP437).
 - Glyphs used: ASCII, `█ ▀ ▄ ░ ─ │ · ■ ▲ ↑ ↓ ◄ ► °`. No Braille, eighth blocks, emoji or Nerd Font icons.
-- The kernel accepts fonts up to 64×128 (`KD_FONT_OP_SET_TALL`), and fbcon's blit supports 24- and 32-pixel widths. Loading a 24×48 or 32×64 font through the NixOS console setup, and `setfont`'s tall-font support, are **not yet verified on the laptop**.
+- The kernel accepts fonts up to 64×128 (`KD_FONT_OP_SET_TALL`). The laptop runs kbd 2.9.0, whose `setfont` uses `KD_FONT_OP_SET_TALL`, and `setfont -d` doubles a font.
+- **systemd 261's `systemd-vconsole-setup` copies the font to the other VTs with a hard 32×32 check.** For a taller font it logs "Invalid font metadata" and skips the copy, and the VT it treats as source is not guaranteed to be tty1. Don't rely on the global `console.font` for a 24×48 or 32×64 font. Load it explicitly on tty1, for example with `setfont -C /dev/tty1` from a tty1-scoped unit or the dashboard launcher. The other VTs keep the built-in 16×32. (Sources: [vconsole-setup.c v261.1](https://github.com/systemd/systemd/blob/v261.1/src/vconsole/vconsole-setup.c), [kbd kdfontop.c v2.9.0](https://github.com/legionus/kbd/blob/v2.9.0/src/libkfont/kdfontop.c).) Checking on the real panel is left to implementation acceptance.
 
 ## Console geometries on this panel
 
@@ -47,17 +48,39 @@ All three keep the selected hierarchy: prominent status and attention first, the
 
 | | Layout | Console | Trade-off |
 | --- | --- | --- | --- |
-| **A · Instrument ledger** | 2× block-letter status band, fixed 4-row attention slot, then a full ledger. Endpoints (check, latency) sit left of a rule, Argo app/sync/health right of it, with apps that have no endpoint listed underneath. Host meters, temperature history and source ages fill the right column. Stable catalog order; failing rows get an ember ground. | 160×50 | Everything visible and nothing moves. Body text is small at 1 m, but the status word is huge. |
+| **A · Instrument ledger** (owner's choice) | At 160×50: 2× block-letter status band, fixed 4-row attention slot, then a full ledger. Endpoints (check, latency) sit left of a rule, Argo app/sync/health right of it, with apps that have no endpoint listed underneath. Host meters, temperature history and source ages fill the right column. Stable catalog order; failing rows get an ember ground. | 160×50 | Everything visible and nothing moves. Body text is small at 1 m, but the status word is huge. |
+| **A at 106×33** | Same status band, attention slot and endpoint/deployment ledger at 1× word size, without the 4-row gaps. The apps without an endpoint collapse to one line. Host meters and a 2-row temperature history move to a strip above the footer. Source ages fold into the summary. | 106×33 | Body text is 1.5× larger. The temperature history is coarse (4 levels) and per-source ages are dropped. |
 | **B · Attention first** | 1× status band, then problems expanded worst-first. Healthy endpoints collapse into a 4-column name grid. Apps show only a count plus the no-endpoint list. Instruments and a full-width temperature history sit along the bottom. | 106×33 | Body text is readable at 1 m. Healthy detail is compressed, so per-app sync/health is not shown when fine. |
 | **C · Large type** | Status band, up to 3 one-line problems, endpoints in 2 columns (catalog order), one apps line, and instruments in 2 lines. No temperature history. Scrolls with `↓ n` if the service list outgrows the screen. | 80×25 | Everything readable at 1 m. Least detail. |
 
-Small-screen rule, as prototyped: A falls back to C's compact layout below 150×45, and B below 100×30. Under 60×20 only the status word and one summary line remain. PNGs of every variant at every size show this.
+Small-screen rule, as prototyped: A uses its full layout at 150×45 or more, its 106×33 layout at 100×30 or more, and C's compact layout below that. B falls back below 100×30. Under 60×20 only the status word and one summary line remain. PNGs of every variant at every size show this.
 
-### Palette (NixOS `console.colors`, slots 0–15)
+### Palette: Catppuccin Mocha (NixOS `console.colors`, slots 0–15)
 
-`13120f 4d2217 9aac86 c9964f 2a2620 9d7d93 71858a c4baa2 5a5347 ff8a5c c2d6a0 f3bd62 8ea3c4 dba6c9 a6c1c2 f1e7cd`
+`1e1e2e 53394c a6e3a1 b4befe 181825 9399b2 7f849c bac2de 45475a f38ba8 eba0ac f9e2af 89b4fa cba6f7 fab387 cdd6f4`
 
-These are soot ground, ember ground, lichen (ok), brass (labels), raised ground, heather (Argo cue), slate (metadata), parchment (text), ash (rules), ember (failing), bright lichen (all clear), amber (heat), moon (night note), bright heather (deployment problem), bright slate (unknown), ivory (values). Reachability uses lichen/ember with `·`/`■`. Deployment uses heather with `▲`. The two are never merged into one state.
+The swatches match [teevik/Config](https://github.com/teevik/Config): Mocha throughout, Lavender as the single structural accent (as in hyprlock), and Maroon (Noctalia's primary) only on the `HOMELAB` mark.
+
+| Slot | Swatch | Role |
+| --- | --- | --- |
+| 0 | base | screen ground |
+| 1 | red at 25% over base (derived) | attention band and failing-row ground |
+| 2 | green | ok, ALL CLEAR |
+| 3 | lavender | section labels |
+| 4 | mantle | header/footer ground |
+| 5 | overlay2 | quiet Argo state |
+| 6 | overlay1 | ages, units, metadata |
+| 7 | subtext1 | body text |
+| 8 | surface1 | rules, empty meter cells |
+| 9 | red | failing, and only failing |
+| 10 | maroon | brand mark |
+| 11 | yellow | warm reading |
+| 12 | blue | normal instrument reading, night note |
+| 13 | mauve | deployment problem (`▲`) |
+| 14 | peach | hot reading |
+| 15 | text | primary values |
+
+Reachability uses green/red with `·`/`■`. Deployment uses overlay2/mauve with `▲`, in its own columns. Heat never uses red. Grounds stay in slots 0–7. The earlier amber/ivory study is commit `ca5ce73`.
 
 ## Fixtures
 

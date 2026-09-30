@@ -1,42 +1,44 @@
-//! The proposed 16-slot console palette (NixOS `console.colors`, slot order 0-15).
+//! The proposed 16-slot console palette (NixOS `console.colors`, slot order 0-15),
+//! drawn from Catppuccin Mocha to match the owner's desktop (teevik/Config).
 //!
 //! Background use is limited to slots 0-7: the Linux VT folds `48;5;n` for n >= 8 back
-//! onto 0-7. Slots 1 and 4 are therefore spent on dark grounds, not on text colours.
+//! onto 0-7. Slots 1 and 4 are therefore spent on grounds, not on text colours.
+//! Red is reserved for failures; heat uses yellow/peach so it never reads as a fault.
 
-pub const SOOT: u8 = 0; // screen ground
-pub const EMBER_GROUND: u8 = 1; // attention band ground
-pub const LICHEN: u8 = 2; // ok, quiet
-pub const BRASS: u8 = 3; // labels and structure
-pub const RAISED: u8 = 4; // header/footer ground
-pub const HEATHER: u8 = 5; // deployment (Argo) cue, quiet
-pub const SLATE: u8 = 6; // metadata, ages, unknown
-pub const PARCHMENT: u8 = 7; // body text
-pub const ASH: u8 = 8; // rules, empty meter cells
-pub const EMBER: u8 = 9; // failing
-pub const LICHEN_HI: u8 = 10; // all clear
-pub const AMBER: u8 = 11; // warm readings / heat
-pub const MOON: u8 = 12; // night schedule note
-pub const HEATHER_HI: u8 = 13; // deployment problem
-pub const SLATE_HI: u8 = 14; // unknown, emphasised
-pub const IVORY: u8 = 15; // primary values
+pub const GROUND: u8 = 0; // base
+pub const ALERT_GROUND: u8 = 1; // red at 25% over base (derived, not a Mocha swatch)
+pub const OK: u8 = 2; // green
+pub const LABEL: u8 = 3; // lavender, the single structural accent (as in hyprlock)
+pub const BAR: u8 = 4; // mantle, header/footer ground
+pub const DEPLOY: u8 = 5; // overlay2, quiet deployment (Argo) state
+pub const META: u8 = 6; // overlay1, ages and units
+pub const BODY: u8 = 7; // subtext1
+pub const RULE: u8 = 8; // surface1, rules and empty meter cells
+pub const FAIL: u8 = 9; // red
+pub const BRAND: u8 = 10; // maroon, Noctalia's primary
+pub const WARM: u8 = 11; // yellow
+pub const COOL: u8 = 12; // blue, normal instrument readings
+pub const DEPLOY_HI: u8 = 13; // mauve, deployment problem
+pub const HOT: u8 = 14; // peach
+pub const TEXT: u8 = 15; // text
 
 pub const PALETTE: [[u8; 3]; 16] = [
-    [0x13, 0x12, 0x0f],
-    [0x4d, 0x22, 0x17],
-    [0x9a, 0xac, 0x86],
-    [0xc9, 0x96, 0x4f],
-    [0x2a, 0x26, 0x20],
-    [0x9d, 0x7d, 0x93],
-    [0x71, 0x85, 0x8a],
-    [0xc4, 0xba, 0xa2],
-    [0x5a, 0x53, 0x47],
-    [0xff, 0x8a, 0x5c],
-    [0xc2, 0xd6, 0xa0],
-    [0xf3, 0xbd, 0x62],
-    [0x8e, 0xa3, 0xc4],
-    [0xdb, 0xa6, 0xc9],
-    [0xa6, 0xc1, 0xc2],
-    [0xf1, 0xe7, 0xcd],
+    [0x1e, 0x1e, 0x2e],
+    [0x53, 0x39, 0x4c],
+    [0xa6, 0xe3, 0xa1],
+    [0xb4, 0xbe, 0xfe],
+    [0x18, 0x18, 0x25],
+    [0x93, 0x99, 0xb2],
+    [0x7f, 0x84, 0x9c],
+    [0xba, 0xc2, 0xde],
+    [0x45, 0x47, 0x5a],
+    [0xf3, 0x8b, 0xa8],
+    [0xeb, 0xa0, 0xac],
+    [0xf9, 0xe2, 0xaf],
+    [0x89, 0xb4, 0xfa],
+    [0xcb, 0xa6, 0xf7],
+    [0xfa, 0xb3, 0x87],
+    [0xcd, 0xd6, 0xf4],
 ];
 
 pub fn hex(i: usize) -> String {
