@@ -1,6 +1,7 @@
 { ... }:
 let
   widgets = import ./glance/widgets.nix;
+  catalog = import ../catalog-lib.nix { };
   dashboardCSS = builtins.readFile ./glance/dashboard.css;
   glanceConfig = builtins.toJSON {
     server.assets-path = "/app/assets";
@@ -16,104 +17,7 @@ let
                 type = "monitor";
                 title = "Applications";
                 cache = "1m";
-                sites = [
-                  {
-                    title = "Glance";
-                    url = "http://glance";
-                    check-url = "http://glance.glance.svc";
-                    icon = "si:glance";
-                  }
-                  {
-                    title = "Longhorn";
-                    url = "http://longhorn";
-                    check-url = "http://longhorn-tailscale.longhorn-system.svc";
-                    icon = "auto-invert https://raw.githubusercontent.com/cncf/artwork/main/projects/longhorn/icon/black/longhorn-icon-black.svg";
-                  }
-                  {
-                    title = "Immich";
-                    url = "http://immich";
-                    check-url = "http://immich-tailscale.immich.svc";
-                    icon = "si:immich";
-                  }
-                  {
-                    title = "Grafana";
-                    url = "http://grafana";
-                    check-url = "http://grafana-tailscale.victoria-metrics.svc";
-                    icon = "si:grafana";
-                  }
-                  {
-                    title = "Nix Cache";
-                    url = "http://grafana/d/nix-cache";
-                    check-url = "http://192.168.1.225:8501/nix-cache-info";
-                    icon = "si:nixos";
-                  }
-                  {
-                    title = "ArgoCD";
-                    url = "http://argocd";
-                    check-url = "http://argocd-tailscale.argocd.svc";
-                    icon = "si:argo";
-                  }
-                  {
-                    title = "KodeKamp";
-                    url = "https://kodekamp.teevik.no";
-                    check-url = "http://kodekamp-web.kodekamp.svc:3000";
-                    icon = "si:codewars";
-                  }
-                  {
-                    title = "Paperless-ngx";
-                    url = "http://paperless";
-                    check-url = "http://paperless-tailscale.paperless-ngx.svc";
-                    icon = "si:paperlessngx";
-                  }
-                  {
-                    title = "BentoPDF";
-                    url = "http://bentopdf";
-                    check-url = "http://bentopdf.bentopdf.svc";
-                    icon = "si:files";
-                  }
-                  {
-                    title = "AMP";
-                    url = "http://amp";
-                    check-url = "http://amp.amp.svc";
-                    icon = "mdi:gamepad-variant";
-                  }
-                  {
-                    title = "TwitchDropsMiner";
-                    url = "http://twitchdropsminer";
-                    check-url = "http://twitchdropsminer.twitchdropsminer.svc";
-                    icon = "si:twitch";
-                  }
-                  {
-                    title = "ntfy";
-                    url = "http://ntfy";
-                    check-url = "http://ntfy.ntfy.svc";
-                    icon = "si:ntfy";
-                  }
-                  {
-                    title = "Immich Share";
-                    url = "https://immich-share.tail84b6c.ts.net";
-                    check-url = "http://immich-public-proxy.immich.svc:3000";
-                    icon = "si:immich";
-                  }
-                  {
-                    title = "Changedetection";
-                    url = "http://changedetection";
-                    check-url = "http://changedetection-tailscale.changedetection.svc";
-                    icon = "di:changedetection-io";
-                  }
-                  {
-                    title = "Registry";
-                    url = "https://registry.tail84b6c.ts.net";
-                    check-url = "http://zot.registry.svc:5000/v2/";
-                    icon = "si:opencontainersinitiative";
-                  }
-                  {
-                    title = "Reclip";
-                    url = "http://reclip";
-                    check-url = "http://reclip-tailscale.reclip.svc";
-                    icon = "mdi:download";
-                  }
-                ];
+                sites = catalog.glance;
               }
             ];
           }

@@ -2,6 +2,7 @@
 //! console, drawn from generated catalog metadata and local collector snapshots.
 
 pub mod contract;
+pub mod collector;
 mod dashboard;
 pub mod health;
 mod ui;

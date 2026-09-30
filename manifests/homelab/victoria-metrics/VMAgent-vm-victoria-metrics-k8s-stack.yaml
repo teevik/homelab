@@ -17,6 +17,12 @@ spec:
   image:
     tag: v1.150.0@sha256:3eff5874d59292714878dcb6aee14f048bf19b7312b727860ba5e7d29e2e0c07
   port: "8429"
+  probeNamespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: victoria-metrics
+  probeSelector:
+    matchLabels:
+      homelab.teevik.dev/dashboard: "true"
   remoteWrite:
     - url: http://vmsingle-vm-victoria-metrics-k8s-stack.victoria-metrics.svc.cluster.local.:8428/api/v1/write
   resources:

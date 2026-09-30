@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: dashboard-collector
+  namespace: victoria-metrics
+rules:
+  - apiGroups:
+      - ""
+    resourceNames:
+      - http:vmsingle-vm-victoria-metrics-k8s-stack:8428
+      - http:vmalertmanager-vm-victoria-metrics-k8s-stack:9093
+    resources:
+      - services/proxy
+    verbs:
+      - get

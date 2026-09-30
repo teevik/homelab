@@ -5,3 +5,4 @@ result-*
 
 __pycache__/
 .mypy_cache/
+packages/health-dashboard/target/

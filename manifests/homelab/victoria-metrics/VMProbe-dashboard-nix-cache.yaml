@@ -1,0 +1,20 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMProbe
+metadata:
+  labels:
+    homelab.teevik.dev/dashboard: "true"
+  name: dashboard-nix-cache
+  namespace: victoria-metrics
+spec:
+  interval: 30s
+  jobName: dashboard-http
+  module: nix-cache
+  scrapeTimeout: 5s
+  targets:
+    staticConfig:
+      labels:
+        service_id: nix-cache
+      targets:
+        - http://192.168.1.225:8501/nix-cache-info
+  vmProberSpec:
+    url: dashboard-blackbox.victoria-metrics.svc:9115

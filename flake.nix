@@ -83,6 +83,7 @@
           ./kubernetes/kodekamp.nix
           ./kubernetes/cloudflare-tunnel.nix
           ./kubernetes/victoriametrics.nix
+          ./kubernetes/health-probes.nix
           ./kubernetes/nix-cache.nix
           ./kubernetes/paperless-ngx.nix
           ./kubernetes/bentopdf.nix

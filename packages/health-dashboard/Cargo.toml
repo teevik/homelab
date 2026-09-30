@@ -3,6 +3,7 @@ name = "health-dashboard"
 version = "0.1.0"
 edition = "2024"
 publish = false
+default-run = "health-dashboard"
 description = "Homelab laptop health dashboard for the Linux console (tty1)"
 
 [dependencies]
@@ -11,7 +12,7 @@ jiff = { version = "0.2.37", features = ["serde", "tzdb-bundle-always"] }
 ratatui = { version = "0.30.2", default-features = false, features = ["crossterm"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
+libc = "0.2.189"
 
 [dev-dependencies]
-libc = "0.2.189"
 png = "0.18.1"

@@ -21,6 +21,12 @@ is **Homelab validation**; this is the status to require on `main`.
   the 15 approved scenarios and freshness/coverage boundaries rendered through
   Ratatui's TestBackend, and the binary's Ctrl+C terminal restoration in a PTY.
   See [health-dashboard.md](health-dashboard.md).
+- `checks/health-catalog.nix`, `health-http.nix` and `health-collector.nix`: verify
+  generated endpoint/app identities and expectations, pinned Glance/blackbox GET,
+  redirect/TLS/auth/timeout behavior, the real collector's fixture API-to-frontend
+  data path and foreground launcher cleanup/retry/relaunch in a PTY. Package
+  checks also exercise the collector snapshots through production derivation and
+  rendered frames. Full RBAC/login/network VM acceptance is expanded in #76.
 - `checks/k3s.nix`: boot the real Kubernetes NixOS module in a disposable VM;
   check Secret provisioning, cluster DNS, Service traffic, k3s restart, and
   reboot recovery. It uses fake secret files and preloaded container images.
