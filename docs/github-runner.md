@@ -1,4 +1,14 @@
-# Config nightly runner
+# Retired Config nightly runner
+
+Retired on 2026-09-30: Config now builds desktop and zenbook sequentially in one
+GitHub-hosted Ubuntu job. Homelab continues to serve the private cache over
+Tailscale, using the existing restricted SSH publication endpoint. The homelab
+configuration no longer imports the runner module, so the runner, its private
+Nix daemon, network namespace and local retention socket are not started.
+The dormant module remains available for reference and its trust regression test
+uses an explicit module extension rather than enabling it on the real host.
+
+The sections below document the former deployment and its validation history.
 
 `github-runner-config-nightly.service` runs natively on homelab as the dedicated,
 unprivileged `config-runner` user. Its only GitHub label is

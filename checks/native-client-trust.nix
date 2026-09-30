@@ -1,6 +1,10 @@
 { pkgs, flake, ... }:
 let
-  cfg = flake.nixosConfigurations.homelab.config;
+  # Keep the dormant runner module tested without enabling it on the host.
+  cfg =
+    (flake.nixosConfigurations.homelab.extendModules {
+      modules = [ flake.nixosModules.github-runner ];
+    }).config;
 in
 pkgs.runCommand "native-client-trust-check"
   {

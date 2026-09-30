@@ -14,7 +14,11 @@ private packages, manuals and outputs built before the main build step.
 Build-only outputs have separate bounded retention. Config's fast post-build
 hook roots completed outputs locally while a background uploader signs and
 copies batches. The updater and shared Nix/plugin bootstrap use this same path.
-The bootstrap is published once before the parallel desktop/zenbook jobs.
+The bootstrap runs once in a GitHub-hosted job, followed by desktop and zenbook
+sequentially. Both hosts share that job's Nix store. Successfully retained and
+verified upload roots can be released locally so the hosted runner can reclaim
+unused intermediates under disk pressure. The homelab serves the cache without
+running the nightly build itself.
 
 The `nix-cache` account is an untrusted Nix daemon user. Its dedicated SSH key
 can invoke only the forced dispatcher: Nix store transfer, space preflight,
