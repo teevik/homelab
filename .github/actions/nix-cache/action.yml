@@ -1,0 +1,27 @@
+name: Cache Nix builds
+description: Reuse GitHub-cached builds after checking the public Nix cache
+
+runs:
+  using: composite
+  steps:
+    - uses: DeterminateSystems/magic-nix-cache-action@v15
+      with:
+        use-gha-cache: enabled
+        use-flakehub: disabled
+    - name: Prefer the public Nix cache
+      shell: bash
+      run: |
+        python3 - <<'PY'
+        import os
+        from pathlib import Path
+
+        config = Path.home() / ".config/nix/nix.conf"
+        text = config.read_text()
+        address = os.environ["MAGIC_NIX_CACHE_ADDRESS"]
+        old = f"http://{address}?trusted=1&compression=zstd&parallel-compression=true&priority=1\n"
+        if text.count(old) != 1:
+            raise SystemExit("Expected one Magic Nix Cache substituter in nix.conf")
+        # cache.nixos.org has priority 40. Magic's default of 1 queries GitHub
+        # for public packages too; one rate-limit response stops all uploads.
+        config.write_text(text.replace(old, old.replace("&priority=1\n", "&priority=60\n")))
+        PY
