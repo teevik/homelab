@@ -57,6 +57,18 @@ the runner cannot provide it. The VM uses 4 GiB RAM, two CPUs, and an 8 GiB
 disposable disk. Its initial local runtime was about three minutes, including
 an orderly reboot. Nix caches successful deterministic checks.
 
+All CI jobs use `.github/actions/nix-cache` to share Nix build and successful
+test outputs through GitHub Actions' cache. The public `cache.nixos.org` cache
+is checked first (priority 40), then Magic Nix Cache (priority 60) for outputs
+not available upstream. Magic's default priority 1 also queries GitHub for
+public packages; GitHub rate limits then disable both cache reads and uploads
+for the rest of the job. Keeping upstream requests off GitHub avoids this
+unnecessary cache traffic. All flake checks still run through Nix; identical
+successful outputs are reused when cached, and cache misses run the checks.
+PRs can restore the base/default branch's cache and save entries scoped to the
+PR. FlakeHub caching is explicitly disabled because these workflows use the
+GitHub cache backend.
+
 ## Updating expectations
 
 Regenerate manifests with `nix develop --command nixidy switch .#homelab` and
