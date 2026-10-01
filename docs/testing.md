@@ -42,7 +42,9 @@ is **Homelab validation**; this is the status to require on `main`.
   Oslo time/action/persisted-state and recording-device boundary.
 - `checks/display-policy-vm.nix`: run the independent controller, real fixed-action
   hotkeys and producer gate in a disposable NixOS VM with simulated panel/ASUS
-  devices; verify authorization, reboot and service recovery. See
+  devices; verify authorization, reboot and service recovery. A held gate also
+  forces cancellation during ExecCondition: both stopped systemd states must have
+  no process, no producer start and dark display readbacks. See
   [display policy and physical acceptance](display-policy.md).
 - Changed custom image sources are built with Docker in separate CI jobs.
   `homelab.teevik.dev/image-builds` annotations on the BuildKit Jobs expose their

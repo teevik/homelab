@@ -155,7 +155,7 @@ struct Inputs {
     night: Stamp,
     first: bool,
     last_snapshot_change: Instant,
-    last_night_change: Instant,
+    night_deadline: Option<Instant>,
 }
 
 impl Inputs {
@@ -177,11 +177,17 @@ impl Inputs {
         }
         let n = stamp(&self.paths.night);
         if self.first || n != self.night {
-            self.last_night_change = Instant::now();
+            // Preserve only the file's remaining heartbeat lifetime on launch
+            // or replacement, then track expiry monotonically across clock changes.
+            self.night_deadline = std::fs::metadata(&self.paths.night).ok()
+                .and_then(|metadata| metadata.modified().ok())
+                .and_then(|modified| modified.elapsed().ok())
+                .and_then(|age| Duration::from_secs(15).checked_sub(age))
+                .map(|remaining| Instant::now() + remaining);
             self.night = n;
             changed |= d.set_night(read::<NightReport>(&self.paths.night).ok());
         }
-        if n.is_some() && self.last_night_change.elapsed() > Duration::from_secs(15) {
+        if self.night_deadline.is_none_or(|deadline| Instant::now() >= deadline) {
             changed |= d.set_night(None);
         }
         self.first = false;
@@ -244,7 +250,7 @@ enum Wake {
 
 fn run(mut d: Dashboard, paths: Option<Paths>, fixed_now: Option<Timestamp>) -> Result<(), Exit> {
     let now = || fixed_now.unwrap_or_else(Timestamp::now);
-    let mut inputs = paths.map(|paths| Inputs { paths, snapshot: None, night: None, first: true, last_snapshot_change: Instant::now(), last_night_change: Instant::now() });
+    let mut inputs = paths.map(|paths| Inputs { paths, snapshot: None, night: None, first: true, last_snapshot_change: Instant::now(), night_deadline: None });
     if let Some(i) = &mut inputs {
         i.refresh(&mut d, now());
     }
