@@ -10,7 +10,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-mode = "healthy"
+mode = "multiple-evaluators"
+evaluator_value = 1
 stamp = time.time()
 boot_id = Path("/proc/sys/kernel/random/boot_id").read_text().strip()
 
@@ -21,7 +22,10 @@ def row(metric_name, value, **labels):
 
 def metrics():
     rows = [row("up", 1, job=job) for job in ["kube-state-metrics", "argocd-application-controller-metrics", "vmalert-vm-victoria-metrics-k8s-stack"]]
-    rows += [row("vmalert_iteration_total", 10 + int(time.time()), group="test")]
+    if mode == "multiple-evaluators":
+        rows += [row("vmalert_iteration_total", evaluator_value, group=group) for group in ["first", "second"]]
+    else:
+        rows += [row("vmalert_iteration_total", 10 + int(time.time()), group="test")]
     for identity in ["immich", "immich-share", "nix-cache"]:
         failed = mode == "failure" and identity == "immich"
         rows += [row("up", 0 if mode == "failed-scrape" and identity == "immich" else 1, job="dashboard-http", service_id=identity), row("probe_success", int(not failed), service_id=identity), row("probe_duration_seconds", .04, service_id=identity), row("probe_http_status_code", 503 if failed else 200, service_id=identity)]
@@ -113,8 +117,13 @@ with ThreadingHTTPServer(("127.0.0.1", 0), API) as api, tempfile.TemporaryDirect
     try:
         initial = wait(lambda s: s["sources"]["host"]["newest_sample_at"] is not None)
         assert initial["host"]["cpu_percent"] is None, "CPU must await the second real sample"
+        wait(lambda s: "waiting for observed evaluator progress" in (s["sources"]["alerts"]["failure"] or {}).get("reason", ""))
+        # Both groups advance once after the same first observation. Collection
+        # must not require another evaluation from a group it skipped at startup.
+        evaluator_value = 2
         healthy = wait(lambda s: s["endpoints"].get("immich", {}).get("result") == "ok" and s["host"]["cpu_percent"] is not None and s["sources"]["alerts"]["failure"] is None and s["sources"]["alerts"]["newest_sample_at"] is not None)
         frontend("all-clear")
+        mode = "healthy"
         assert healthy["host"]["root"]["total_bytes"] > 0
         policy.write_text(json.dumps({"version": 1, "boot_id": boot_id, "observed_at": time.time(), "schedule_until": time.time() + 3600, "bedtime_until": None, "wake_until": None, "scheduled_dark": False, "application": "applied", "failures": []}))
         wait(lambda s: (directory / "night.json").exists())
