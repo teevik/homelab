@@ -5,10 +5,12 @@ approved [#72](https://github.com/teevik/homelab/issues/72) spec. The render,
 collection/startup and night-control implementations are already integrated in
 main through PRs #78, #80 and #77. The validation baseline is `990e4cc`.
 
-**Acceptance remains open until the owner completes the physical checks.**
-Preparing and building this candidate does not authorize production deployment,
-reboot, display power changes, fault injection or service restarts on the laptop.
-Read-only observations are recorded in [the evidence record](dashboard-evidence.md).
+**Owner decision on 1 October 2026:** close #76 and #72, leave the deployed
+dashboard running, and check it remotely through the next morning. Remaining
+physical acceptance checks below are deferred, not passed. The authorized rollout,
+completed initial one-hour capture and observation limits are recorded in
+[the evidence record](dashboard-evidence.md). Preparing or building another
+candidate alone does not authorize new production actions.
 The completed design maps and approved hierarchy remain unchanged.
 
 ## Reproduce the candidate
@@ -102,7 +104,9 @@ delete or reset bedtime state as a shortcut to acceptance.
    application state. Ctrl+C must yield a usable shell while collection and
    policy continue. Complete the checklist and resource record before acceptance.
 5. If a functional or physical check fails, record it, fix the relevant component
-   and repeat the affected automated **and** physical checks. Keep #76 open.
+   and repeat the affected automated **and** physical checks before recording
+   acceptance. The owner elected to close #76 with the remaining physical checks
+   deferred on 1 October; that decision does not turn missing results into passes.
 
 For an authorized host rollback, select the recorded previous generation with
 the normal NixOS rollback workflow (`nixos-rebuild switch --rollback` only when
@@ -118,8 +122,10 @@ for that during rollback rather than assuming darkness remains enforced.
 
 For **each case**, record observer, Europe/Oslo timestamp, candidate commit/store
 path, booted kernel/packages, geometry/font/brightness, input/action, directly
-observed result, supporting logs and pass/fail. A missing observation is pending.
+observed result, supporting logs and pass/fail. A missing observation is deferred under the owner's closure decision.
 Successful writes/readbacks, screenshots and VM results cannot pass physical cases.
+The entries below retain the complete original checklist; partial completed
+observations and the chosen closure scope are recorded in the evidence document.
 
 - [ ] Actual tty1: confirm eDP panel/amdgpu driver, 160×50 console and 256-glyph
   16×32 font. Inspect `! ? ■ ▲ ·`, `─ │ ↑ ↓` and chart symbols on the real panel.
@@ -167,8 +173,11 @@ Successful writes/readbacks, screenshots and VM results cannot pass physical cas
 Record the **method, sampling interval, elapsed duration and package versions**
 before collecting results. Measure baseline with the previous system, then the
 same workloads on the candidate; note unrelated application/backup activity.
-Choose and record observation/soak durations with the owner. No CPU/RAM budget or
-soak duration was approved, so measurements require owner judgment.
+Choose and record observation/soak durations with the owner. At preparation, no
+CPU/RAM budget or soak duration was approved. The authorized 1 October rollout
+uses three-minute phase samples and an initial 60-minute soak; no numeric resource
+budget was approved. Measurements still require owner judgment. The completed initial capture and
+partial physical results are recorded in [the evidence record](dashboard-evidence.md).
 
 Include renderer, launcher, transient curl/console helpers, collector, policy,
 relay, triggerhappy, AniMe producer and blackbox probes; record incremental
@@ -187,14 +196,16 @@ Write counts alone are not frame counts. Never infer resource use from language.
 
 | Phase | Baseline/candidate, duration | CPU/core time | RSS/PSS/cgroup memory | Redraws/triggers | Process/history growth | Owner result |
 | --- | --- | --- | --- | --- | --- | --- |
-| Idle, normal host/cluster sampling | Pending | Pending | Pending | Pending | Pending | Pending |
-| Successful refresh | Pending | Pending | Pending | Pending | Pending | Pending |
-| Failed/partial source and automatic return | Pending | Pending | Pending | Pending | Pending | Pending |
-| Ctrl+C and sustained shell handoff | Pending | Pending | Pending | UI absent | Pending | Pending |
-| Quiet hours/bedtime and screen-only wake | Pending | Pending | Pending | Pending | Pending | Pending |
-| Sustained soak, catalog failures and recoveries | Pending | Pending | Pending | Pending | Pending | Pending |
+| Idle, normal host/cluster sampling | Previous/candidate, 180s each | Recorded in evidence | Recorded in evidence | Separate 60s write-burst capture | Recorded in evidence | No numeric budget set |
+| Successful refresh | Candidate, 180.03s | Recorded in evidence | Recorded in evidence | Normal source advancement | Recorded in evidence | No numeric budget set |
+| Failed/partial source and automatic return | Candidate credential withdrawal, 180s | Recorded in evidence | Recorded in evidence | Automatic return observed | Recorded in evidence | No numeric budget set |
+| Ctrl+C and sustained shell handoff | Ctrl+C observed; sustained window deferred | Deferred | Deferred | UI absent after Ctrl+C | Deferred | Partial owner observation in evidence |
+| Quiet hours/bedtime and screen-only wake | Deferred | Deferred | Deferred | Deferred | Deferred | Deferred |
+| Sustained soak, catalog failures and recoveries | Initial 60 minutes complete; longer soak deferred | Recorded in evidence | Recorded in evidence | Transient Argo source failure and affirmative recovery recorded | History 20→80; recoveries 0→1; one UI/collector per sample | Owner chose continued operation; no numeric budget set |
 
 During the soak, sample temperature-history length (bounded to 90 minutes),
 recovery count (at most 128, entries expire at 15m) and process/cgroup membership.
-Check trends over time, not just one final value. Keep unresolved physical,
-readability, resource or recovery failures open and retest before closing #76.
+Check trends over time, not just one final value. Record unresolved physical,
+readability, resource or recovery results honestly and retest before claiming
+complete acceptance. The owner's closure decision defers the remaining checks;
+the hourly read-only follow-up does not replace physical observation.
