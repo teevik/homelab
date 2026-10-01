@@ -19,9 +19,9 @@ performed during preparation.
   matching config-reloader, and vmagent 1.150.0 pinned by OCI digest and Nix hash.
 - Lockfile SHA-256: `2e84392c5dfef676595d6f6ba6a997d3187a7d2afd33f0fc1723b5c8c59f7099`.
 - Built renderer/collector/launcher package:
-  `/nix/store/kficnpp1kj82867mp9k685qyzkp066f1-health-dashboard-0.1.0`.
+  `/nix/store/ivbblgw6z3a54r40a87dk8r6vj10xvgq-health-dashboard-0.1.0`.
 - Built candidate host closure:
-  `/nix/store/agy4kqgicc6dq543325xcwh1bqsg058w-nixos-system-homelab-26.11.20260816.e5bdc4a`.
+  `/nix/store/zvjrbkzm75569avrsja7djx560gxv42a-nixos-system-homelab-26.11.20260816.e5bdc4a`.
   Preserve these paths, the exact source revision and lockfile at rollout.
 
 ## Automated results
@@ -30,23 +30,35 @@ performed during preparation.
 | --- | --- |
 | Stale controller observation (>15s) rejected by real collector; current-boot verification; failed/absent reports | Regression reproduced, corrected and focused test passed |
 | Frozen translated night file expires after 15s and reconnects automatically | Regression reproduced, corrected and real renderer PTY test passed |
+| Already-expired or partly-aged night file at launch/relaunch | Both regressions reproduced; real renderer PTY tests pass, rejecting old input immediately and preserving only remaining lifetime |
+| Cancelled producer ExecCondition on a slow runner | Deterministic real VM regression passes: zero main/control PIDs, no producer start and dark device state in both inactive and failed/signal outcomes |
 | Live footer formats summer/winter Oslo 08:00 on a UTC host | Regression reproduced, corrected and real renderer PTY test passed |
 | Expanded API cases: empty, 403, missing timestamps, failed scrape, one old required series amid fresh responses | Focused real collector → frame test passed |
 | Actual default 5s host / 30s cluster cadence during slow API requests | Focused scheduling test passed |
 | Real renderer kill/error, retries/cancellation/relaunch, ignored q/no idle animation and usable canonical shell input | Expanded launcher PTY test passed |
 | Deliberate panic after real terminal setup, child and launcher cleanup; production ignores fault input | Separate test-feature build and PTY check passed |
 | Render boundaries/layout focused suites | Passed |
-| Integrated login/RBAC/expiry/discovery/network/clock VM | Passed all six subtests, 524.34s; no-IP cold startup, real authenticated SSH and reboot included |
+| Integrated login/RBAC/expiry/discovery/network/clock VM | Passed all six subtests, 524.63s; no-IP cold startup, real authenticated SSH and reboot included |
 | Full flake/Homelab checks, committed manifests and candidate host build | Passed all 17 x86_64-linux checks; manifest regeneration reported no changes; package and host closure built |
 
 The successful integrated check is retained at
-`/nix/store/cfcy3pyyldkvfdzy05cj28msx1mnpnlr-vm-test-run-integrated-health-dashboard`.
+`/nix/store/1sgam957lvmdz2lkl8flqrcrfhb3l1ga-vm-test-run-integrated-health-dashboard`.
 Its Nix build log records the six production-interface subtests. The final full
-flake invocation reused matching successful outputs for all 17 checks; the host
+flake invocation passed all 17 checks, rebuilding changed checks and reusing
+matching successful outputs for the rest; the host
 closure was also built separately because flake checking evaluates, but does not
 build, the `nixosConfigurations` output. Final `cargo check --all-targets
---all-features` and the four real renderer terminal tests passed. These are
+--all-features` and all six real renderer terminal tests passed. These are
 automated results, with no implied physical or performance acceptance.
+
+The first [PR #81 CI run](https://github.com/teevik/homelab/actions/runs/36835863550)
+failed because a cancelled producer gate can leave systemd in `failed/signal`,
+while the test required only `inactive`. A held ExecCondition now reproduces
+that cancellation deterministically and proves the producer never started;
+accepting this stopped state does not weaken the darkness assertions. The
+[review finding](https://github.com/teevik/homelab/pull/81#discussion_r4153323668)
+about stale reports on relaunch is also reproduced and covered by the startup
+file-age and remaining-lifetime terminal regressions.
 
 The console-faithful generator rendered all 15 states plus grown/scrolled,
 threshold/compact and tiny examples. Every generated image reported zero missing
