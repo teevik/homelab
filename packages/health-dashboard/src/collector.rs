@@ -603,25 +603,39 @@ impl Evaluator {
             return Err("required evaluator series absent".into());
         }
         let mut oldest = scrape;
+        let mut failure = None;
         for row in rows {
-            oldest = oldest.min(cluster.current(row, now)?);
-            let value = row.number()?;
-            let observation = self
-                .groups
-                .entry(row.metric.clone())
-                .or_insert((value, now, false));
-            if observation.0 != value {
-                *observation = (value, now, true);
+            // Observe every group before deciding freshness. An early waiting
+            // group must not hide other groups' first sample or progress.
+            let result = (|| {
+                let sample = cluster.current(row, now)?;
+                let value = row.number()?;
+                let observation = self
+                    .groups
+                    .entry(row.metric.clone())
+                    .or_insert((value, now, false));
+                if observation.0 != value {
+                    *observation = (value, now, true);
+                }
+                if !observation.2 {
+                    return Err("waiting for observed evaluator progress".to_string());
+                }
+                if !fresh(observation.1, now) {
+                    return Err("old evaluator progress".to_string());
+                }
+                Ok(sample.min(observation.1))
+            })();
+            match result {
+                Ok(time) => oldest = oldest.min(time),
+                Err(reason) => {
+                    failure.get_or_insert(reason);
+                }
             }
-            if !observation.2 {
-                return Err("waiting for observed evaluator progress".into());
-            }
-            if !fresh(observation.1, now) {
-                return Err("old evaluator progress".into());
-            }
-            oldest = oldest.min(observation.1);
         }
-        Ok(oldest)
+        match failure {
+            Some(reason) => Err(reason),
+            None => Ok(oldest),
+        }
     }
 }
 fn alerts(
