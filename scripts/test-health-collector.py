@@ -12,6 +12,7 @@ from urllib.parse import parse_qs, urlsplit
 
 mode = "healthy"
 stamp = time.time()
+boot_id = Path("/proc/sys/kernel/random/boot_id").read_text().strip()
 
 
 def row(metric_name, value, **labels):
@@ -23,10 +24,12 @@ def metrics():
     rows += [row("vmalert_iteration_total", 10 + int(time.time()), group="test")]
     for identity in ["immich", "immich-share", "nix-cache"]:
         failed = mode == "failure" and identity == "immich"
-        rows += [row("up", 1, job="dashboard-http", service_id=identity), row("probe_success", int(not failed), service_id=identity), row("probe_duration_seconds", .04, service_id=identity), row("probe_http_status_code", 503 if failed else 200, service_id=identity)]
+        rows += [row("up", 0 if mode == "failed-scrape" and identity == "immich" else 1, job="dashboard-http", service_id=identity), row("probe_success", int(not failed), service_id=identity), row("probe_duration_seconds", .04, service_id=identity), row("probe_http_status_code", 503 if failed else 200, service_id=identity)]
     for app in ["immich", "cloudflare-tunnel"]:
         rows += [row("argocd_app_info", 1, name=app, sync_status="Synced", health_status="Degraded" if mode == "degraded" and app == "immich" else "Healthy")]
     rows += [row("kube_pod_info", 1, namespace="immich", pod="server"), row("kube_pod_status_phase", 1, namespace="immich", pod="server", phase="Succeeded" if mode == "completed" else "Running"), row("kube_pod_status_ready", 1, namespace="immich", pod="server", condition="false" if mode in ["workloads", "completed"] else "true"), row("kube_pod_container_status_restarts_total", 2 if mode in ["workloads", "completed"] else 0, namespace="immich", pod="server", container="server")]
+    if mode == "empty":
+        return []
     return [r for r in rows if mode != "missing" or r["metric"]["__name__"] != "probe_success"]
 
 
@@ -36,8 +39,8 @@ class API(BaseHTTPRequestHandler):
             self.send_response(401)
             self.end_headers()
             return
-        if mode == "offline":
-            self.send_response(503)
+        if mode in ["offline", "forbidden"]:
+            self.send_response(403 if mode == "forbidden" else 503)
             self.end_headers()
             return
         if mode == "timeout":
@@ -46,7 +49,9 @@ class API(BaseHTTPRequestHandler):
         rows = metrics()
         if query.startswith("timestamp("):
             for r in rows:
-                r["value"][1] = str(stamp if mode == "stale" else time.time())
+                r["value"][1] = str(stamp if mode == "stale" or (mode == "one-old-series" and r["metric"]["__name__"] == "probe_duration_seconds" and r["metric"].get("service_id") == "immich") else time.time())
+            if mode == "missing-timestamp":
+                rows = [r for r in rows if r["metric"]["__name__"] != "probe_duration_seconds"]
         elif query.startswith("round("):
             rows = [] if mode == "missing-restarts" else [row("restarts", 2 if mode in ["workloads", "completed"] else 0, namespace="immich", pod="server", container="server")]
         alerts = []
@@ -100,17 +105,44 @@ with ThreadingHTTPServer(("127.0.0.1", 0), API) as api, tempfile.TemporaryDirect
             if signals is not None:
                 assert view["signals"] == signals, view
 
+    def replace_credential(token):
+        replacement = credential.with_suffix(".new")
+        replacement.write_text(json.dumps({"token": token}))
+        replacement.replace(credential)
+
     try:
         initial = wait(lambda s: s["sources"]["host"]["newest_sample_at"] is not None)
         assert initial["host"]["cpu_percent"] is None, "CPU must await the second real sample"
         healthy = wait(lambda s: s["endpoints"].get("immich", {}).get("result") == "ok" and s["host"]["cpu_percent"] is not None and s["sources"]["alerts"]["failure"] is None and s["sources"]["alerts"]["newest_sample_at"] is not None)
         frontend("all-clear")
         assert healthy["host"]["root"]["total_bytes"] > 0
-        policy.write_text(json.dumps({"version": 1, "observed_at": time.time(), "schedule_until": time.time() + 3600, "bedtime_until": None, "wake_until": None, "scheduled_dark": False, "application": "applied", "failures": []}))
+        policy.write_text(json.dumps({"version": 1, "boot_id": boot_id, "observed_at": time.time(), "schedule_until": time.time() + 3600, "bedtime_until": None, "wake_until": None, "scheduled_dark": False, "application": "applied", "failures": []}))
         wait(lambda s: (directory / "night.json").exists())
         assert json.loads((directory / "night.json").read_text())["mode"] == "day"
+        report = json.loads(policy.read_text())
+        report["observed_at"] = time.time() - 16
+        policy.write_text(json.dumps(report))
+        wait(lambda s: not (directory / "night.json").exists())
+        report["observed_at"] = time.time()
+        report["boot_id"] = "previous-boot"
+        policy.write_text(json.dumps(report))
+        wait(lambda s: not (directory / "night.json").exists())
+        report["boot_id"] = boot_id
+        report["application"] = "failed"
+        report["failures"] = ["panel control unavailable"]
+        policy.write_text(json.dumps(report))
+        wait(lambda s: (directory / "night.json").exists())
+        assert json.loads((directory / "night.json").read_text())["failure"]["reason"] == "panel control unavailable"
         policy.unlink()
         wait(lambda s: not (directory / "night.json").exists())
+        for invalid in ["empty", "forbidden", "missing-timestamp", "failed-scrape", "one-old-series"]:
+            mode = invalid
+            stamp = time.time() - 240
+            broken = wait(lambda s: s["sources"]["http"]["failure"] is not None or s["endpoints"]["immich"]["observed_at"] < healthy["endpoints"]["immich"]["observed_at"])
+            frontend("unknown")
+            assert not broken["recoveries"], "missing evidence must not manufacture recovery"
+            mode = "healthy"
+            wait(lambda s: s["sources"]["http"]["failure"] is None and s["endpoints"]["immich"]["observed_at"] > healthy["endpoints"]["immich"]["observed_at"])
         mode = "failure"
         failed = wait(lambda s: s["endpoints"]["immich"]["result"] == "fail")
         frontend("attention")
@@ -133,7 +165,7 @@ with ThreadingHTTPServer(("127.0.0.1", 0), API) as api, tempfile.TemporaryDirect
         credential.write_text(json.dumps({"token": "expired"}))
         wait(lambda s: s["sources"]["argo"]["failure"] is not None)
         frontend("unknown")
-        credential.write_text(json.dumps({"token": "disposable"}))
+        replace_credential("disposable")
         wait(lambda s: s["sources"]["argo"]["failure"] is None)
         mode = "degraded"
         wait(lambda s: s["apps"]["immich"]["health"] == "Degraded")
@@ -162,7 +194,7 @@ with ThreadingHTTPServer(("127.0.0.1", 0), API) as api, tempfile.TemporaryDirect
         wait(lambda s: s["sources"]["argo"]["failure"] is None)
         credential.unlink()
         wait(lambda s: "credential unavailable" in (s["sources"]["argo"]["failure"] or {}).get("reason", ""))
-        credential.write_text(json.dumps({"token": "disposable"}))
+        replace_credential("disposable")
         wait(lambda s: s["sources"]["argo"]["failure"] is None)
         mode = "timeout"
         wait(lambda s: s["sources"]["argo"]["failure"] is not None)

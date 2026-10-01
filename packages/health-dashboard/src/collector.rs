@@ -940,8 +940,15 @@ fn night(settings: &Settings, now: Timestamp) -> Result<(), String> {
                 .as_f64()
                 .ok_or("policy observation absent")?,
         )?;
-        if !fresh(observed, now) {
+        if observed > now + SignedDuration::from_secs(5)
+            || now.duration_since(observed) > SignedDuration::from_secs(15)
+        {
             return Err("old policy report".into());
+        }
+        let boot = fs::read_to_string("/proc/sys/kernel/random/boot_id")
+            .map_err(|e| e.to_string())?;
+        if report["boot_id"].as_str() != Some(boot.trim()) {
+            return Err("policy report belongs to another boot".into());
         }
         let until = instant(
             report["schedule_until"]

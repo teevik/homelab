@@ -97,7 +97,7 @@ fn parse(args: &[String]) -> Result<Paths, Exit> {
 fn live(args: &[String]) -> Result<(), Exit> {
     let paths = parse(args)?;
     let catalog: Catalog = read(&paths.catalog).map_err(|e| Exit::Runtime(format!("catalog {}: {e}", paths.catalog.display())))?;
-    let tz = TimeZone::system();
+    let tz = TimeZone::get("Europe/Oslo").map_err(|e| Exit::Runtime(e.to_string()))?;
     let dashboard = Dashboard::new(catalog, tz, Timestamp::now());
     run(dashboard, Some(paths), None)?;
     if std::env::var_os("DASHBOARD_LAUNCHER").is_none() {
@@ -155,6 +155,7 @@ struct Inputs {
     night: Stamp,
     first: bool,
     last_snapshot_change: Instant,
+    last_night_change: Instant,
 }
 
 impl Inputs {
@@ -176,8 +177,12 @@ impl Inputs {
         }
         let n = stamp(&self.paths.night);
         if self.first || n != self.night {
+            self.last_night_change = Instant::now();
             self.night = n;
             changed |= d.set_night(read::<NightReport>(&self.paths.night).ok());
+        }
+        if n.is_some() && self.last_night_change.elapsed() > Duration::from_secs(15) {
+            changed |= d.set_night(None);
         }
         self.first = false;
         changed
@@ -239,11 +244,15 @@ enum Wake {
 
 fn run(mut d: Dashboard, paths: Option<Paths>, fixed_now: Option<Timestamp>) -> Result<(), Exit> {
     let now = || fixed_now.unwrap_or_else(Timestamp::now);
-    let mut inputs = paths.map(|paths| Inputs { paths, snapshot: None, night: None, first: true, last_snapshot_change: Instant::now() });
+    let mut inputs = paths.map(|paths| Inputs { paths, snapshot: None, night: None, first: true, last_snapshot_change: Instant::now(), last_night_change: Instant::now() });
     if let Some(i) = &mut inputs {
         i.refresh(&mut d, now());
     }
     let mut session = Session::start()?;
+    #[cfg(feature = "test-panic")]
+    if std::env::var("HEALTH_DASHBOARD_TEST_PANIC").as_deref() == Ok("1") {
+        panic!("injected renderer panic");
+    }
 
     let (tx, rx) = mpsc::channel();
     std::thread::spawn(move || {
