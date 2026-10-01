@@ -191,6 +191,10 @@ let
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
+          # k3s can restart after API readiness while a Secret transaction runs.
+          # PartOf restarts active units, but a failed transaction needs a retry.
+          Restart = "on-failure";
+          RestartSec = "5s";
           Environment = "KUBECONFIG=/etc/rancher/k3s/k3s.yaml";
         };
         path = [ pkgs.kubectl ];

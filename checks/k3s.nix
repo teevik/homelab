@@ -16,6 +16,13 @@ let
       "infinity"
     ];
   };
+  controlledKubectl = pkgs.writeShellScriptBin "kubectl" ''
+    if [ "$1" = label ] && test -e /run/k3s-secret-fixture/hold-label; then
+      touch /run/k3s-secret-fixture/label-waiting
+      while test -e /run/k3s-secret-fixture/hold-label; do sleep 0.1; done
+    fi
+    exec ${pkgs.kubectl}/bin/kubectl "$@"
+  '';
   workload = pkgs.writeText "homelab-probe.yaml" ''
     apiVersion: v1
     kind: Pod
@@ -82,6 +89,12 @@ pkgs.testers.runNixOSTest {
           mode = "0600";
         }
       ) config.sops.secrets;
+      # Delay only one real API call in this disposable fixture so clean k3s
+      # shutdown interrupts a Secret transaction deterministically.
+      systemd.services.argocd-repo-creds-k8s-secret.path = lib.mkForce [
+        controlledKubectl
+        pkgs.coreutils
+      ];
       environment.systemPackages = [ pkgs.kubectl ];
       environment.variables.KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
 
@@ -131,6 +144,23 @@ pkgs.testers.runNixOSTest {
         verify_secrets()
         machine.wait_until_succeeds("kubectl get serviceaccount default", timeout=120)
         machine.succeed("kubectl create -f ${workload}")
+        verify_network()
+
+    with subtest("clean k3s exit during a Secret transaction recovers automatically"):
+        k3s_restarts = int(machine.succeed("systemctl show --value --property=NRestarts k3s.service"))
+        machine.succeed("mkdir -p /run/k3s-secret-fixture; touch /run/k3s-secret-fixture/hold-label; systemctl restart --no-block argocd-repo-creds-k8s-secret.service")
+        try:
+            machine.wait_until_succeeds("test -e /run/k3s-secret-fixture/label-waiting", timeout=10)
+            # k3s also exits successfully when its network startup aborts. Stop
+            # its main process directly, preserving systemd's automatic policy.
+            machine.succeed("systemctl kill --kill-whom=main --signal=SIGTERM k3s.service")
+            machine.wait_until_succeeds("${pkgs.iproute2}/bin/ss -H -lnt 'sport = :6443' > /run/k3s-secret-fixture/listeners && test ! -s /run/k3s-secret-fixture/listeners", timeout=10)
+        finally:
+            machine.succeed("rm -f /run/k3s-secret-fixture/hold-label")
+        machine.wait_until_succeeds(f"test $(systemctl show --value --property=NRestarts k3s.service) -gt {k3s_restarts}", timeout=20)
+        machine.wait_for_unit("k3s.service")
+        verify_secrets()
+        machine.succeed("rm -r /run/k3s-secret-fixture")
         verify_network()
 
     with subtest("k3s restart recreates missing secrets and restores connectivity"):

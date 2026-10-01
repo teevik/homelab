@@ -37,7 +37,8 @@ is **Homelab validation**; this is the status to require on `main`.
   synthetic app and host routes. See the [acceptance runbook](dashboard-acceptance.md).
 - `checks/k3s.nix`: boot the real Kubernetes NixOS module in a disposable VM;
   check Secret provisioning, cluster DNS, Service traffic, k3s restart, and
-  reboot recovery. It uses fake secret files and preloaded container images.
+  reboot recovery. A held real Secret label call exercises API interruption
+  during a clean k3s exit and verifies automatic transaction recovery. It uses fake secret files and preloaded container images.
 - `checks/display-policy.nix`: typecheck and exercise the approved deterministic
   Oslo time/action/persisted-state and recording-device boundary.
 - `checks/display-policy-vm.nix`: run the independent controller, real fixed-action
