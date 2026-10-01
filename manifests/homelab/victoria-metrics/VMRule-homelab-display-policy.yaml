@@ -15,6 +15,7 @@ spec:
           for: 1m
           labels:
             severity: warning
+          record: ""
         - alert: HomelabDisplayControllerUnavailable
           annotations:
             summary: Laptop display controller stopped reconciling
@@ -22,3 +23,4 @@ spec:
           for: 1m
           labels:
             severity: warning
+          record: ""
