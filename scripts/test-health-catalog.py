@@ -14,9 +14,12 @@ by_name = {e["name"]: e for e in endpoints}
 assert by_name["Immich Share"]["app"] == "immich"
 assert by_name["Grafana"]["app"] == "victoria-metrics"
 assert by_name["Nix Cache"]["app"] is None
-assert {"amd-device-plugin", "cloudflare-tunnel", "glance-agent", "tailscale-operator"} <= set(outputs["dashboard"]["apps"])
-assert "apps" not in outputs["dashboard"]["apps"]
-assert "__bootstrap" not in outputs["dashboard"]["apps"]
+assert outputs["dashboard"]["apps"] == [
+    "amd-device-plugin", "amp", "argocd", "bentopdf", "changedetection",
+    "cloudflare-tunnel", "glance", "glance-agent", "immich", "kodekamp",
+    "longhorn", "ntfy", "paperless-ngx", "reclip", "registry",
+    "tailscale-operator", "twitchdropsminer", "victoria-metrics",
+], "expected app inventory is independent of the endpoint catalog"
 for endpoint, glance, probe in zip(endpoints, outputs["glance"], outputs["probes"], strict=True):
     identity = endpoint["id"]
     module = outputs["blackbox"]["modules"][identity]

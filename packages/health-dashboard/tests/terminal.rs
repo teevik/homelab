@@ -39,6 +39,7 @@ fn spawn(pty: &Pty, dir: &std::path::Path) -> Child {
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_health-dashboard"));
     cmd.args(["--catalog", "--snapshot", "--night"].iter().zip(["catalog.json", "snapshot.json", "night.json"]).flat_map(|(f, n)| [f.to_string(), dir.join(n).display().to_string()]))
         .env("TERM", "linux")
+        .env("TZ", "UTC")
         .stdin(fd(pty))
         .stdout(fd(pty))
         .stderr(fd(pty));
@@ -89,6 +90,17 @@ fn exit_within(child: &mut Child, limit: Duration) -> Option<std::process::ExitS
         std::thread::sleep(Duration::from_millis(20));
     }
     None
+}
+
+fn finish_session(pty: &Pty, child: &mut Child, dir: PathBuf) {
+    pty.master.try_clone().unwrap().write_all(b"\x03").unwrap();
+    let status = exit_within(child, Duration::from_secs(5));
+    if status.is_none() {
+        child.kill().unwrap();
+        child.wait().unwrap();
+    }
+    std::fs::remove_dir_all(dir).ok();
+    assert!(status.expect("Ctrl+C exits").success());
 }
 
 fn termios(fd: &OwnedFd) -> libc::termios {
@@ -146,4 +158,50 @@ fn a_missing_catalog_fails_before_touching_the_terminal() {
 
     let usage = Command::new(env!("CARGO_BIN_EXE_health-dashboard")).arg("--catalog").output().unwrap();
     assert_eq!(usage.status.code(), Some(2));
+}
+
+#[test]
+fn a_stopped_night_report_becomes_unavailable_and_reconnects_without_relaunch() {
+    use health_dashboard::contract::NightState;
+    use jiff::{SignedDuration, Timestamp};
+
+    let pty = openpty();
+    let dir = inputs("night-heartbeat");
+    let mut night = fixtures::fixture(Scenario::Normal).night;
+    night.state = NightState::Day { next_dark_at: Timestamp::now() + SignedDuration::from_hours(1) };
+    let bytes = serde_json::to_vec(&night).unwrap();
+    std::fs::write(dir.join("night.json"), &bytes).unwrap();
+    let mut child = spawn(&pty, &dir);
+    let out = collect(&pty);
+    let initial = wait_for(&out, "screen dark 23:00-08:00");
+
+    // Even a report whose schedule expiry is hours away loses its authority when
+    // the translating collector stops. Use the public file interface, not Inputs.
+    std::thread::sleep(Duration::from_secs(7));
+    let unavailable = wait_for(&out, "night schedule state not reported");
+    out.lock().unwrap().clear();
+    std::fs::write(dir.join("night.new"), &bytes).unwrap();
+    std::fs::rename(dir.join("night.new"), dir.join("night.json")).unwrap();
+    let reconnected = wait_for(&out, "screen dark 23:00-08:00");
+    finish_session(&pty, &mut child, dir);
+    assert!(initial, "initial night report");
+    assert!(unavailable, "a frozen file cannot confirm current night policy");
+    assert!(reconnected, "a current report returns automatically");
+}
+
+#[test]
+fn night_footer_uses_oslo_in_summer_and_winter_even_on_a_utc_host() {
+    use health_dashboard::contract::NightState;
+    for (case, morning) in [("summer", "2099-07-01T06:00:00Z"), ("winter", "2099-01-01T07:00:00Z")] {
+        let pty = openpty();
+        let dir = inputs(case);
+        let mut night = fixtures::fixture(Scenario::Normal).night;
+        night.state = NightState::QuietHours { until: morning.parse().unwrap(), wake_until: None };
+        std::fs::write(dir.join("night.json"), serde_json::to_vec(&night).unwrap()).unwrap();
+        let mut child = spawn(&pty, &dir);
+        let out = collect(&pty);
+        let correct = wait_for(&out, "quiet hours until 08:00");
+        finish_session(&pty, &mut child, dir);
+        assert!(correct, "{case}: the UTC host must still report the Oslo policy boundary at 08:00");
+    }
 }

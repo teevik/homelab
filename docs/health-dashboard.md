@@ -26,7 +26,7 @@ Ctrl+C is the only exit (`q` is ignored). It exits 0, restores the terminal and 
 
 ## Input contracts
 
-The types in `src/contract.rs` are authoritative, and `examples/contract/*.json` shows a complete example of each document. Every document carries `"version": 1`, and any other version is rejected. Times are RFC 3339 instants. Each owner writes its file atomically (write a temporary file, then rename it). The renderer checks the files' metadata once a second and only redraws when their content changed.
+The types in `src/contract.rs` are authoritative, and `examples/contract/*.json` shows a complete example of each document. Every document carries `"version": 1`, and any other version is rejected. Times are RFC 3339 instants. Each owner writes its file atomically (write a temporary file, then rename it). The renderer checks the files' metadata once a second and only redraws when their content changed. Both live and illustrative rendering use Europe/Oslo for the clock and policy expiries, including on a host configured for UTC.
 
 ### Catalog: generated from the service catalog
 
@@ -62,7 +62,7 @@ The collector owns signal onsets, history accumulation and recovery retention. T
 - `day`, with `next_dark_at`.
 - `quiet-hours` or `bedtime`, with `until` and an optional `wake_until` while a screen-only wake runs.
 
-`failure` reports a known failure to apply the intended state. The footer shows this report verbatim in the approved wording. It reads "night schedule state not reported" when the file is missing or invalid, and "night schedule state out of date" once a reported expiry has passed. It never assumes darkness or wake.
+`failure` reports a known failure to apply the intended state. The footer shows this report verbatim in the approved wording. It reads "night schedule state not reported" when the file is missing, invalid or has stopped updating for more than 15 seconds, and "night schedule state out of date" once a reported expiry has passed. The collector accepts controller observations only from the current boot and at most 15 seconds old, then atomically rewrites this file with each 5-second host sample. It never assumes darkness or wake.
 
 ## Derivation
 
@@ -106,4 +106,4 @@ cargo run --example render_console -- /tmp/renders  # console-faithful PNGs for 
 cargo run -- demo mixed                             # interactive, in the current terminal
 ```
 
-The PNGs use the kernel's built-in TER16x32 bitmaps and the VT's colour rules, so they are review evidence for the frame. Neither they nor the PTY test prove real fbcon rendering, readability at one metre, palette behaviour on the real VT or resource use. Those checks belong to actual-laptop acceptance ([#76](https://github.com/teevik/homelab/issues/76)).
+The PNGs use the kernel's built-in TER16x32 bitmaps and the VT's colour rules, so they are review evidence for the frame. Neither they nor the PTY test prove real fbcon rendering, readability at one metre, palette behaviour on the real VT or resource use. Those checks belong to actual-laptop acceptance ([#76](https://github.com/teevik/homelab/issues/76)); see the [candidate, rollout/rollback and owner checklist](dashboard-acceptance.md) and [evidence record](dashboard-evidence.md).

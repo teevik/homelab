@@ -6,6 +6,10 @@ publish = false
 default-run = "health-dashboard"
 description = "Homelab laptop health dashboard for the Linux console (tty1)"
 
+[features]
+# Built only as a separate check dependency; absent from the production package.
+test-panic = []
+
 [dependencies]
 crossterm = "0.29"
 jiff = { version = "0.2.37", features = ["serde", "tzdb-bundle-always"] }

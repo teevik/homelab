@@ -26,7 +26,15 @@ is **Homelab validation**; this is the status to require on `main`.
   redirect/TLS/auth/timeout behavior, the real collector's fixture API-to-frontend
   data path and foreground launcher cleanup/retry/relaunch in a PTY. Package
   checks also exercise the collector snapshots through production derivation and
-  rendered frames. Full RBAC/login/network VM acceptance is expanded in #76.
+  rendered frames. The collector check also runs the actual default 5s/30s
+  scheduling and a separately built renderer panic fixture; production has no
+  fault injection enabled.
+- `checks/health-dashboard-vm.nix`: extend the real k3s VM with production login,
+  collector, credential renewal and independent night services. Exercise actual
+  service-proxy RBAC and token expiry, automatic recovery, tty1 login/logout and
+  shell/SSH exclusions. The deployed operator/vmagent/blackbox images discover
+  all generated VMProbes and enforce representative network policies against
+  synthetic app and host routes. See the [acceptance runbook](dashboard-acceptance.md).
 - `checks/k3s.nix`: boot the real Kubernetes NixOS module in a disposable VM;
   check Secret provisioning, cluster DNS, Service traffic, k3s restart, and
   reboot recovery. It uses fake secret files and preloaded container images.
