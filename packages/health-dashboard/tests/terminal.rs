@@ -205,3 +205,54 @@ fn night_footer_uses_oslo_in_summer_and_winter_even_on_a_utc_host() {
         assert!(correct, "{case}: the UTC host must still report the Oslo policy boundary at 08:00");
     }
 }
+
+#[test]
+fn an_already_stale_night_file_is_unavailable_on_launch_and_recovers() {
+    use health_dashboard::contract::NightState;
+    use jiff::{SignedDuration, Timestamp};
+    use std::time::SystemTime;
+
+    let pty = openpty();
+    let dir = inputs("stale-night-launch");
+    let mut night = fixtures::fixture(Scenario::Normal).night;
+    night.state = NightState::Day { next_dark_at: Timestamp::now() + SignedDuration::from_hours(1) };
+    let bytes = serde_json::to_vec(&night).unwrap();
+    std::fs::write(dir.join("night.json"), &bytes).unwrap();
+    std::fs::File::open(dir.join("night.json")).unwrap().set_times(
+        std::fs::FileTimes::new().set_modified(SystemTime::now() - Duration::from_secs(30))
+    ).unwrap();
+    let mut child = spawn(&pty, &dir);
+    let out = collect(&pty);
+    let unavailable = wait_for(&out, "night schedule state not reported");
+    let stale_was_shown = String::from_utf8_lossy(&out.lock().unwrap()).contains("screen dark 23:00-08:00");
+    out.lock().unwrap().clear();
+    std::fs::write(dir.join("night.new"), &bytes).unwrap();
+    std::fs::rename(dir.join("night.new"), dir.join("night.json")).unwrap();
+    let reconnected = wait_for(&out, "screen dark 23:00-08:00");
+    finish_session(&pty, &mut child, dir);
+    assert!(unavailable && !stale_was_shown, "an already expired file must be rejected on the first frame");
+    assert!(reconnected, "a fresh atomic replacement restores the footer");
+}
+
+#[test]
+fn a_partly_aged_night_file_only_has_its_remaining_heartbeat_lifetime() {
+    use health_dashboard::contract::NightState;
+    use jiff::{SignedDuration, Timestamp};
+    use std::time::SystemTime;
+
+    let pty = openpty();
+    let dir = inputs("aged-night-launch");
+    let mut night = fixtures::fixture(Scenario::Normal).night;
+    night.state = NightState::Day { next_dark_at: Timestamp::now() + SignedDuration::from_hours(1) };
+    std::fs::write(dir.join("night.json"), serde_json::to_vec(&night).unwrap()).unwrap();
+    std::fs::File::open(dir.join("night.json")).unwrap().set_times(
+        std::fs::FileTimes::new().set_modified(SystemTime::now() - Duration::from_secs(8))
+    ).unwrap();
+    let mut child = spawn(&pty, &dir);
+    let out = collect(&pty);
+    let initial = wait_for(&out, "screen dark 23:00-08:00");
+    let expired = wait_for(&out, "night schedule state not reported");
+    finish_session(&pty, &mut child, dir);
+    assert!(initial, "a recent file may confirm current policy");
+    assert!(expired, "launching must not extend the remaining file lifetime");
+}

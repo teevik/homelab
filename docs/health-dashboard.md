@@ -62,7 +62,7 @@ The collector owns signal onsets, history accumulation and recovery retention. T
 - `day`, with `next_dark_at`.
 - `quiet-hours` or `bedtime`, with `until` and an optional `wake_until` while a screen-only wake runs.
 
-`failure` reports a known failure to apply the intended state. The footer shows this report verbatim in the approved wording. It reads "night schedule state not reported" when the file is missing, invalid or has stopped updating for more than 15 seconds, and "night schedule state out of date" once a reported expiry has passed. The collector accepts controller observations only from the current boot and at most 15 seconds old, then atomically rewrites this file with each 5-second host sample. It never assumes darkness or wake.
+`failure` reports a known failure to apply the intended state. The footer shows this report verbatim in the approved wording. It reads "night schedule state not reported" when the file is missing, invalid or older than 15 seconds. Startup and atomic replacement preserve the remaining file lifetime; expiry then uses a monotonic deadline, so relaunching cannot grant stale reports another grace period. It reads "night schedule state out of date" once a reported policy expiry has passed. The collector accepts controller observations only from the current boot and at most 15 seconds old, then atomically rewrites this file with each 5-second host sample. It never assumes darkness or wake.
 
 ## Derivation
 

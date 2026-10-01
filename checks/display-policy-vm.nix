@@ -1,7 +1,21 @@
 { pkgs, flake, ... }:
 pkgs.testers.runNixOSTest {
   name = "display-policy-recovery";
-  nodes.machine = import ../tests/nixos/display-fixture.nix { inherit pkgs flake; };
+  nodes.machine = { lib, ... }: {
+    imports = [ (import ../tests/nixos/display-fixture.nix { inherit pkgs flake; }) ];
+    # Hold the ExecCondition open so a dark-policy stop deterministically reaches
+    # the same cancellation window as a slow CI runner. The real gate still runs
+    # whenever this disposable fixture marker is absent.
+    systemd.services.anime-matrix-stats.serviceConfig.ExecCondition = lib.mkForce (
+      pkgs.writeShellScript "controlled-anime-gate" ''
+        if test -e /run/display-fixture/hold-gate; then
+          touch /run/display-fixture/gate-waiting
+          exec ${pkgs.coreutils}/bin/sleep infinity
+        fi
+        exec ${flake.packages.${pkgs.system}.display-policy}/bin/display-policy gate
+      ''
+    );
+  };
 
   testScript = ''
     import json
@@ -16,6 +30,18 @@ pkgs.testers.runNixOSTest {
         return json.loads(machine.succeed("su -s /bin/sh teevik -c 'display-policy " + name + "'"))
     def applied():
         machine.wait_until_succeeds("grep -q '\"application\": \"applied\"' /run/homelab-display-policy/status.json")
+    def stopped_producer():
+        machine.wait_until_succeeds("state=$(systemctl show --value --property=ActiveState anime-matrix-stats.service); test \"$state\" = inactive || test \"$state\" = failed", timeout=10)
+        properties = dict(line.split("=", 1) for line in machine.succeed(
+            "systemctl show anime-matrix-stats.service --property=ActiveState,Result,MainPID,ControlPID,ExecMainStartTimestampMonotonic"
+        ).splitlines())
+        assert properties["MainPID"] == "0" and properties["ControlPID"] == "0"
+        assert properties["ExecMainStartTimestampMonotonic"] == "0", "producer must never have started while dark"
+        if properties["ActiveState"] == "failed":
+            assert properties["Result"] == "signal", properties
+        assert not status()["screen_on"] and not status()["anime_on"]
+        machine.succeed("grep -qx false /run/display-fixture/anime-display")
+        return properties
     with subtest("dark boot, fixed authorization, gated producer and console ordering"):
         # If the fixture did not initialize RTC before setting night, this
         # registration restores host daytime and the dark-boot assertion fails.
@@ -23,10 +49,22 @@ pkgs.testers.runNixOSTest {
         applied()
         assert not status()["screen_on"] and not status()["anime_on"]
         machine.succeed("grep -q '/dev/tty1 --blank force' /run/display-fixture/console-effects")
-        # The gate can skip this forbidden start, or periodic reconciliation can
-        # cancel its job. Assert the producer stays inactive in either case.
+        # A skipped gate is inactive; cancelling its ExecCondition can leave a
+        # failed/signal terminal state. Both must have no process or producer start.
         machine.execute("systemctl start anime-matrix-stats.service")
-        machine.wait_until_succeeds("test $(systemctl show --value --property=ActiveState anime-matrix-stats.service) = inactive")
+        stopped_producer()
+        # Stop periodic reconciliation until the controlled gate is in flight,
+        # avoiding a race where the start job is cancelled before the marker exists.
+        machine.succeed("systemctl kill --signal=SIGSTOP homelab-display-policy.service; touch /run/display-fixture/hold-gate")
+        try:
+            machine.execute("systemctl start --no-block anime-matrix-stats.service")
+            machine.wait_until_succeeds("test -e /run/display-fixture/gate-waiting", timeout=10)
+        finally:
+            machine.succeed("systemctl kill --signal=SIGCONT homelab-display-policy.service")
+        machine.succeed("display-policy reconcile")
+        cancelled = stopped_producer()
+        assert cancelled["ActiveState"] == "failed" and cancelled["Result"] == "signal"
+        machine.succeed("rm /run/display-fixture/hold-gate")
         machine.fail("su -s /bin/sh nobody -c 'display-policy wake'")
         machine.fail("su -s /bin/sh teevik -c 'display-policy reconcile'")
         machine.fail("display-policy suspend")
