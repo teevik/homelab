@@ -21,7 +21,7 @@ performed during preparation.
 - Built renderer/collector/launcher package:
   `/nix/store/ivbblgw6z3a54r40a87dk8r6vj10xvgq-health-dashboard-0.1.0`.
 - Built candidate host closure:
-  `/nix/store/zvjrbkzm75569avrsja7djx560gxv42a-nixos-system-homelab-26.11.20260816.e5bdc4a`.
+  `/nix/store/nhqa7sqysfyc8c08rllfp6549b4bqcaw-nixos-system-homelab-26.11.20260816.e5bdc4a`.
   Preserve these paths, the exact source revision and lockfile at rollout.
 
 ## Automated results
@@ -31,6 +31,7 @@ performed during preparation.
 | Stale controller observation (>15s) rejected by real collector; current-boot verification; failed/absent reports | Regression reproduced, corrected and focused test passed |
 | Frozen translated night file expires after 15s and reconnects automatically | Regression reproduced, corrected and real renderer PTY test passed |
 | Already-expired or partly-aged night file at launch/relaunch | Both regressions reproduced; real renderer PTY tests pass, rejecting old input immediately and preserving only remaining lifetime |
+| Clean k3s exit interrupts a real Secret label transaction | Regression reproduced; all four real k3s VM subtests pass (239.95s), including automatic transaction and reboot recovery |
 | Cancelled producer ExecCondition on a slow runner | Deterministic real VM regression passes: zero main/control PIDs, no producer start and dark device state in both inactive and failed/signal outcomes |
 | Live footer formats summer/winter Oslo 08:00 on a UTC host | Regression reproduced, corrected and real renderer PTY test passed |
 | Expanded API cases: empty, 403, missing timestamps, failed scrape, one old required series amid fresh responses | Focused real collector → frame test passed |
@@ -38,11 +39,13 @@ performed during preparation.
 | Real renderer kill/error, retries/cancellation/relaunch, ignored q/no idle animation and usable canonical shell input | Expanded launcher PTY test passed |
 | Deliberate panic after real terminal setup, child and launcher cleanup; production ignores fault input | Separate test-feature build and PTY check passed |
 | Render boundaries/layout focused suites | Passed |
-| Integrated login/RBAC/expiry/discovery/network/clock VM | Passed all six subtests, 524.63s; no-IP cold startup, real authenticated SSH and reboot included |
+| Integrated login/RBAC/expiry/discovery/network/clock VM | Passed all six subtests, 525.19s; no-IP cold startup, real authenticated SSH and reboot included |
 | Full flake/Homelab checks, committed manifests and candidate host build | Passed all 17 x86_64-linux checks; manifest regeneration reported no changes; package and host closure built |
 
+The standalone k3s recovery check is retained at
+`/nix/store/7b2z7ffx7x1a4r5rz2lqq862vm2hws9p-vm-test-run-homelab-k3s`.
 The successful integrated check is retained at
-`/nix/store/1sgam957lvmdz2lkl8flqrcrfhb3l1ga-vm-test-run-integrated-health-dashboard`.
+`/nix/store/fqf6k041wal08hd5ljfry6dxj56lmg4l-vm-test-run-integrated-health-dashboard`.
 Its Nix build log records the six production-interface subtests. The final full
 flake invocation passed all 17 checks, rebuilding changed checks and reusing
 matching successful outputs for the rest; the host
@@ -59,6 +62,15 @@ accepting this stopped state does not weaken the darkness assertions. The
 [review finding](https://github.com/teevik/homelab/pull/81#discussion_r4153323668)
 about stale reports on relaunch is also reproduced and covered by the startup
 file-age and remaining-lifetime terminal regressions.
+
+The next [GitHub run](https://github.com/teevik/homelab/actions/runs/36839832511)
+exposed a separate recovery gap in the existing k3s reboot check. k3s shut down
+after a transient networking initialization error while a Secret API transaction
+was running. In the local reproduction, k3s restarted automatically, but the
+failed Secret service stayed failed after API readiness returned. A controlled real label call reproduces
+this gap. The shared Secret services now retry failed transactions after five
+seconds; the regression verifies automatic service, data, label and traffic
+recovery. No production service was actuated.
 
 The console-faithful generator rendered all 15 states plus grown/scrolled,
 threshold/compact and tiny examples. Every generated image reported zero missing
