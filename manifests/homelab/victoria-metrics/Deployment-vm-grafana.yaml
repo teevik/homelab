@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/instance: vm
     app.kubernetes.io/name: grafana
     app.kubernetes.io/version: 13.1.1
-    helm.sh/chart: grafana-12.7.3
+    helm.sh/chart: grafana-13.2.6
   name: vm-grafana
   namespace: victoria-metrics
 spec:
@@ -20,14 +20,14 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 2e154f7ee56836e360831d995d653ffafb7da4f0f508a73f239dedc8638352b3
+        checksum/config: 640023976480453fb60289c7c63e6d3ca53580d6085410b5b5fd0f381169a779
         checksum/sc-dashboard-provider-config: 92acfe758217826510cd0a64ddda352df7bf0eb63759781e9e3206b245430244
         kubectl.kubernetes.io/default-container: grafana
       labels:
         app.kubernetes.io/instance: vm
         app.kubernetes.io/name: grafana
         app.kubernetes.io/version: 13.1.1
-        helm.sh/chart: grafana-12.7.3
+        helm.sh/chart: grafana-13.2.6
     spec:
       automountServiceAccountToken: true
       containers:
@@ -60,7 +60,7 @@ spec:
               value: http://localhost:3000/api/admin/provisioning/dashboards/reload
             - name: REQ_METHOD
               value: POST
-          image: quay.io/kiwigrid/k8s-sidecar:2.8.1
+          image: quay.io/kiwigrid/k8s-sidecar:2.11.2
           imagePullPolicy: IfNotPresent
           name: grafana-sc-dashboard
           resources:
@@ -74,6 +74,7 @@ spec:
             capabilities:
               drop:
                 - ALL
+            readOnlyRootFilesystem: true
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:
@@ -110,10 +111,7 @@ spec:
             - name: GF_UNIFIED_STORAGE_INDEX_PATH
               value: /var/lib/grafana-search/bleve
             - name: GOMEMLIMIT
-              valueFrom:
-                resourceFieldRef:
-                  divisor: "1"
-                  resource: limits.memory
+              value: 921MiB
           image: docker.io/grafana/grafana:13.1.1@sha256:7cb8c64c4d57a57e734073f3cc94620adb24a0acb929bd80ba9f14017e3a975b
           imagePullPolicy: IfNotPresent
           livenessProbe:
@@ -153,9 +151,12 @@ spec:
               drop:
                 - ALL
             privileged: false
+            readOnlyRootFilesystem: true
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:
+            - mountPath: /tmp
+              name: tmp
             - mountPath: /etc/grafana/grafana.ini
               name: config
               subPath: grafana.ini
@@ -222,7 +223,7 @@ spec:
               value: http://localhost:3000/api/admin/provisioning/datasources/reload
             - name: REQ_METHOD
               value: POST
-          image: quay.io/kiwigrid/k8s-sidecar:2.8.1
+          image: quay.io/kiwigrid/k8s-sidecar:2.11.2
           imagePullPolicy: IfNotPresent
           name: grafana-init-sc-datasources
           resources:
@@ -236,6 +237,7 @@ spec:
             capabilities:
               drop:
                 - ALL
+            readOnlyRootFilesystem: true
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:
@@ -249,6 +251,8 @@ spec:
       serviceAccountName: vm-grafana
       shareProcessNamespace: false
       volumes:
+        - emptyDir: {}
+          name: tmp
         - configMap:
             name: vm-grafana
           name: config
