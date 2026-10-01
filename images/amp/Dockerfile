@@ -1,6 +1,6 @@
 # Community packaging; CubeCoders does not support running the ADS controller
 # in a container. Pin the dependency image; AMP manages its own runtime updates.
-FROM mitchtalmadge/amp-dockerized:v27@sha256:47ecc0346799225c03d95c5cea7b44755de1e1beae382e36d2b7fa3a7e6c4737
+FROM mitchtalmadge/amp-dockerized:v29@sha256:24bdd01da1bdd409a9591c4658d7d6831f715e7679dd449d7bec69c6dfb96a1a
 
 # The upstream entrypoint creates this user as root on every boot. Create it
 # at build time instead so the entire Kubernetes workload can be non-root.
