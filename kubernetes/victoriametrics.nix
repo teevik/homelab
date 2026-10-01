@@ -351,6 +351,8 @@
             rules = [
               {
                 alert = "HomelabDisplayControlFailed";
+                # Match the CRD default so admission does not create Argo drift.
+                record = "";
                 expr = "homelab_display_policy_failure == 1";
                 for = "1m";
                 labels.severity = "warning";
@@ -359,6 +361,7 @@
               }
               {
                 alert = "HomelabDisplayControllerUnavailable";
+                record = "";
                 expr = "time() - homelab_display_policy_reconciled_seconds > 30 or absent(homelab_display_policy_reconciled_seconds)";
                 for = "1m";
                 labels.severity = "warning";
