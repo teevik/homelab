@@ -1,8 +1,9 @@
 # Laptop health dashboard
 
-The tty1 dashboard starts once per boot when `teevik` logs in. Press **Ctrl+C**
-to return to the shell; `q` is ignored. Run `dashboard` to open it again.
-SSH sessions and other consoles do not launch it automatically.
+The laptop automatically logs in as `teevik` on tty1 once per boot and opens the
+dashboard. Later authenticated tty1 logins also open it. Press **Ctrl+C** to
+return to the shell; `q` is ignored. Run `dashboard` to open it again. SSH
+sessions and other consoles do not launch it automatically.
 
 **ALL CLEAR** means every source is current, with no signals or coverage gaps.
 **ATTENTION** means at least one signal is known. **UNKNOWN** means there are no

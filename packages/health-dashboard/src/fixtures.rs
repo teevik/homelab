@@ -1,6 +1,6 @@
 //! ILLUSTRATIVE fixtures: the 15 approved scenarios from teevik/homelab#71, written in
 //! the production input contracts. Nothing here is read from the cluster or host;
-//! readings, alert names and times are made up. They back the tests and the
+//! readings, alert names and times are made up. They back the
 //! `health-dashboard demo` entry point, never the production path.
 //!
 //! The inventory mirrors today's 16 Glance endpoints and 18 Argo CD apps, so the
