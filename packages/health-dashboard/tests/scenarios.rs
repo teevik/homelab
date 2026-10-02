@@ -222,3 +222,16 @@ fn night_wake_shows_the_controllers_reported_state() {
     let s = render(Scenario::BedtimeWake);
     assert!(s.line(49).trim_end().ends_with("bedtime until 08:00 · woken, dark again at 22:16 (in 10m)"));
 }
+
+#[test]
+fn away_footer_reports_persistent_darkness_and_temporary_screen_only_wake() {
+    let mut f = health_dashboard::fixtures::fixture(Scenario::Normal);
+    f.night.state = serde_json::from_value(serde_json::json!({"mode": "away"})).unwrap();
+    let s = draw(&mut dashboard(&f), 160, 50, f.now);
+    assert!(s.line(49).contains("away · screen dark until resumed"));
+    f.night.state = serde_json::from_value(serde_json::json!({
+        "mode": "away", "wake_until": f.now + jiff::SignedDuration::from_mins(10)
+    })).unwrap();
+    let s = draw(&mut dashboard(&f), 160, 50, f.now);
+    assert!(s.line(49).contains("away · screen-only wake until 21:52 (in 10m)"));
+}

@@ -269,6 +269,7 @@ fn night_text(night: Option<&NightReport>, now: Timestamp, tz: &TimeZone) -> Vec
         return vec![("night schedule state not reported".into(), META)];
     };
     let expired = match &r.state {
+        NightState::Away { wake_until } => wake_until.is_some_and(|w| w <= now),
         NightState::Day { next_dark_at } => *next_dark_at <= now,
         NightState::QuietHours { until, wake_until } | NightState::Bedtime { until, wake_until } => {
             *until <= now || wake_until.is_some_and(|w| w <= now)
@@ -279,6 +280,10 @@ fn night_text(night: Option<&NightReport>, now: Timestamp, tz: &TimeZone) -> Vec
     }
     let (from, to) = (sanitize(&r.dark_from), sanitize(&r.dark_until));
     let intent = match &r.state {
+        NightState::Away { wake_until } => match wake_until {
+            Some(w) => format!("away · screen-only wake until {} (in {})", clock(*w, tz), ahead(w.duration_since(now))),
+            None => "away · screen dark until resumed".into(),
+        },
         NightState::Day { next_dark_at } => format!("screen dark {from}-{to}, in {}", ahead(next_dark_at.duration_since(now))),
         NightState::QuietHours { until, wake_until } | NightState::Bedtime { until, wake_until } => {
             let what = if matches!(r.state, NightState::Bedtime { .. }) { "bedtime" } else { "quiet hours" };

@@ -129,6 +129,21 @@ with ThreadingHTTPServer(("127.0.0.1", 0), API) as api, tempfile.TemporaryDirect
         wait(lambda s: (directory / "night.json").exists())
         assert json.loads((directory / "night.json").read_text())["mode"] == "day"
         report = json.loads(policy.read_text())
+        report["away"] = True
+        policy.write_text(json.dumps(report))
+        wait(lambda s: json.loads((directory / "night.json").read_text())["mode"] == "away")
+        assert json.loads((directory / "night.json").read_text())["wake_until"] is None
+        report["wake_until"] = time.time() + 600
+        policy.write_text(json.dumps(report))
+        wait(lambda s: json.loads((directory / "night.json").read_text())["wake_until"] is not None)
+        assert json.loads((directory / "night.json").read_text())["mode"] == "away"
+        report["away"] = "yes"
+        policy.write_text(json.dumps(report))
+        wait(lambda s: not (directory / "night.json").exists())
+        report["away"] = False
+        report["wake_until"] = None
+        policy.write_text(json.dumps(report))
+        wait(lambda s: (directory / "night.json").exists())
         report["observed_at"] = time.time() - 16
         policy.write_text(json.dumps(report))
         wait(lambda s: not (directory / "night.json").exists())

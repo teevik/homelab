@@ -7,11 +7,12 @@ from typing import Callable, Protocol
 from zoneinfo import ZoneInfo
 
 OSLO = ZoneInfo("Europe/Oslo")
-ACTIONS = ("bedtime", "wake", "resume-schedule")
+ACTIONS = ("away", "bedtime", "wake", "resume-schedule")
 
 
 @dataclass
 class State:
+    away: bool = False
     bedtime_until: float | None = None
     wake_until: float | None = None
     wake_deadline: float | None = None
@@ -68,23 +69,28 @@ class Controller:
                 state.wake_deadline is not None and uptime >= state.wake_deadline
             ):
                 state.clear_wake()
-            if action == "bedtime":
+            if action == "away":
+                state.away = True
+                state.bedtime_until = None
+                state.clear_wake()
+            elif action == "bedtime":
                 morning = next_morning(local)
                 state.bedtime_until = morning.timestamp()
                 state.clear_wake()
             elif action == "wake":
-                if scheduled or state.bedtime_until is not None:
+                if state.away or scheduled or state.bedtime_until is not None:
                     state.wake_until = now + 600
                     state.wake_deadline = uptime + 600
                     state.wake_boot = boot
             elif action == "resume-schedule":
+                state.away = False
                 state.bedtime_until = None
                 state.clear_wake()
             elif action is not None:
                 raise ValueError("unknown fixed action")
             if state.wake_deadline is not None:
                 state.wake_until = now + state.wake_deadline - uptime
-            dark = scheduled or state.bedtime_until is not None
+            dark = state.away or scheduled or state.bedtime_until is not None
             schedule_until = (
                 next_morning(local)
                 if scheduled
@@ -104,11 +110,12 @@ class Controller:
                 "scheduled_dark": scheduled,
                 "schedule_until": schedule_until,
                 "bedtime_until": state.bedtime_until,
+                "away": state.away,
                 "wake_until": state.wake_until,
                 "mode": (
                     "wake"
                     if dark and state.wake_until is not None
-                    else ("bedtime" if state.bedtime_until is not None else "schedule")
+                    else ("away" if state.away else "bedtime" if state.bedtime_until is not None else "schedule")
                 ),
                 "screen_on": intent.screen_on,
                 "anime_on": intent.anime_on,

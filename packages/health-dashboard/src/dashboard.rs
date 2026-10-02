@@ -128,6 +128,9 @@ impl Dashboard {
         }
         if let Some(n) = &self.night {
             match &n.state {
+                NightState::Away { wake_until } => {
+                    wake_until.map(&mut consider);
+                },
                 NightState::Day { next_dark_at } => consider(*next_dark_at),
                 NightState::QuietHours { until, wake_until } | NightState::Bedtime { until, wake_until } => {
                     consider(*until);

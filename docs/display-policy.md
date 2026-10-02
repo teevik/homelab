@@ -15,13 +15,14 @@ The existing logind lid-ignore configuration and unrelated ASUS controls remain.
 From an authorized SSH session as `teevik` (or root):
 
 ```sh
+display-policy away
 display-policy bedtime
 display-policy wake
 display-policy resume-schedule
 ```
 
 The kernel authenticates each socket peer UID. Only root and the account resolved
-as `teevik` may submit those three fixed requests; no command, path or device
+as `teevik` may submit those four fixed requests; no command, path or device
 argument is accepted. Root-only `reconcile` is used by host event hooks and timers.
 The account retains its pre-existing administrative sudo access. These commands
 do not claim isolation from the owner or from root.
@@ -30,9 +31,9 @@ Reserved chords, available at the UI, shell and login prompt:
 
 | Chord | Request |
 | --- | --- |
-| Ctrl+Alt+Home | Bedtime until the next local 08:00 |
+| Ctrl+Alt+Home | Persistent away mode: both displays off until resumed |
 | Ctrl+Alt+End | Ten-minute screen-only wake |
-| Ctrl+Alt+Insert | Clear both overrides and resume the current schedule |
+| Ctrl+Alt+Insert | Clear all overrides and resume the current schedule |
 
 Either Ctrl/Alt side works. The laptop's Fn combination may be needed to generate
 Home, End or Insert. Confirm the actual keys during physical acceptance.
@@ -50,18 +51,30 @@ Both hotkey services restart independently. The relay reattaches its action
 device when triggerhappy's socket is replaced. On relay exit the kernel releases
 its grabs and removes its synthetic keyboard; ordinary physical input remains
 available. A new relay mirrors already-held ordinary keys without synthesizing
-a bedtime/wake action. Overflow/hot-unplug rebuilds the affected keyboard.
+an away/wake action. Overflow/hot-unplug rebuilds the affected keyboard.
 
 ## Time, state and recovery
 
-Darkness is 23:00 inclusive–08:00 exclusive, **Europe/Oslo**. Bedtime expires at
+Press **Ctrl+Alt+Home** while the dashboard is open to enter away mode. It
+powers down the panel/backlight and disables AniMe without suspending the host or
+stopping collection. Away mode has no morning expiry and survives controller
+restarts and reboots. **Ctrl+Alt+Insert** exits away mode and resumes the current
+schedule. **Ctrl+Alt+End** allows a ten-minute screen-only wake; after it expires,
+both displays stay dark again. Ordinary input does not cancel away mode.
+
+The Home shortcut previously requested bedtime until 08:00; it now requests away
+mode, as the owner requested on 2 October 2026. `display-policy bedtime` remains
+available for the shorter override and does not cancel an active away mode.
+
+Scheduled darkness is 23:00 inclusive–08:00 exclusive, **Europe/Oslo**. Bedtime expires at
 the next local 08:00, calculated with IANA timezone data across both DST changes.
-New bedtime cancels wake. Wake during applicable darkness illuminates only the
+New away or bedtime requests cancel wake. Only resume clears away mode. Wake during applicable darkness illuminates only the
 panel and resets a ten-minute **CLOCK_BOOTTIME** deadline. The boot identity and
 deadline survive controller recovery; actual reboot discards wake. Wall-clock
 corrections recompute the reported wake expiry without extending its duration.
 Resume at 02:00 stays dark. At wake expiry after 08:00, current daytime policy
-wins. Requests and effects run on one serialized loop, guarded against a second
+wins when away mode is inactive; active away mode stays dark. Requests and effects
+run on one serialized loop, guarded against a second
 controller process.
 
 Overrides are atomically persisted and fsynced in
@@ -69,6 +82,16 @@ Overrides are atomically persisted and fsynced in
 daytime brightness is saved separately. Corrupt policy fails closed and remains
 reported as a failure until an administrator repairs the state and restarts the
 controller; it is not silently erased by a reboot or request.
+
+The new controller reads older state files with away mode inactive. A downgrade
+to a controller without away support needs deliberate state conversion: that
+controller rejects the new `away` key, even when false, and fails closed until
+the file is repaired. Resuming alone does not remove the key. Before an authorized
+downgrade, explicitly decide whether to clear away mode, stop the controller,
+back up `policy.json`, and atomically remove only its `away` key while preserving
+root ownership and mode 0600. Then switch to the older configuration and verify
+its policy and device application. Never edit state while the controller runs or
+silently remove an active away override during an unattended trip.
 
 Calendar, clock/timezone changes, udev power/display events and asusd/getty startup
 request reconciliation, rather than unconditional switching. The controller
@@ -124,7 +147,8 @@ Read `/run/homelab-display-policy/status.json` without privileges. It is atomic,
 versioned (`version: 1`), and contains:
 
 - `observed_at` (Unix wall timestamp), `boot_id`;
-- `mode`: `schedule`, `bedtime` or `wake`;
+- `mode`: `schedule`, `away`, `bedtime` or `wake`;
+- `away`: boolean persistent override (absent in older reports means false);
 - `scheduled_dark`, `schedule_until`, `bedtime_until`, `wake_until` (Unix timestamps or null);
 - `screen_on`, `anime_on`: **intended policy**, not physical observations;
 - `application`: `applied` (commands/readbacks succeeded) or `failed`;
@@ -179,20 +203,23 @@ writes, black pixels, polling/retries and simulated evidence do not pass.
 4. Use all three **real chords** at the dashboard, usable shell and authenticated
    login prompt; confirm no chord key leaks escape sequences or actions into the
    shell, repeats do not invoke requests, and ordinary input/Ctrl+C/VT switching
-   still work. Repeat all three SSH requests. Verify actual Home/End/Insert Fn keys.
+   still work. Repeat all four SSH requests. Verify actual Home/End/Insert Fn keys.
 5. Wake during darkness: screen-only for ten minutes, repeat press renews, bedtime
    cancels, resume at night stays dark. Cover wake expiry across 08:00. Recover the
    controller in the same boot, then reboot while bedtime plus wake are active:
    remaining wake survives only same boot and bedtime survives reboot.
-6. During scheduled darkness and bedtime, open/close the lid, unplug/replug AC,
+6. During scheduled darkness, bedtime and away mode, open/close the lid, unplug/replug AC,
    restart/reload asusd, attempt producer restart, recover the controller and both
    hotkey services, restart getty, reconnect/reinitialize the display and boot at
    night. Observe **no panel or AniMe flash once OS controls are available**.
    Record firmware/early-boot illumination separately within the approved boundary.
-7. During daytime, repeat lid/battery events and confirm AniMe remains restricted
+7. Enter away mode with Home, cross multiple 08:00 boundaries and restart/reboot.
+   Both displays must remain off; a temporary End wake must expire back to away
+   mode, and Insert must resume the current schedule without waking at night.
+8. During daytime, repeat lid/battery events and confirm AniMe remains restricted
    and returns only when permitted. Verify screen-only wake never turns AniMe on
    while darkness applies. Verify intended daytime brightness after all events.
-8. Simulate/observe unsupported device control and controller/producer faults
+9. Simulate/observe unsupported device control and controller/producer faults
    under controlled validation conditions. Confirm failure/status/monitoring
    evidence without an intentional panel wake, and independent service recovery.
 

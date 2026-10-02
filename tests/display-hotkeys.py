@@ -62,7 +62,7 @@ with evdev.UInput({E.EV_KEY: keys}, name="acceptance-keyboard") as source:
         emit(E.KEY_LEFTCTRL, 0)
 
     chord(E.KEY_HOME)
-    until(lambda: status()["mode"] == "bedtime")
+    until(lambda: status()["mode"] == "away" and not status()["screen_on"] and not status()["anime_on"])
     chord(E.KEY_END)
     until(lambda: status()["mode"] == "wake")
     expiry = status()["wake_until"]
