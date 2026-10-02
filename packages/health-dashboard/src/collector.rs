@@ -970,7 +970,13 @@ fn night(settings: &Settings, now: Timestamp) -> Result<(), String> {
                 .ok_or("policy expiry absent")?,
         )?;
         let wake = report["wake_until"].as_f64().map(instant).transpose()?;
-        let state = if let Some(bedtime) = report["bedtime_until"].as_f64() {
+        let away = match report.get("away") {
+            None => false, // Reports from the previous controller remain readable.
+            Some(value) => value.as_bool().ok_or("invalid away mode")?,
+        };
+        let state = if away {
+            NightState::Away { wake_until: wake }
+        } else if let Some(bedtime) = report["bedtime_until"].as_f64() {
             NightState::Bedtime {
                 until: instant(bedtime)?,
                 wake_until: wake,

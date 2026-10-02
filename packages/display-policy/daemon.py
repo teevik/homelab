@@ -40,6 +40,8 @@ def load_state(config: dict) -> State:
     except FileNotFoundError:
         return State()
     state = State(**data)
+    if not isinstance(state.away, bool):
+        raise ValueError("invalid persisted away mode")
     for value in (state.bedtime_until, state.wake_until, state.wake_deadline):
         if value is not None and (
             not isinstance(value, (float, int)) or not math.isfinite(value)
@@ -205,7 +207,7 @@ def serve(config: dict) -> None:
                         result = reconcile(action)
                     else:
                         raise ValueError(
-                            "only bedtime, wake and resume-schedule are authorized"
+                            "only away, bedtime, wake and resume-schedule are authorized"
                         )
                 except (OSError, ValueError, RuntimeError) as error:
                     result = {"error": str(error)}

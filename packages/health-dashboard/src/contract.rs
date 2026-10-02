@@ -261,6 +261,11 @@ pub struct NightReport {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(tag = "mode", rename_all = "kebab-case")]
 pub enum NightState {
+    /// Both displays stay dark until explicitly resumed; wake is screen-only.
+    Away {
+        #[serde(default)]
+        wake_until: Option<Timestamp>,
+    },
     /// Screen on; scheduled darkness starts at `next_dark_at`.
     Day { next_dark_at: Timestamp },
     /// Scheduled darkness until `until`; `wake_until` while a screen-only wake runs.

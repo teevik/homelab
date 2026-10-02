@@ -109,6 +109,23 @@ pkgs.testers.runNixOSTest {
         assert not status()["screen_on"]
         machine.succeed("echo connected > /run/display-fixture/sys/devices/card2-eDP-2/status")
         applied()
+    with subtest("away chord stays dark across mornings and reboot until resumed"):
+        action("away")
+        machine.succeed("date -s '2026-10-03 07:00:00 UTC'; display-policy reconcile")
+        assert status()["mode"] == "away" and not status()["screen_on"]
+        assert not status()["anime_on"]
+        machine.fail("systemctl start anime-matrix-stats.service && systemctl is-active anime-matrix-stats.service")
+        machine.succeed("test $(cat /run/display-fixture/sys/devices/card2-eDP-2/panel/bl_power) = 4")
+        machine.succeed("test $(cat /run/display-fixture/sys/devices/card2-eDP-2/panel/brightness) = 0")
+        action("wake")
+        machine.reboot()
+        machine.wait_for_unit("homelab-display-policy.service")
+        applied()
+        machine.succeed("date -s '2026-10-04 07:00:00 UTC'; display-policy reconcile")
+        assert status()["mode"] == "away" and not status()["screen_on"]
+        assert status()["wake_until"] is None and not status()["anime_on"]
+        action("resume-schedule")
+        assert status()["screen_on"] and status()["anime_on"]
     with subtest("morning follows current policy; lid and battery restrictions survive"):
         machine.succeed("date -s '2026-10-01 07:00:00 UTC'; display-policy reconcile")
         assert status()["screen_on"] and status()["anime_on"]

@@ -108,6 +108,9 @@ delete or reset bedtime state as a shortcut to acceptance.
    acceptance. The owner elected to close #76 with the remaining physical checks
    deferred on 1 October; that decision does not turn missing results into passes.
 
+For a rollback to a controller predating away mode, first follow the deliberate
+[state conversion](display-policy.md#time-state-and-recovery); the older daemon
+fails closed on the new state key, including when away mode is false.
 For an authorized host rollback, select the recorded previous generation with
 the normal NixOS rollback workflow (`nixos-rebuild switch --rollback` only when
 that recorded generation is the immediately previous one). Otherwise switch the
@@ -151,9 +154,11 @@ observations and the chosen closure scope are recorded in the evidence document.
   panel-off control fails acceptance. AniMe flashing requires a policy-aware
   daemon fix and retesting; later polling correction is insufficient.
 - [ ] Real Ctrl+Alt+Home / End / Insert chords at UI, shell and authenticated
-  login while dark, plus the three SSH commands. Verify actual Fn mappings, no
+  login while dark, plus the four SSH commands. Verify actual Fn mappings, no
   leaked chord input/actions, no autorepeat renewal and preserved ordinary keys,
   Ctrl+C and VT switching. See [display policy](display-policy.md).
+- [ ] Persistent away mode (Ctrl+Alt+Home) remains dark across morning boundaries
+  and reboot until Ctrl+Alt+Insert resumes the current schedule.
 - [ ] Screen-only ten-minute wake and renewal; bedtime cancels wake; resume at
   night stays dark; expiry across 08:00 recomputes daytime policy. Same-boot
   controller recovery retains the remaining wake; reboot clears wake but retains

@@ -23,7 +23,7 @@ let
   }
   // cfg.settings;
   triggers = pkgs.writeText "display-actions.conf" ''
-    KEY_PROG1 1 ${command} bedtime
+    KEY_PROG1 1 ${command} away
     KEY_PROG2 1 ${command} wake
     KEY_PROG3 1 ${command} resume-schedule
   '';

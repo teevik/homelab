@@ -22,6 +22,35 @@ def at(value):
 
 
 class PolicyTests(unittest.TestCase):
+    def test_away_survives_mornings_reboots_and_temporary_wake_until_resume(self):
+        c = Controller(State(), RecordingDevices())
+        start = at("2026-10-02T11:00:00+02:00")
+        status = c.reconcile(start, 100, "a", "away")
+        self.assertEqual(status["mode"], "away")
+        self.assertFalse(status["screen_on"])
+        self.assertFalse(status["anime_on"])
+        # Restoring persisted state on a new boot must not restore either display.
+        c = Controller(State(**status["persisted"]), RecordingDevices())
+        morning = at("2026-10-05T08:00:00+02:00")
+        status = c.reconcile(morning, 10, "b")
+        self.assertEqual(status["mode"], "away")
+        self.assertFalse(status["screen_on"])
+        self.assertFalse(status["anime_on"])
+        status = c.reconcile(morning, 10, "b", "wake")
+        self.assertTrue(status["screen_on"])
+        self.assertFalse(status["anime_on"])
+        status = c.reconcile(morning + 600, 610, "b")
+        self.assertEqual(status["mode"], "away")
+        self.assertFalse(status["screen_on"])
+        # A bedtime request cannot silently shorten the persistent override.
+        status = c.reconcile(morning + 600, 610, "b", "bedtime")
+        status = c.reconcile(at("2026-10-06T08:00:00+02:00"), 87010, "b")
+        self.assertFalse(status["screen_on"])
+        status = c.reconcile(at("2026-10-06T08:00:00+02:00"), 87010, "b", "resume-schedule")
+        self.assertEqual(status["mode"], "schedule")
+        self.assertTrue(status["screen_on"])
+        self.assertTrue(status["anime_on"])
+
     def test_bedtime_dst_restart_and_latest_request_wins(self):
         for evening, morning in [
             ("2026-03-28T22:00:00+01:00", "2026-03-29T08:00:00+02:00"),
