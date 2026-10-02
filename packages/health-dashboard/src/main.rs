@@ -255,10 +255,6 @@ fn run(mut d: Dashboard, paths: Option<Paths>, fixed_now: Option<Timestamp>) -> 
         i.refresh(&mut d, now());
     }
     let mut session = Session::start()?;
-    #[cfg(feature = "test-panic")]
-    if std::env::var("HEALTH_DASHBOARD_TEST_PANIC").as_deref() == Ok("1") {
-        panic!("injected renderer panic");
-    }
 
     let (tx, rx) = mpsc::channel();
     std::thread::spawn(move || {

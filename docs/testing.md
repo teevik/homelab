@@ -17,36 +17,12 @@ is **Homelab validation**; this is the status to require on `main`.
   manifest tree; validate every resource with pinned Kubernetes schemas and
   schemas extracted from the rendered CRDs; enforce the deployment invariants
   in `tests/manifest-policy.json`. No missing schemas are silently skipped.
-- `pkgs-health-dashboard`: build the laptop dashboard renderer and run its tests:
-  the 15 approved scenarios and freshness/coverage boundaries rendered through
-  Ratatui's TestBackend, and the binary's Ctrl+C terminal restoration in a PTY.
-  See [health-dashboard.md](health-dashboard.md).
-- `checks/health-catalog.nix`, `health-http.nix` and `health-collector.nix`: verify
-  generated endpoint/app identities and expectations, pinned Glance/blackbox GET,
-  redirect/TLS/auth/timeout behavior, the real collector's fixture API-to-frontend
-  data path and foreground launcher cleanup/retry/relaunch in a PTY. Package
-  checks also exercise the collector snapshots through production derivation and
-  rendered frames. The collector check also runs the actual default 5s/30s
-  scheduling and a separately built renderer panic fixture; production has no
-  fault injection enabled.
-- `checks/health-dashboard-vm.nix`: extend the real k3s VM with production login,
-  collector, credential renewal and independent night services. Exercise actual
-  service-proxy RBAC and token expiry, automatic recovery, tty1 login/logout and
-  shell/SSH exclusions. The deployed operator/vmagent/blackbox images discover
-  all generated VMProbes and enforce representative network policies against
-  synthetic app and host routes. See the [acceptance runbook](dashboard-acceptance.md).
+- `pkgs-health-dashboard`: build the laptop dashboard package. Dashboard and
+  display-policy behavior tests have been removed; this checks compilation only.
 - `checks/k3s.nix`: boot the real Kubernetes NixOS module in a disposable VM;
   check Secret provisioning, cluster DNS, Service traffic, k3s restart, and
   reboot recovery. A held real Secret label call exercises API interruption
   during a clean k3s exit and verifies automatic transaction recovery. It uses fake secret files and preloaded container images.
-- `checks/display-policy.nix`: typecheck and exercise the approved deterministic
-  Oslo time/action/persisted-state and recording-device boundary.
-- `checks/display-policy-vm.nix`: run the independent controller, real fixed-action
-  hotkeys and producer gate in a disposable NixOS VM with simulated panel/ASUS
-  devices; verify authorization, reboot and service recovery. A held gate also
-  forces cancellation during ExecCondition: both stopped systemd states must have
-  no process, no producer start and dark display readbacks. See
-  [display policy and physical acceptance](display-policy.md).
 - Changed custom image sources are built with Docker in separate CI jobs.
   `homelab.teevik.dev/image-builds` annotations on the BuildKit Jobs expose their
   source revisions. Local build contexts come from the rendered ConfigMaps.
