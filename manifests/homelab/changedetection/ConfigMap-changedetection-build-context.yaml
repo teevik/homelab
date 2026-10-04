@@ -49,7 +49,7 @@ data:
     RUN python -m cloakbrowser install && python -m cloakbrowser info
     USER root
   requirements.txt: |
-    cloakbrowser==0.5.10
+    cloakbrowser==0.5.11
     changedetection.io-cloak-browser==0.1.1
 kind: ConfigMap
 metadata:
