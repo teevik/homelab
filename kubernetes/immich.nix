@@ -11,7 +11,7 @@
         # Pin Immich image tag to stay current when chart lags app releases
         # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
         controllers.main.containers.main.image.tag =
-          "v3.1.0@sha256:b434cb9287eea1471c9974845914d4dd328c9c2d652e446ed4930f99944f0ceb";
+          "v3.2.4@sha256:d317916b28090c33eb36b308464ea391f8b7df1d850fcfea227a39ec879718c2";
 
         # Database connection (shared across components); the password comes
         # from the sops-provisioned immich-secrets (modules/nixos/kubernetes.nix)
@@ -30,7 +30,7 @@
           enabled = true;
           # renovate: datasource=docker depName=docker.io/valkey/valkey
           controllers.main.containers.main.image.tag =
-            "9.1.1-alpine@sha256:de31910896150d5e754a07d57d227cfdde4e258ddd0d1aa4607f2d2f95843715";
+            "9.1.2-alpine@sha256:48332870af354a799964c0012ae1194a0bf2bf894eb508f945810596dc2d8d11";
           persistence.data = {
             enabled = true;
             type = "persistentVolumeClaim";
@@ -205,7 +205,7 @@
             automountServiceAccountToken = false;
             containers.proxy = {
               # renovate: datasource=docker depName=ghcr.io/alangrainger/immich-public-proxy
-              image = "ghcr.io/alangrainger/immich-public-proxy:3.2.1@sha256:7ca34cc3efa618a11674db00e1d943e4611cb2e14d1f6d73343757db700a6e3c";
+              image = "ghcr.io/alangrainger/immich-public-proxy:3.4.1@sha256:d29ffe35c81f784685b6e06bc8b7d62bfb654f6e6e7ef8db95bb8aa3d7122694";
               ports.http.containerPort = 3000;
               env.IMMICH_URL.value = "http://immich-server:2283";
               securityContext = {
