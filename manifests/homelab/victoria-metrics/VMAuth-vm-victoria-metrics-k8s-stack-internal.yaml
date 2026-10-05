@@ -6,13 +6,13 @@ metadata:
     app.kubernetes.io/instance: vm
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: victoria-metrics-k8s-stack
-    app.kubernetes.io/version: v1.150.0
+    app.kubernetes.io/version: v1.153.0
     helm.sh/chart: victoria-metrics-k8s-stack-0.93.0
   name: vm-victoria-metrics-k8s-stack-internal
   namespace: victoria-metrics
 spec:
   image:
-    tag: v1.150.0@sha256:18501bc13770dbb921fc999b6ae15ddb5054b5147bab027b5d459662855c172d
+    tag: v1.153.0@sha256:4ebf2f21490df3e8837302b85d9db6ac45765442dfa28db77ffacd3577035a74
   port: "8427"
   unauthorizedUserAccessSpec:
     url_map:
