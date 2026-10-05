@@ -14,11 +14,11 @@
       values = {
         # Pin VictoriaMetrics image version
         # renovate: datasource=docker depName=victoriametrics/victoria-metrics
-        vmsingle.spec.image.tag = "v1.150.0@sha256:54467c7764a3e6579199af1914bb779f01ce32265cd552eb5ae0d4f8a2b80a97";
+        vmsingle.spec.image.tag = "v1.153.0@sha256:5eff7af5341e401471002f58d106d399e614a62f3d240f2dbc21901e49eed5dd";
         # renovate: datasource=docker depName=victoriametrics/vmagent
-        vmagent.spec.image.tag = "v1.150.0@sha256:3eff5874d59292714878dcb6aee14f048bf19b7312b727860ba5e7d29e2e0c07";
+        vmagent.spec.image.tag = "v1.153.0@sha256:474135388ae700b842007d3e186a8ae60ccf7de3dfd776fb6ed27cf8522d8331";
         # renovate: datasource=docker depName=victoriametrics/vmalert
-        vmalert.spec.image.tag = "v1.150.0@sha256:c6e6c1ef6e43c09510dd0aff264bf0ea319c1bdfced1ccc79dad1545950a7989";
+        vmalert.spec.image.tag = "v1.153.0@sha256:0c1c7718b54b03e8559d0f257f31f1bd79ef7fa32ac6e9ed90d7b92a74a4fe76";
 
         # k3s bundles controller-manager, scheduler, and etcd into the main
         # k3s process — there are no separate pods to scrape, so disable these
@@ -87,9 +87,9 @@
         # app.kubernetes.io/version label and a digest breaks the 63-char limit
         # (renovate.json5 disables pinDigests for this image accordingly).
         # renovate: datasource=docker depName=victoriametrics/victoria-logs
-        vlsingle.spec.image.tag = "v1.52.0";
+        vlsingle.spec.image.tag = "v1.53.0";
         # renovate: datasource=docker depName=victoriametrics/victoria-logs
-        vlagent.spec.image.tag = "v1.52.0";
+        vlagent.spec.image.tag = "v1.53.0";
 
         vlsingle.enabled = true;
         vlsingle.spec = {
@@ -116,7 +116,7 @@
         # so LogsQL rules reach vlsingle and PromQL rules reach vmsingle.
         # renovate: datasource=docker depName=victoriametrics/vmauth
         internal.vmauth.spec.image.tag =
-          "v1.150.0@sha256:18501bc13770dbb921fc999b6ae15ddb5054b5147bab027b5d459662855c172d";
+          "v1.153.0@sha256:4ebf2f21490df3e8837302b85d9db6ac45765442dfa28db77ffacd3577035a74";
 
         vlagent.enabled = true;
         vlagent.spec.resources = {
@@ -149,7 +149,7 @@
         # Pin the Grafana image like the VM images above; the chart's appVersion
         # is otherwise unpinned and invisible to Renovate.
         # renovate: datasource=docker depName=docker.io/grafana/grafana
-        grafana.image.tag = "13.1.1@sha256:7cb8c64c4d57a57e734073f3cc94620adb24a0acb929bd80ba9f14017e3a975b";
+        grafana.image.tag = "13.2.3@sha256:b28bae15e219c998fb0e0424ed724930cc61b1f61fb404d47c862f9a23f9e572";
 
         grafana.resources = {
           requests = {
