@@ -18,7 +18,7 @@ spec:
         - env:
             - name: IMMICH_URL
               value: http://immich-server:2283
-          image: ghcr.io/alangrainger/immich-public-proxy:3.2.1@sha256:7ca34cc3efa618a11674db00e1d943e4611cb2e14d1f6d73343757db700a6e3c
+          image: ghcr.io/alangrainger/immich-public-proxy:3.4.1@sha256:d29ffe35c81f784685b6e06bc8b7d62bfb654f6e6e7ef8db95bb8aa3d7122694
           name: proxy
           ports:
             - containerPort: 3000
