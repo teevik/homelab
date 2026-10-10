@@ -7,12 +7,12 @@ metadata:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/version: v1.13.0
     helm.sh/chart: longhorn-1.13.0
-  name: longhorn-support-bundle
+  name: longhorn-csi-bind
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: cluster-admin
+  name: longhorn-csi-role
 subjects:
   - kind: ServiceAccount
-    name: longhorn-support-bundle
+    name: longhorn-csi-service-account
     namespace: longhorn-system
