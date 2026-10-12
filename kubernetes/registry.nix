@@ -118,7 +118,7 @@ in
               fsGroup = 1000;
             };
             containers.zot = {
-              image = "ghcr.io/project-zot/zot-linux-amd64:v2.1.21@sha256:8258443838e95989c13c891f78a02bc1c391b5a00591ffef24cb8c17cde28038";
+              image = "ghcr.io/project-zot/zot-linux-amd64:v2.1.22@sha256:46f688dc26315a35a247e1784368829e66a67bf91de94c7d8d1645044fac1d5b";
               ports.http.containerPort = 5000;
               volumeMounts = {
                 "/var/lib/zot".name = "data";

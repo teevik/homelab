@@ -11,7 +11,7 @@
         # Pin Immich image tag to stay current when chart lags app releases
         # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
         controllers.main.containers.main.image.tag =
-          "v3.2.4@sha256:d317916b28090c33eb36b308464ea391f8b7df1d850fcfea227a39ec879718c2";
+          "v3.3.1@sha256:db996e352359771c6a3db121a0ed8761516b22f727fc092a0f46dcfef82c1bc1";
 
         # Database connection (shared across components); the password comes
         # from the sops-provisioned immich-secrets (modules/nixos/kubernetes.nix)
@@ -47,7 +47,7 @@
           controllers.main = {
             containers.main = {
               # renovate: datasource=docker depName=ghcr.io/immich-app/immich-machine-learning
-              image.tag = "v3.1.0-rocm@sha256:dd0984a9d61172d45ab4cc3508e3e9861d5262b50ede18200bb5fa56b3addb49";
+              image.tag = "v3.3.1-rocm@sha256:0936fa0414903164315c9c80a9f2c2a6ed9b8387ce05decbfe606d1d54e7a2ca";
               env.HSA_OVERRIDE_GFX_VERSION = "10.3.0";
               # MIGraphX model compilation blocks /ping for several minutes on gfx1032.
               probes.liveness.spec.failureThreshold = 60;

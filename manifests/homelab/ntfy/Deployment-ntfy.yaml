@@ -36,7 +36,7 @@ spec:
               value: :9090
             - name: NTFY_UPSTREAM_BASE_URL
               value: https://ntfy.sh
-          image: docker.io/binwiederhier/ntfy:v2.28.0@sha256:6ef4b819f722fccdc036af611c4774cfdc2de821ab74fdd48bbf4c9d6f8973da
+          image: docker.io/binwiederhier/ntfy:v2.30.0@sha256:8563a39da2f5a47360618b2ab9200239c76b37f4145f6d627d9ab4368abd23f0
           name: ntfy
           ports:
             - containerPort: 8080

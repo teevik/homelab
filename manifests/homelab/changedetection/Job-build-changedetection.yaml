@@ -5,7 +5,7 @@ metadata:
     argocd.argoproj.io/hook: PreSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
     argocd.argoproj.io/sync-wave: "0"
-    homelab.teevik.dev/image-builds: '[{"context":"/workspace","image":"changedetection","tag":"0.60.8-18273c94"}]'
+    homelab.teevik.dev/image-builds: '[{"context":"/workspace","image":"changedetection","tag":"0.60.9-c39df5c9"}]'
   name: build-changedetection
   namespace: changedetection
 spec:
@@ -22,12 +22,12 @@ spec:
             - -c
             - |+
               set -eu
-              if wget -q --spider --header "Accept: application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json" "http://zot.registry.svc:5000/v2/changedetection/manifests/0.60.8-18273c94"; then
-                echo "zot.registry.svc:5000/changedetection:0.60.8-18273c94 is already in the registry; skipping build"
+              if wget -q --spider --header "Accept: application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json" "http://zot.registry.svc:5000/v2/changedetection/manifests/0.60.9-c39df5c9"; then
+                echo "zot.registry.svc:5000/changedetection:0.60.9-c39df5c9 is already in the registry; skipping build"
               else
-                echo "building zot.registry.svc:5000/changedetection:0.60.8-18273c94"
+                echo "building zot.registry.svc:5000/changedetection:0.60.9-c39df5c9"
                 buildctl-daemonless.sh build --frontend dockerfile.v0 --local context=/workspace --local dockerfile=/workspace \
-                  --output type=image,name=zot.registry.svc:5000/changedetection:0.60.8-18273c94,push=true,registry.insecure=true \
+                  --output type=image,name=zot.registry.svc:5000/changedetection:0.60.9-c39df5c9,push=true,registry.insecure=true \
                   --export-cache type=registry,ref=zot.registry.svc:5000/changedetection:buildcache,mode=max,registry.insecure=true \
                   --import-cache type=registry,ref=zot.registry.svc:5000/changedetection:buildcache,registry.insecure=true
               fi
@@ -37,7 +37,7 @@ spec:
               value: --oci-worker-no-process-sandbox
             - name: DOCKER_CONFIG
               value: /home/user/.docker
-          image: docker.io/moby/buildkit:v0.33.1-rootless@sha256:f8a833b2de9d68e27f0815e4a737abdfaf8a2e4c615650557df11025101557b4
+          image: docker.io/moby/buildkit:v0.34.0-rootless@sha256:65eca3c01cd1180c8f64565c4e3c5983af5145818b0e6fa863385d099eb73855
           name: buildkit
           resources:
             limits:
