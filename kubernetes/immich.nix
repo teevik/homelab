@@ -205,7 +205,7 @@
             automountServiceAccountToken = false;
             containers.proxy = {
               # renovate: datasource=docker depName=ghcr.io/alangrainger/immich-public-proxy
-              image = "ghcr.io/alangrainger/immich-public-proxy:3.4.1@sha256:d29ffe35c81f784685b6e06bc8b7d62bfb654f6e6e7ef8db95bb8aa3d7122694";
+              image = "ghcr.io/alangrainger/immich-public-proxy:4.0.0@sha256:54eb2a83f2d76a2e7e6b971638b011863ccb57a248e1d0a3e8a0f703c1f795dd";
               ports.http.containerPort = 3000;
               env.IMMICH_URL.value = "http://immich-server:2283";
               securityContext = {
