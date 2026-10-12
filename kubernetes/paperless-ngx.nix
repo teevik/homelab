@@ -253,7 +253,7 @@ in
           metadata.labels.app = "paperless";
           spec = {
             containers.paperless = {
-              image = "ghcr.io/paperless-ngx/paperless-ngx:3.2.1@sha256:5fa76604a81df6945086e0837b14b56543d137e8ce4f311cc5d9ebe907e74e79";
+              image = "ghcr.io/paperless-ngx/paperless-ngx:3.3.0@sha256:6b94799bc769a063b3340cc5847402e626d4d91d29a295a8e747f8e9bead4207";
               ports.http.containerPort = 8000;
               env = paperlessEnv;
               volumeMounts = {
