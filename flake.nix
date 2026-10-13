@@ -55,6 +55,17 @@
       pkgs = inputs.nixpkgs.legacyPackages.${system};
       chartTree = inputs.nixidy.packages.${system}.mkChartAttrs ./charts;
       updateCharts = inputs.nixidy.packages.${system}.mkChartsUpdateScript chartTree;
+      glance = (import ./kubernetes/glance.nix { }).applications.glance.resources;
+      glanceConfig = pkgs.writeText "glance.json" glance.configMaps.glance-config.data."glance.yml";
+      checkGlance = pkgs.writeShellApplication {
+        name = "check-glance";
+        runtimeInputs = [ pkgs.python3 pkgs.docker ];
+        text = ''
+          exec python3 ${./scripts/test-glance.py} \
+            --image ${pkgs.lib.escapeShellArg glance.deployments.glance.spec.template.spec.containers.glance.image} \
+            --config ${glanceConfig}
+        '';
+      };
 
     in
     blueprintOutputs
@@ -65,9 +76,15 @@
         imports = [ module ];
       }) blueprintOutputs.nixosModules;
 
-      apps.${system}.updateCharts = {
-        type = "app";
-        program = pkgs.lib.getExe updateCharts;
+      apps.${system} = {
+        updateCharts = {
+          type = "app";
+          program = pkgs.lib.getExe updateCharts;
+        };
+        checkGlance = {
+          type = "app";
+          program = pkgs.lib.getExe checkGlance;
+        };
       };
 
       nixidyEnvs.${system} = inputs.nixidy.lib.mkEnvs {

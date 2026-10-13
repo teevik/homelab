@@ -21,6 +21,10 @@ switch:
 
 check:
     nix flake check -L --no-update-lock-file
+    nix run --no-update-lock-file .#checkGlance
+
+check-glance:
+    nix run --no-update-lock-file .#checkGlance
 
 check-manifests:
     nix build -L --no-link .#checks.x86_64-linux.manifests

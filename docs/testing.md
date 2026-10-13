@@ -1,7 +1,8 @@
 # Homelab testing
 
-Run `just check` (or `nix flake check -L --no-update-lock-file`) before merging
-configuration or dependency changes. GitHub runs the same checks on every PR,
+Run `just check` before merging configuration or dependency changes. It runs
+`nix flake check -L --no-update-lock-file` and the Docker-based Glance checks.
+GitHub runs the same checks on every PR,
 including commits added by manifest regeneration. The stable aggregate status
 is **Homelab validation**; this is the status to require on `main`.
 
@@ -10,9 +11,11 @@ is **Homelab validation**; this is the status to require on `main`.
 - Blueprint's host build, development shell, application package, and existing
   private cache tests. The public NixOS module outputs are wrapped as imports so
   they also satisfy flake output validation.
-- `checks/glance.nix`: render the production dashboard templates with the deployed
-  Glance version against fixture APIs. Covers healthy and unhealthy services,
-  overdue and missing backups, absent metrics, API errors, and cached outages.
+- `nix run .#checkGlance`: render the production dashboard templates with the
+  exact tag and digest from `kubernetes/glance.nix` against fixture APIs. Covers
+  healthy and unhealthy services, overdue and missing backups, absent metrics,
+  API errors, and cached outages. Runs in the required **Glance widgets** CI job;
+  it does not depend on the version of Glance packaged by nixpkgs.
 - `checks/amp.nix`: send real termination signals to the AMP supervisor with a
   fixture manager and detached game process. Check cancellation during startup,
   slow saves, process-exit verification, repeated signals, shutdown deadlines
@@ -44,10 +47,16 @@ production rebuild. Mutable apt/pip/Chromium downloads can change the artifact.
 ```sh
 just check-manifests
 just check-k3s
+just check-glance
 nix develop --command python3 scripts/build-images.py manifests/homelab --list
 nix develop --command python3 scripts/build-images.py manifests/homelab --image amp/amp
 python3 scripts/test-amp.py images/amp/entrypoint.py
 ```
+
+Glance widget checks require a running Docker daemon on Linux and network access
+to pull the digest-pinned image. Test containers use host networking to reach
+the loopback-only fixture API and dashboard ports; they use no production API,
+configuration credentials or service traffic, and are removed after each case.
 
 The VM check needs Linux with working `/dev/kvm` and Nix's `kvm` system feature.
 The GitHub Nix installer configures KVM when available; CI fails explicitly if

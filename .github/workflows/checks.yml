@@ -58,6 +58,19 @@ jobs:
           images=$(nix develop --no-update-lock-file --command python3 scripts/build-images.py rendered --list "${args[@]}")
           echo "images=$images" >> "$GITHUB_OUTPUT"
 
+  glance:
+    name: Glance widgets
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@v23
+      - uses: ./.github/actions/nix-cache
+      - name: Test widgets with the deployment image
+        run: nix run --no-update-lock-file .#checkGlance
+
   images:
     name: Build ${{ matrix.image }}
     needs: image-plan
@@ -86,17 +99,19 @@ jobs:
     # matrix is valid only when planning succeeded and found no changed builds.
     name: Homelab validation
     if: always()
-    needs: [nix, image-plan, images]
+    needs: [nix, glance, image-plan, images]
     runs-on: ubuntu-26.04
     steps:
       - name: Require all applicable checks
         env:
           NIX_RESULT: ${{ needs.nix.result }}
+          GLANCE_RESULT: ${{ needs.glance.result }}
           PLAN_RESULT: ${{ needs.image-plan.result }}
           IMAGES_RESULT: ${{ needs.images.result }}
           IMAGES: ${{ needs.image-plan.outputs.images }}
         run: |
           test "$NIX_RESULT" = success
+          test "$GLANCE_RESULT" = success
           test "$PLAN_RESULT" = success
           if [[ "$IMAGES" == '[]' ]]; then
             test "$IMAGES_RESULT" = skipped
