@@ -13,6 +13,10 @@ is **Homelab validation**; this is the status to require on `main`.
 - `checks/glance.nix`: render the production dashboard templates with the deployed
   Glance version against fixture APIs. Covers healthy and unhealthy services,
   overdue and missing backups, absent metrics, API errors, and cached outages.
+- `checks/amp.nix`: send real termination signals to the AMP supervisor with a
+  fixture manager and detached game process. Check cancellation during startup,
+  slow saves, process-exit verification, repeated signals, shutdown deadlines
+  and the one-time ADS upgrade. These do not need a licence or external network.
 - `checks/manifests.nix`: compare fresh nixidy output with the entire committed
   manifest tree; validate every resource with pinned Kubernetes schemas and
   schemas extracted from the rendered CRDs; enforce the deployment invariants
@@ -42,6 +46,7 @@ just check-manifests
 just check-k3s
 nix develop --command python3 scripts/build-images.py manifests/homelab --list
 nix develop --command python3 scripts/build-images.py manifests/homelab --image amp/amp
+python3 scripts/test-amp.py images/amp/entrypoint.py
 ```
 
 The VM check needs Linux with working `/dev/kvm` and Nix's `kvm` system feature.
