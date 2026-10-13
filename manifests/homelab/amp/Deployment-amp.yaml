@@ -20,9 +20,11 @@ spec:
       automountServiceAccountToken: false
       containers:
         - env:
+            - name: AMP_SHUTDOWN_TIMEOUT_SECONDS
+              value: "600"
             - name: TZ
               value: Europe/Oslo
-          image: registry.tail84b6c.ts.net/amp:v27-72ed7f6b
+          image: registry.tail84b6c.ts.net/amp:v29-c825c98b
           livenessProbe:
             exec:
               command:
@@ -100,7 +102,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      terminationGracePeriodSeconds: 360
+      terminationGracePeriodSeconds: 720
       volumes:
         - name: data
           persistentVolumeClaim:

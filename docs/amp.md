@@ -189,11 +189,68 @@ officially support the ADS controller in a container. There is no Docker socket
 or nested container runtime. Games share the Unix user, filesystem, pod resources
 and host network; templates requiring nested Docker cannot run here.
 
-The dependency image is pinned. First startup downloads the current AMP
-Mainline runtime into the PVC; its version is separate from the image tag.
-Use AMP's update controls for the controller, instances, templates and games.
-Pod restarts do not force upgrades. Rolling back the Kubernetes image does not
-roll back AMP's persisted binaries or databases.
+The dependency image is pinned at v29, which supplies `ampinstmgr` 2.8.0.8.
+First startup downloads the current AMP Mainline runtime into the PVC; its
+version is separate from the image tag. Existing installations get a one-time
+ADS controller upgrade on the first rollout of the shutdown changes, before
+`StartBoot` starts any instances. This uses `ampinstmgr --nocache UpgradeInstance
+ADS01 false` and records success in `/home/amp/.homelab/ads-shutdown-fixes`.
+A failed or interrupted upgrade does not record completion or start games, so
+the next startup retries it. Ordinary restarts then leave runtime versions
+alone. Game-instance runtimes, templates and games remain managed through AMP's
+update controls. Rolling back the Kubernetes image does not roll back AMP's
+persisted binaries or databases.
+
+### Image rollout and shutdown
+
+Argo CD builds the replacement image in PreSync while the old server continues
+running. The single-replica Deployment uses `Recreate`, so an image rollout then
+disconnects players, shuts down the old pod and starts a replacement against the
+same PVC. Boot-enabled instances and each game's startup mode control what
+starts again; this does not preserve an ad-hoc running/stopped state.
+
+Tini forwards termination to the Python supervisor. Startup and maintenance
+command waits respond to termination, cancel only their own manager process
+group, and proceed to `ampinstmgr StopAll`. Shutdown has a dedicated 600-second
+budget, exceeding the existing Minecraft instance's 300-second stop limit.
+Kubernetes gives the pod 720 seconds, leaving margin for an in-flight API call
+and command cleanup. Increase both budgets deliberately if future servers need
+longer saves; their game stop limits must fit within the shutdown budget.
+
+The supervisor logs the stop result and elapsed time without command arguments
+or raw manager output. After `StopAll`, it checks instance processes and their
+descendants, tracking process start times to avoid PID reuse. It reports shutdown
+complete only after those processes have exited; a failed command or a timeout
+produces a nonzero exit. These checks do not prove every game saved correctly,
+and a hung game, out-of-memory kill or power loss can still lose unsaved state.
+
+The first transition still stops the **old** image using its old supervisor and
+manager. Save and stop games in AMP before merging that rollout. After it, use
+the isolated restart test below to exercise image changes without disconnecting
+the production server. Maintenance scheduling and backup policy remain manual.
+
+### Isolated restart verification
+
+`checks/amp.nix` runs signal-based supervisor regressions with a fixture manager
+and a detached game process. The tests cover busy startup, delayed saves,
+repeated termination signals, stuck games and the one-time controller upgrade.
+They run with `just check` and use no licence or production data.
+
+For a real Minecraft test, build the image and provide a private licence file:
+
+```sh
+docker build -t homelab-amp-test images/amp
+python3 scripts/test-amp-minecraft.py \
+  --image homelab-amp-test --license-file /path/to/private/amp-license
+```
+
+This activates a disposable AMP fixture, creates a Minecraft 1.21.11 world,
+disables autosaves, changes a block, terminates the image through Tini/SIGTERM,
+and checks the block through Minecraft's console after restart. It also runs
+the first-rollout ADS migration. No ports are published, and no production data
+is mounted. The test requires Docker, outbound downloads and UID 1000; its
+container, world and copied credentials are removed afterwards. Licence values
+and raw AMP/Docker error output are never printed.
 
 Sources: [AMP container support](https://discourse.cubecoders.com/t/configuring-amp-to-use-docker-podman-for-instances/1957),
 [proxy configuration](https://discourse.cubecoders.com/t/setting-up-secure-http-https-with-amp/2305),

@@ -15,6 +15,7 @@ import urllib.request
 STATE = Path('/home/amp/.homelab')
 READY = Path('/tmp/amp-ready')
 SECRETS = Path('/run/secrets/amp')
+INSTANCES = Path('/home/amp/.ampdata/instances')
 STOPPING = threading.Event()
 
 
@@ -61,15 +62,73 @@ class API:
             raise RuntimeError('AMP did not accept its configuration')
 
 
-def manager(*args, wait=True):
+class ShutdownRequested(Exception):
+    """Leave startup or maintenance work so instance shutdown can begin."""
+
+
+def manager(operation, *args, wait=True, timeout=240, interruptible=True, flags=()):
     # QuickStart requires its bootstrap password as a CLI argument. No shell
     # interpolation and no manager output: upstream can print provisioning data.
-    process = subprocess.Popen(['ampinstmgr', *args], stdin=subprocess.DEVNULL,
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if interruptible and STOPPING.is_set():
+        raise ShutdownRequested()
+    process = subprocess.Popen(['ampinstmgr', *flags, operation, *args],
+                               stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL, start_new_session=True)
     if not wait:
         return process
-    if process.wait(timeout=240):
-        raise RuntimeError(f'AMP instance manager failed: {args[0]}')
+    wait_manager(process, operation, timeout, interruptible)
+
+
+def wait_manager(process, operation, timeout, interruptible=True):
+    deadline = time.monotonic() + timeout
+    try:
+        while True:
+            if interruptible and STOPPING.is_set():
+                raise ShutdownRequested()
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise RuntimeError(f'AMP {operation} timed out after {timeout:.1f}s')
+            try:
+                code = process.wait(timeout=min(0.2, remaining))
+            except subprocess.TimeoutExpired:
+                continue
+            if code:
+                raise RuntimeError(f'AMP {operation} failed with exit code {code}')
+            return
+    finally:
+        # Only the manager command's process group is interrupted. Existing
+        # tmux-hosted AMP/game sessions are stopped through StopAll below.
+        cancel_manager(process)
+
+
+def cancel_manager(process):
+    def group_running():
+        process.poll()  # Reap the leader before checking its remaining children.
+        for directory in Path('/proc').iterdir():
+            if not directory.name.isdigit():
+                continue
+            try:
+                fields = (directory / 'stat').read_text().rsplit(')', 1)[1].split()
+                if fields[0] != 'Z' and int(fields[2]) == process.pid:
+                    return True
+            except (FileNotFoundError, ProcessLookupError, PermissionError):
+                continue
+        return False
+
+    if group_running():
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        deadline = time.monotonic() + 2
+        while group_running() and time.monotonic() < deadline:
+            time.sleep(0.05)
+        if group_running():
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+    process.wait(timeout=2)
 
 
 def login_when_ready(deadline=900):
@@ -81,6 +140,8 @@ def login_when_ready(deadline=900):
             return api
         except (OSError, ValueError, RuntimeError, urllib.error.URLError):
             STOPPING.wait(3)
+    if STOPPING.is_set():
+        raise ShutdownRequested()
     raise RuntimeError('AMP did not become ready; inspect its persistent AMP_Logs')
 
 
@@ -112,6 +173,79 @@ def stop(_signum=None, _frame=None):
     READY.unlink(missing_ok=True)
 
 
+def instance_processes():
+    """Find AMP/game processes and descendants, including detached tmux sessions."""
+    processes = {}
+    instances = str(INSTANCES.resolve()) + '/'
+    for directory in Path('/proc').iterdir():
+        if not directory.name.isdigit() or int(directory.name) == os.getpid():
+            continue
+        try:
+            if directory.stat().st_uid != os.getuid():
+                continue
+            fields = (directory / 'stat').read_text().rsplit(')', 1)[1].split()
+            if fields[0] == 'Z':
+                continue
+            paths = [os.readlink(directory / name) for name in ['cwd', 'exe']]
+            processes[int(directory.name)] = (
+                int(fields[1]), fields[19],
+                any(path.startswith(instances) for path in paths),
+            )
+        except (FileNotFoundError, ProcessLookupError, PermissionError):
+            # Exited processes and unrelated non-dumpable host processes are
+            # unavailable. In the pod, AMP and games share our unprivileged UID.
+            continue
+    selected = {pid for pid, (_, _, inside) in processes.items() if inside}
+    while True:
+        children = {pid for pid, (parent, _, _) in processes.items() if parent in selected}
+        expanded = selected | children
+        if expanded == selected:
+            return {pid: processes[pid][1] for pid in selected}
+        selected = expanded
+
+
+def processes_still_running(identities):
+    alive = {}
+    for pid, start_time in identities.items():
+        try:
+            fields = Path(f'/proc/{pid}/stat').read_text().rsplit(')', 1)[1].split()
+            if fields[0] != 'Z' and fields[19] == start_time:
+                alive[pid] = start_time
+        except (FileNotFoundError, ProcessLookupError):
+            pass
+    return alive
+
+
+def shutdown():
+    started = time.monotonic()
+    timeout = float(os.environ.get('AMP_SHUTDOWN_TIMEOUT_SECONDS', '600'))
+    if timeout <= 0:
+        raise RuntimeError('AMP_SHUTDOWN_TIMEOUT_SECONDS must be positive')
+    deadline = started + timeout
+    identities = instance_processes()
+    print(f'Stopping AMP and games; shutdown budget {timeout:.0f}s.', flush=True)
+    failure = None
+    try:
+        manager('StopAll', timeout=max(0, deadline - time.monotonic()), interruptible=False)
+        print(f'AMP StopAll returned successfully after {time.monotonic() - started:.1f}s; '
+              'checking for remaining instance processes.', flush=True)
+    except RuntimeError as error:
+        failure = error
+        print(f'AMP shutdown command failed: {safe_error(error)}', flush=True)
+    while True:
+        identities = processes_still_running(identities) | instance_processes()
+        if not identities:
+            break
+        if time.monotonic() >= deadline:
+            raise RuntimeError(f'AMP shutdown timed out after {timeout:.1f}s; '
+                               f'{len(identities)} instance process(es) remain')
+        time.sleep(0.2)
+    if failure:
+        raise failure
+    print(f'AMP shutdown completed after {time.monotonic() - started:.1f}s; '
+          'no instance processes remain.', flush=True)
+
+
 def safe_error(error):
     # subprocess.TimeoutExpired includes the original argv (QuickStart has a
     # password argument). Only our own RuntimeErrors contain safe diagnostics.
@@ -126,11 +260,20 @@ def main():
     signal.signal(signal.SIGINT, stop)
     quickstart = None
     try:
-        if not Path('/home/amp/.ampdata/instances/ADS01/AMPConfig.conf').exists():
+        if not (INSTANCES / 'ADS01' / 'AMPConfig.conf').exists():
             print('Installing the AMP controller; the first download can take several minutes.')
             quickstart = manager('QuickStart', 'admin', secret('AMP_ADMIN_PASSWORD'),
                                  '127.0.0.1', '8080', wait=False)
         else:
+            # Existing ADS binaries live on the PVC, independently of the
+            # image's manager. Apply the approved shutdown-fix migration while
+            # all instances are still offline. Never mark a failed/interrupted
+            # upgrade complete, and do not repeat it on ordinary restarts.
+            if not (STATE / 'ads-shutdown-fixes').exists():
+                print('Upgrading the existing ADS controller before starting instances.', flush=True)
+                manager('UpgradeInstance', 'ADS01', 'false', flags=('--nocache',), timeout=900)
+                (STATE / 'ads-shutdown-fixes').touch()
+                print('ADS controller upgrade completed.', flush=True)
             manager('StartBoot')
 
         if not (STATE / 'standalone').exists():
@@ -143,13 +286,20 @@ def main():
                     api.call('Core/RestartAMP')
                 except (OSError, urllib.error.URLError):
                     pass  # The HTTP connection can close during restart.
-                if quickstart.wait(timeout=180):
-                    raise RuntimeError('AMP QuickStart failed')
+                try:
+                    wait_manager(quickstart, 'QuickStart', timeout=180)
+                finally:
+                    # Cleanup already reaped this command group. Do not retain
+                    # its numeric PID across uptime and risk cancelling a reuse.
+                    quickstart = None
             else:
                 manager('RestartInstance', 'ADS01')
             login_when_ready()
             (STATE / 'standalone').touch()
             print('AMP standalone controller configured.')
+
+        # A new QuickStart already downloads the current Mainline controller.
+        (STATE / 'ads-shutdown-fixes').touch()
 
         READY.touch()
         print('AMP is running. Manage accounts and games in the panel.')
@@ -169,13 +319,16 @@ def main():
             if STOPPING.wait(60):
                 break
             manager('ProcessPendingTasks')
+    except ShutdownRequested:
+        pass
     finally:
         stop()
-        print('Stopping game instances and AMP gracefully.')
-        manager('StopAll')
-        if quickstart and quickstart.poll() is None:
-            quickstart.terminate()
-            quickstart.wait(timeout=30)
+        try:
+            # Bootstrap must not create a new instance after StopAll's scan.
+            if quickstart:
+                cancel_manager(quickstart)
+        finally:
+            shutdown()
 
 
 if __name__ == '__main__':
@@ -183,5 +336,5 @@ if __name__ == '__main__':
         main()
     except Exception as error:
         # Never dump API response bodies or provisioning arguments.
-        print(f'AMP startup failed: {safe_error(error)}', file=sys.stderr)
+        print(f'AMP supervisor failed: {safe_error(error)}', file=sys.stderr)
         sys.exit(1)

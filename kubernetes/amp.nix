@@ -116,7 +116,8 @@ in
             dnsPolicy = "ClusterFirstWithHostNet";
             nodeSelector."kubernetes.io/hostname" = "homelab";
             automountServiceAccountToken = false;
-            terminationGracePeriodSeconds = 360;
+            # Ten minutes for AMP/game saves, plus cancellation/API/cleanup margin.
+            terminationGracePeriodSeconds = 720;
             securityContext = {
               runAsNonRoot = true;
               runAsUser = 1000;
@@ -128,6 +129,7 @@ in
               amp = {
                 image = "registry.tail84b6c.ts.net/amp:${imageTag}";
                 env.TZ.value = "Europe/Oslo";
+                env.AMP_SHUTDOWN_TIMEOUT_SECONDS.value = "600";
                 securityContext = containerSecurity;
                 volumeMounts = {
                   "/home/amp".name = "data";

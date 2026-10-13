@@ -1,14 +1,15 @@
 """Render the production templates with Glance against controlled API responses."""
 
+import argparse
 import copy
 import json
 import subprocess
-import sys
 import tempfile
 import threading
 import time
 import urllib.error
 import urllib.request
+import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -61,9 +62,14 @@ def get(url):
         return response.read().decode()
 
 
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--image", required=True, help="Digest-pinned deployment image")
+parser.add_argument("--config", required=True, type=Path, help="Production Glance configuration")
+args = parser.parse_args()
+
 api = ThreadingHTTPServer(("127.0.0.1", 0), API)
 threading.Thread(target=api.serve_forever, daemon=True).start()
-config = json.loads(Path(sys.argv[2]).read_text())
+config = json.loads(args.config.read_text())
 widgets = next(column["widgets"] for column in config["pages"][0]["columns"] if column["size"] == "full")
 assert [w["title"] for w in widgets] == ["Needs attention", "Backups", "Resource consumers"]
 config = {"pages": [{"name": "Test", "columns": [{"size": "full", "widgets": widgets}]}]}
@@ -73,8 +79,11 @@ for index, widget in enumerate(widgets):
         request["url"] = f"http://127.0.0.1:{api.server_port}/{index}/{name}"
 
 try:
+    print(f"Testing deployment image: {args.image}", flush=True)
+    subprocess.run(["docker", "pull", args.image], check=True)
     with tempfile.TemporaryDirectory() as directory:
         directory = Path(directory)
+        directory.chmod(0o755)  # The image's user must be able to read fixture config.
 
         def render(overrides, present=(), absent=(), outage=False):
             responses.clear()
@@ -86,8 +95,14 @@ try:
             config["server"] = {"host": "127.0.0.1", "port": address}
             path = directory / "config.json"
             path.write_text(json.dumps(config))
+            path.chmod(0o644)
+            container = "homelab-glance-test-" + uuid.uuid4().hex
             with (directory / "glance.log").open("w+") as log:
-                process = subprocess.Popen([sys.argv[1], "--config", str(path)], stdout=log, stderr=log)
+                process = subprocess.Popen([
+                    "docker", "run", "--rm", "--name", container, "--network=host",
+                    "--mount", f"type=bind,src={directory},dst=/test-config,readonly",
+                    args.image, "--config", "/test-config/config.json",
+                ], stdout=log, stderr=log)
                 try:
                     url = f"http://127.0.0.1:{address}"
                     for _ in range(100):
@@ -114,8 +129,20 @@ try:
                         assert 'notice-icon-major' in html, html
                         assert 'homelab-unavailable' in html, html
                 finally:
-                    process.terminate()
-                    process.wait(timeout=5)
+                    # Remove the owned container even if the Docker client died
+                    # or an assertion failed; terminating the client is not enough.
+                    try:
+                        cleanup = subprocess.run(["docker", "rm", "--force", container],
+                                                 capture_output=True, text=True)
+                        # --rm may already have removed a container that failed to start.
+                        if cleanup.returncode and f"No such container: {container}" not in cleanup.stderr:
+                            raise RuntimeError(f"Could not remove {container}: {cleanup.stderr.strip()}")
+                    finally:
+                        try:
+                            process.wait(timeout=10)
+                        except subprocess.TimeoutExpired:
+                            process.kill()
+                            process.wait(timeout=5)
 
         render({}, ["All clear", "1 of 1 backups current", "20% busy", "2.0 GiB"], outage=True)
         render({
