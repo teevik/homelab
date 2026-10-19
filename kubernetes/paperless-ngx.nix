@@ -184,7 +184,7 @@ in
           spec = {
             containers.gotenberg = {
               # renovate: datasource=docker depName=gotenberg/gotenberg
-              image = "gotenberg/gotenberg:8.37@sha256:f29984bd1e226bf1b93ba90af06000afa8b315853e99d27b9aaa41b93f15c769";
+              image = "gotenberg/gotenberg:8.38@sha256:aa552cc115db488e0f0bcb07446aac13071ad51505b642c84bb894500907b42b";
               command = [
                 "gotenberg"
                 "--chromium-disable-javascript=true"
@@ -253,7 +253,7 @@ in
           metadata.labels.app = "paperless";
           spec = {
             containers.paperless = {
-              image = "ghcr.io/paperless-ngx/paperless-ngx:3.2.1@sha256:5fa76604a81df6945086e0837b14b56543d137e8ce4f311cc5d9ebe907e74e79";
+              image = "ghcr.io/paperless-ngx/paperless-ngx:3.3.2@sha256:d232cba37cc0bab0d6c6581ecd320383b7a6f49f33e0fd16adda4d009eb600dd";
               ports.http.containerPort = 8000;
               env = paperlessEnv;
               volumeMounts = {

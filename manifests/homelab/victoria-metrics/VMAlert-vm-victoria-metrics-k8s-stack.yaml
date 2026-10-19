@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/instance: vm
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: victoria-metrics-k8s-stack
-    app.kubernetes.io/version: v1.153.0
+    app.kubernetes.io/version: v1.154.0
     helm.sh/chart: victoria-metrics-k8s-stack-0.93.0
   name: vm-victoria-metrics-k8s-stack
   namespace: victoria-metrics
@@ -22,7 +22,7 @@ spec:
     http.pathPrefix: /
     remoteWrite.disablePathAppend: "true"
   image:
-    tag: v1.153.0@sha256:0c1c7718b54b03e8559d0f257f31f1bd79ef7fa32ac6e9ed90d7b92a74a4fe76
+    tag: v1.154.0@sha256:f11d77f9ff68dfd63c871d0e59ae7b479f9c3fd0e8a685fef690fb88b794d938
   notifiers:
     - url: http://vmalertmanager-vm-victoria-metrics-k8s-stack-0.vmalertmanager-vm-victoria-metrics-k8s-stack.victoria-metrics.svc.cluster.local.:9093
   port: "8080"

@@ -14,11 +14,11 @@
       values = {
         # Pin VictoriaMetrics image version
         # renovate: datasource=docker depName=victoriametrics/victoria-metrics
-        vmsingle.spec.image.tag = "v1.153.0@sha256:5eff7af5341e401471002f58d106d399e614a62f3d240f2dbc21901e49eed5dd";
+        vmsingle.spec.image.tag = "v1.154.0@sha256:4bd592341587d669b7f57d54bbb82bd21ac8675f4e24234b7703a7c0f85197d8";
         # renovate: datasource=docker depName=victoriametrics/vmagent
-        vmagent.spec.image.tag = "v1.153.0@sha256:474135388ae700b842007d3e186a8ae60ccf7de3dfd776fb6ed27cf8522d8331";
+        vmagent.spec.image.tag = "v1.154.0@sha256:2a939a9df9c8591aa5447efcd21af8c4f2ecc60ca6a8e742ffd46b9c76ef7f17";
         # renovate: datasource=docker depName=victoriametrics/vmalert
-        vmalert.spec.image.tag = "v1.153.0@sha256:0c1c7718b54b03e8559d0f257f31f1bd79ef7fa32ac6e9ed90d7b92a74a4fe76";
+        vmalert.spec.image.tag = "v1.154.0@sha256:f11d77f9ff68dfd63c871d0e59ae7b479f9c3fd0e8a685fef690fb88b794d938";
 
         # k3s bundles controller-manager, scheduler, and etcd into the main
         # k3s process — there are no separate pods to scrape, so disable these
@@ -116,7 +116,7 @@
         # so LogsQL rules reach vlsingle and PromQL rules reach vmsingle.
         # renovate: datasource=docker depName=victoriametrics/vmauth
         internal.vmauth.spec.image.tag =
-          "v1.153.0@sha256:4ebf2f21490df3e8837302b85d9db6ac45765442dfa28db77ffacd3577035a74";
+          "v1.154.0@sha256:f4c4f409e59a076cd52bbbb3127fbea8a3fde24dac04353102f39a7e778a1f80";
 
         vlagent.enabled = true;
         vlagent.spec.resources = {
@@ -149,7 +149,7 @@
         # Pin the Grafana image like the VM images above; the chart's appVersion
         # is otherwise unpinned and invisible to Renovate.
         # renovate: datasource=docker depName=docker.io/grafana/grafana
-        grafana.image.tag = "13.2.3@sha256:b28bae15e219c998fb0e0424ed724930cc61b1f61fb404d47c862f9a23f9e572";
+        grafana.image.tag = "13.2.4@sha256:dbbc38ea21103cefb50396340cd88afec779c7e070b0a7bf5a75b4ce46651d3f";
 
         grafana.resources = {
           requests = {
