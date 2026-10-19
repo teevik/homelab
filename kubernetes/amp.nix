@@ -167,7 +167,7 @@ in
                 };
               };
               proxy = {
-                image = "nginxinc/nginx-unprivileged:1.31.6-alpine@sha256:e763a8b7715970fa4808c8b1f3f211da4496f1054494f17b800b915e22f2ab2c";
+                image = "nginxinc/nginx-unprivileged:1.31.7-alpine@sha256:c3bcf3d1a53a027bfa515b9fe4fbbe7bf6b791476a5af853de439ad494b145bd";
                 securityContext = containerSecurity;
                 ports.http.containerPort = 8088;
                 volumeMounts."/etc/nginx/conf.d" = {
