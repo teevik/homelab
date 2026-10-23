@@ -23,6 +23,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # T3 Code server (modules/nixos/t3code.nix). Not following nixpkgs so
+    # builds come from numtide's binary cache.
+    llm-agents.url = "github:numtide/llm-agents.nix";
+
     sops-nix = {
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
