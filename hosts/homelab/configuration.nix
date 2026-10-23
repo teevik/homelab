@@ -18,6 +18,7 @@
     flake.nixosModules.anime-matrix
     flake.nixosModules.nix-cache
     flake.nixosModules.health-dashboard
+    flake.nixosModules.t3code
   ];
 
   # Disk configuration
@@ -189,6 +190,9 @@
   homelab.animeMatrix.enable = true;
   homelab.displayPolicy.enable = true;
   homelab.healthDashboard.enable = true;
+
+  # Remote coding agents at https://homelab.tail84b6c.ts.net
+  homelab.t3code.enable = true;
 
   # Enable GPU driver/firmware support (needed for ROCm in containers)
   hardware.graphics.enable = true;
