@@ -9,7 +9,7 @@ data:
     # Built in-cluster by the build-changedetection PreSync Job in
     # kubernetes/changedetection.nix, which embeds this file and requirements.txt
     # as the build context and derives the image tag from their contents.
-    FROM docker.io/dgtlmoon/changedetection.io:0.60.8@sha256:34df3680db1cbffc45ac1e9c1514bc0507dd0c5b5fde47d1992fe6f14a7b40e4
+    FROM docker.io/dgtlmoon/changedetection.io:0.60.10@sha256:72f97681f390e4d6ae3e6585e1e0036449910f347144b766fc23910458566a1a
 
     # Chromium runtime libraries and fonts, from the upstream CloakBrowser
     # Dockerfile minus Xvfb/openbox: the plugin always runs headless.

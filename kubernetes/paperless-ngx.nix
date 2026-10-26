@@ -101,7 +101,7 @@ in
           spec = {
             containers.postgres = {
               # renovate: datasource=docker depName=postgres
-              image = "postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24";
+              image = "postgres:17-alpine@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b";
               ports.postgres.containerPort = 5432;
               env = {
                 POSTGRES_USER.value = "paperless";
@@ -147,7 +147,7 @@ in
           spec = {
             containers.redis = {
               # renovate: datasource=docker depName=redis
-              image = "redis:8.10-alpine@sha256:3811787313eba226a2ef38658c6ccb91cd5e110edc89c37767de373120a0e5a0";
+              image = "redis:8.10-alpine@sha256:0bf6577d7774e592b29d093e3ac9390eb91e13d72c21e506afce736de5e0eeb0";
               command = [ "redis-server" ];
               ports.redis.containerPort = 6379;
               volumeMounts."/data" = {
@@ -184,7 +184,7 @@ in
           spec = {
             containers.gotenberg = {
               # renovate: datasource=docker depName=gotenberg/gotenberg
-              image = "gotenberg/gotenberg:8.37@sha256:f29984bd1e226bf1b93ba90af06000afa8b315853e99d27b9aaa41b93f15c769";
+              image = "gotenberg/gotenberg:8.38@sha256:aa552cc115db488e0f0bcb07446aac13071ad51505b642c84bb894500907b42b";
               command = [
                 "gotenberg"
                 "--chromium-disable-javascript=true"
@@ -221,7 +221,7 @@ in
           spec = {
             containers.tika = {
               # renovate: datasource=docker depName=apache/tika
-              image = "apache/tika:3.3.1.0@sha256:90b7fa1dc018434075fce9e1d9b88b1e3d0ea6979d0cf86e116c79a8073ae973";
+              image = "apache/tika:3.3.3.0@sha256:326b238b37904c94ff61fed87afe0af72e6a29fa715933b10af97b7d56f1d4cb";
               ports.http.containerPort = 9998;
               resources = {
                 requests = {
@@ -253,7 +253,7 @@ in
           metadata.labels.app = "paperless";
           spec = {
             containers.paperless = {
-              image = "ghcr.io/paperless-ngx/paperless-ngx:3.2.1@sha256:5fa76604a81df6945086e0837b14b56543d137e8ce4f311cc5d9ebe907e74e79";
+              image = "ghcr.io/paperless-ngx/paperless-ngx:3.3.4@sha256:9bc6e8248891bcfa6f52fffe8b81e4ea8cae75790c3ec1b9906961a7ba55c969";
               ports.http.containerPort = 8000;
               env = paperlessEnv;
               volumeMounts = {

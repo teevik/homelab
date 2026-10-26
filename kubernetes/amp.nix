@@ -167,7 +167,7 @@ in
                 };
               };
               proxy = {
-                image = "nginxinc/nginx-unprivileged:1.31.6-alpine@sha256:e763a8b7715970fa4808c8b1f3f211da4496f1054494f17b800b915e22f2ab2c";
+                image = "nginxinc/nginx-unprivileged:1.31.7-alpine@sha256:c3bcf3d1a53a027bfa515b9fe4fbbe7bf6b791476a5af853de439ad494b145bd";
                 securityContext = containerSecurity;
                 ports.http.containerPort = 8088;
                 volumeMounts."/etc/nginx/conf.d" = {
@@ -354,7 +354,7 @@ in
               runAsGroup = 1000;
             };
             containers.ddns = {
-              image = "favonia/cloudflare-ddns:1.17.1@sha256:5e61736b982b87d84a1120b4767c4deff0f2cc55ca3ee9dcb1dc58623039b5cb";
+              image = "favonia/cloudflare-ddns:1.18.0@sha256:345b41895a8846d74c62d30bd27e61101a754f8ab8da10c68115823883803afb";
               securityContext = containerSecurity;
               env = {
                 CLOUDFLARE_API_TOKEN.valueFrom.secretKeyRef = {

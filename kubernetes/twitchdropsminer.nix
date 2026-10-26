@@ -40,7 +40,7 @@ in
             };
             containers.twitchdropsminer = {
               # renovate: datasource=docker depName=dungfu/twitch-drops-miner
-              image = "docker.io/dungfu/twitch-drops-miner:latest@sha256:853eeb90c13dfbc555d5d47913039d53a23c63228618ca1dc46d94e38c5d8ae7";
+              image = "docker.io/dungfu/twitch-drops-miner:latest@sha256:fa11767d7ba0d3a8e9e8af123ad90dc4b5093733ae5454e5d49f1d49bef11398";
               ports.http.containerPort = 5800;
               env = {
                 DARK_MODE.value = "1";
