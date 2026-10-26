@@ -34,10 +34,13 @@ in
     # config without root. The account already has passwordless sudo.
     services.tailscale.extraSetFlags = [ "--operator=${cfg.user}" ];
 
+    # The same agent builds the wrapper uses, so `claude login` and
+    # `codex login` work over SSH.
     environment.systemPackages = [
       cfg.package
       pkgs.git
-    ];
+    ]
+    ++ cfg.package.providerPackages;
 
     systemd.services.t3code = {
       description = "T3 Code server";
