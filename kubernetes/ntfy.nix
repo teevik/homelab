@@ -46,7 +46,7 @@
             };
             containers.ntfy = {
               # renovate: datasource=docker depName=docker.io/binwiederhier/ntfy
-              image = "docker.io/binwiederhier/ntfy:v2.28.0@sha256:6ef4b819f722fccdc036af611c4774cfdc2de821ab74fdd48bbf4c9d6f8973da";
+              image = "docker.io/binwiederhier/ntfy:v2.34.0@sha256:901e14503d3f605f445be0e68f2ac71f0aa73391897ce6ceb599f8c48d8b3792";
               args = [ "serve" ];
               ports.http.containerPort = 8080;
               ports.metrics.containerPort = 9090;
