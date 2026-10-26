@@ -191,7 +191,6 @@
   homelab.displayPolicy.enable = true;
   homelab.healthDashboard.enable = true;
 
-  # Remote coding agents at https://homelab.tail84b6c.ts.net
   homelab.t3code.enable = true;
 
   # Enable GPU driver/firmware support (needed for ROCm in containers)
