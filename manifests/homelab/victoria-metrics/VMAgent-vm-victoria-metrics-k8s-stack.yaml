@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/instance: vm
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: victoria-metrics-k8s-stack
-    app.kubernetes.io/version: v1.153.0
+    app.kubernetes.io/version: v1.154.1
     helm.sh/chart: victoria-metrics-k8s-stack-0.93.0
   name: vm-victoria-metrics-k8s-stack
   namespace: victoria-metrics
@@ -15,7 +15,7 @@ spec:
   extraArgs:
     promscrape.streamParse: "true"
   image:
-    tag: v1.153.0@sha256:474135388ae700b842007d3e186a8ae60ccf7de3dfd776fb6ed27cf8522d8331
+    tag: v1.154.1@sha256:970ba603235839655e03501311c683d2269b882f7bcf0ac98892ae422603cb61
   port: "8429"
   probeNamespaceSelector:
     matchLabels:
