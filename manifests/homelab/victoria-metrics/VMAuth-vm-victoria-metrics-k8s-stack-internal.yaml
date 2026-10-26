@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: victoria-metrics-k8s-stack
     app.kubernetes.io/version: v1.153.0
-    helm.sh/chart: victoria-metrics-k8s-stack-0.93.0
+    helm.sh/chart: victoria-metrics-k8s-stack-0.96.1
   name: vm-victoria-metrics-k8s-stack-internal
   namespace: victoria-metrics
 spec:
@@ -15,12 +15,16 @@ spec:
     tag: v1.153.0@sha256:4ebf2f21490df3e8837302b85d9db6ac45765442dfa28db77ffacd3577035a74
   port: "8427"
   unauthorizedUserAccessSpec:
-    url_map:
-      - src_paths:
+    targetRefs:
+      - crd:
+          kind: VLSingle
+          name: vm-victoria-metrics-k8s-stack
+          namespace: victoria-metrics
+        paths:
           - /select/logsql/.*
-        url_prefix:
-          - http://vlsingle-vm-victoria-metrics-k8s-stack.victoria-metrics.svc.cluster.local.:9428/
-      - src_paths:
+      - crd:
+          kind: VMSingle
+          name: vm-victoria-metrics-k8s-stack
+          namespace: victoria-metrics
+        paths:
           - /.*
-        url_prefix:
-          - http://vmsingle-vm-victoria-metrics-k8s-stack.victoria-metrics.svc.cluster.local.:8428/
