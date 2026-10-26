@@ -15,11 +15,12 @@ has real HTTPS. `teevik` is a Tailscale operator for that reason. State lives in
 Every browser or desktop client needs a one-time token:
 
 ```sh
-ssh homelab t3 pair --label phone
+ssh homelab t3 pair --tailscale --label phone
 ```
 
-Open the printed URL (or scan the QR code) on the device. Tokens expire after
-five minutes; `--ttl` changes that.
+`--tailscale` makes it print the tailnet URL instead of the loopback one. Open
+it (or scan the QR code) on the device. Tokens expire after five minutes;
+`--ttl` changes that.
 
 ## Provider logins
 
