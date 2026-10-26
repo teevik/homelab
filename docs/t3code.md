@@ -20,7 +20,8 @@ ssh homelab t3 pair --tailscale --label phone
 
 `--tailscale` makes it print the tailnet URL instead of the loopback one. Open
 it (or scan the QR code) on the device. Tokens expire after five minutes;
-`--ttl` changes that.
+`--ttl` changes that. A token works once: opening the URL in a browser spends
+it, so give a desktop app a fresh token instead of one already clicked.
 
 ## Provider logins
 
