@@ -191,7 +191,11 @@
   homelab.displayPolicy.enable = true;
   homelab.healthDashboard.enable = true;
 
-  homelab.t3code.enable = true;
+  homelab.t3code = {
+    enable = true;
+    # Fine-grained, teevik/Config only: contents and pull requests read/write.
+    githubTokenSecret = "t3code_github_token";
+  };
 
   # Enable GPU driver/firmware support (needed for ROCm in containers)
   hardware.graphics.enable = true;
