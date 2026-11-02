@@ -288,7 +288,22 @@ def wait_for_attached_volumes [
   let deadline = (date now) + $timeout
 
   loop {
-    let volumes = (remote_kubectl_json $host $kubeconfig ["-n" $longhorn_namespace get volumes.longhorn.io]).items
+    # Longhorn's webhook and manager can restart for a few minutes after boot,
+    # so a failed listing is retried until the deadline rather than fatal.
+    let volumes = try {
+      (remote_kubectl_json $host $kubeconfig ["-n" $longhorn_namespace get volumes.longhorn.io]).items
+    } catch {|err|
+      print $"Could not list Longhorn volumes yet: ($err.msg)"
+      null
+    }
+    if $volumes == null {
+      if (date now) > $deadline {
+        error make {msg: "Timed out waiting for Longhorn volumes to recover: the volume list stayed unavailable"}
+      }
+      sleep 10sec
+      continue
+    }
+
     let current_names = ($volumes | each {|volume| $volume.metadata.name})
     let missing_names = ($volume_names | where {|name| $name not-in $current_names})
     let pending = ($volumes | where {|volume|
