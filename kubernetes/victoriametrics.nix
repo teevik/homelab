@@ -1,4 +1,25 @@
 { charts, ... }:
+let
+  # The forwarder appends every alert label to X-Tags, and ntfy rejects
+  # oversized tags (40058); one rejected alert fails the whole webhook, so
+  # Alertmanager re-sends the batch forever. Custom headers are set last,
+  # so this X-Tags template replaces the label tags with a status emoji.
+  alertmanagerNtfyConfig = ''
+    ntfy:
+      baseurl: http://ntfy.ntfy.svc.cluster.local
+      notification:
+        topic: alerts
+        priority: |
+          status == "firing" ? "high" : "default"
+        templates:
+          title: |
+            {{ if eq .Status "resolved" }}Resolved: {{ end }}{{ index .Annotations "summary" }}
+          description: |
+            {{ index .Annotations "description" }}
+          headers:
+            X-Tags: '{{ if eq .Status "resolved" }}white_check_mark{{ else }}rotating_light{{ end }}'
+  '';
+in
 {
   applications.victoria-metrics = {
     namespace = "victoria-metrics";
@@ -249,6 +270,9 @@
         alertmanager.config = {
           route = {
             receiver = "ntfy";
+            # One group per alert name, so a failing notification only
+            # retries its own group instead of every active alert.
+            group_by = [ "alertname" ];
             routes = [
               {
                 matchers = [ ''alertname=~"Watchdog|InfoInhibitor"'' ];
@@ -273,30 +297,17 @@
     };
 
     # Forwards Alertmanager webhook payloads to ntfy as readable notifications
-    resources.configMaps.alertmanager-ntfy.data."config.yml" = ''
-      ntfy:
-        baseurl: http://ntfy.ntfy.svc.cluster.local
-        notification:
-          topic: alerts
-          priority: |
-            status == "firing" ? "high" : "default"
-          tags:
-            - tag: rotating_light
-              condition: status == "firing"
-            - tag: white_check_mark
-              condition: status == "resolved"
-          templates:
-            title: |
-              {{ if eq .Status "resolved" }}Resolved: {{ end }}{{ index .Annotations "summary" }}
-            description: |
-              {{ index .Annotations "description" }}
-    '';
+    resources.configMaps.alertmanager-ntfy.data."config.yml" = alertmanagerNtfyConfig;
 
     resources.deployments.alertmanager-ntfy.spec = {
       replicas = 1;
       selector.matchLabels.app = "alertmanager-ntfy";
       template = {
-        metadata.labels.app = "alertmanager-ntfy";
+        metadata = {
+          labels.app = "alertmanager-ntfy";
+          # The forwarder only reads its config at startup
+          annotations."checksum/config" = builtins.hashString "sha256" alertmanagerNtfyConfig;
+        };
         spec = {
           automountServiceAccountToken = false;
           containers.alertmanager-ntfy = {
