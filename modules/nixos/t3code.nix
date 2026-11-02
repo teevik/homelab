@@ -27,6 +27,14 @@ in
       default = 3773;
       description = "Loopback port Tailscale Serve proxies to.";
     };
+    githubTokenSecret = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = ''
+        SOPS secret holding a GitHub token for the agents' `gh` and HTTPS
+        pushes. Only the server's environment gets it, not login shells.
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -38,9 +46,31 @@ in
     # `codex login` work over SSH.
     environment.systemPackages = [
       cfg.package
+      pkgs.gh
       pkgs.git
     ]
     ++ cfg.package.providerPackages;
+
+    # Agents commit as the account owner; HTTPS pushes authenticate through gh,
+    # which reads GH_TOKEN from the server's environment.
+    programs.git = {
+      enable = true;
+      config = {
+        user = {
+          name = "teevik";
+          email = "teemu.vikoren@gmail.com";
+        };
+        credential."https://github.com".helper = "!${lib.getExe pkgs.gh} auth git-credential";
+      };
+    };
+
+    sops = lib.mkIf (cfg.githubTokenSecret != null) {
+      secrets.${cfg.githubTokenSecret} = { };
+      templates."t3code-github.env" = {
+        owner = cfg.user;
+        content = "GH_TOKEN=${config.sops.placeholder.${cfg.githubTokenSecret}}";
+      };
+    };
 
     systemd.services.t3code = {
       description = "T3 Code server";
@@ -60,6 +90,7 @@ in
         "/run/current-system/sw"
         config.nix.package
         config.services.tailscale.package
+        pkgs.gh
         pkgs.git
         pkgs.openssh
         pkgs.bashInteractive
@@ -80,6 +111,9 @@ in
         User = cfg.user;
         Group = user.group;
         WorkingDirectory = user.home;
+        EnvironmentFile = lib.mkIf (
+          cfg.githubTokenSecret != null
+        ) config.sops.templates."t3code-github.env".path;
         ExecStart = lib.escapeShellArgs [
           (lib.getExe cfg.package)
           "serve"
