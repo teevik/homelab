@@ -1,8 +1,6 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.21.0
   name: vmclusters.operator.victoriametrics.com
 spec:
   group: operator.victoriametrics.com
@@ -147,7 +145,7 @@ spec:
                       x-kubernetes-preserve-unknown-fields: true
                   type: object
                 retentionPeriod:
-                  pattern: ^[0-9]+(h|d|w|y)?$
+                  pattern: ^[0-9]+(h|d|w|y|M)?$
                   type: string
                 serviceAccountName:
                   type: string
@@ -192,30 +190,8 @@ spec:
                         - enabled
                       type: object
                     dnsConfig:
-                      items:
-                        x-kubernetes-preserve-unknown-fields: true
-                      properties:
-                        nameservers:
-                          items:
-                            type: string
-                          type: array
-                          x-kubernetes-list-type: atomic
-                        options:
-                          items:
-                            properties:
-                              name:
-                                type: string
-                              value:
-                                type: string
-                            type: object
-                          type: array
-                          x-kubernetes-list-type: atomic
-                        searches:
-                          items:
-                            type: string
-                          type: array
-                          x-kubernetes-list-type: atomic
                       type: object
+                      x-kubernetes-preserve-unknown-fields: true
                     dnsPolicy:
                       type: string
                     enableServiceLinks:
@@ -658,8 +634,6 @@ spec:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                     serviceScrapeSpec:
-                      required:
-                        - endpoints
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                     serviceSpec:
@@ -728,6 +702,11 @@ spec:
                     volumeMounts:
                       items:
                         properties:
+                          bindMountOptions:
+                            items:
+                              type: string
+                            type: array
+                            x-kubernetes-list-type: set
                           mountPath:
                             type: string
                           mountPropagation:
@@ -936,30 +915,8 @@ spec:
                         - enabled
                       type: object
                     dnsConfig:
-                      items:
-                        x-kubernetes-preserve-unknown-fields: true
-                      properties:
-                        nameservers:
-                          items:
-                            type: string
-                          type: array
-                          x-kubernetes-list-type: atomic
-                        options:
-                          items:
-                            properties:
-                              name:
-                                type: string
-                              value:
-                                type: string
-                            type: object
-                          type: array
-                          x-kubernetes-list-type: atomic
-                        searches:
-                          items:
-                            type: string
-                          type: array
-                          x-kubernetes-list-type: atomic
                       type: object
+                      x-kubernetes-preserve-unknown-fields: true
                     dnsPolicy:
                       type: string
                     enableServiceLinks:
@@ -1405,8 +1362,6 @@ spec:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                     serviceScrapeSpec:
-                      required:
-                        - endpoints
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                     serviceSpec:
@@ -1441,6 +1396,9 @@ spec:
                           properties:
                             medium:
                               type: string
+                            mode:
+                              format: int32
+                              type: integer
                             sizeLimit:
                               anyOf:
                                 - type: integer
@@ -1610,6 +1568,37 @@ spec:
                                   x-kubernetes-list-type: map
                                 currentVolumeAttributesClassName:
                                   type: string
+                                healthStatus:
+                                  properties:
+                                    healthConditions:
+                                      items:
+                                        properties:
+                                          message:
+                                            type: string
+                                          reason:
+                                            minLength: 1
+                                            type: string
+                                          status:
+                                            enum:
+                                              - DataLoss
+                                              - Degraded
+                                              - Inaccessible
+                                            minLength: 1
+                                            type: string
+                                        required:
+                                          - reason
+                                          - status
+                                        type: object
+                                      maxItems: 16
+                                      type: array
+                                      x-kubernetes-list-map-keys:
+                                        - status
+                                        - reason
+                                      x-kubernetes-list-type: map
+                                    lastTransitionTime:
+                                      format: date-time
+                                      type: string
+                                  type: object
                                 modifyVolumeStatus:
                                   properties:
                                     status:
@@ -1659,6 +1648,11 @@ spec:
                     volumeMounts:
                       items:
                         properties:
+                          bindMountOptions:
+                            items:
+                              type: string
+                            type: array
+                            x-kubernetes-list-type: set
                           mountPath:
                             type: string
                           mountPropagation:
@@ -1852,30 +1846,8 @@ spec:
                     disableSelfServiceScrape:
                       type: boolean
                     dnsConfig:
-                      items:
-                        x-kubernetes-preserve-unknown-fields: true
-                      properties:
-                        nameservers:
-                          items:
-                            type: string
-                          type: array
-                          x-kubernetes-list-type: atomic
-                        options:
-                          items:
-                            properties:
-                              name:
-                                type: string
-                              value:
-                                type: string
-                            type: object
-                          type: array
-                          x-kubernetes-list-type: atomic
-                        searches:
-                          items:
-                            type: string
-                          type: array
-                          x-kubernetes-list-type: atomic
                       type: object
+                      x-kubernetes-preserve-unknown-fields: true
                     dnsPolicy:
                       type: string
                     enableServiceLinks:
@@ -2674,8 +2646,6 @@ spec:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                     serviceScrapeSpec:
-                      required:
-                        - endpoints
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                     serviceSpec:
@@ -2710,6 +2680,9 @@ spec:
                           properties:
                             medium:
                               type: string
+                            mode:
+                              format: int32
+                              type: integer
                             sizeLimit:
                               anyOf:
                                 - type: integer
@@ -2973,6 +2946,11 @@ spec:
                         volumeMounts:
                           items:
                             properties:
+                              bindMountOptions:
+                                items:
+                                  type: string
+                                type: array
+                                x-kubernetes-list-type: set
                               mountPath:
                                 type: string
                               mountPropagation:
@@ -3000,6 +2978,11 @@ spec:
                     volumeMounts:
                       items:
                         properties:
+                          bindMountOptions:
+                            items:
+                              type: string
+                            type: array
+                            x-kubernetes-list-type: set
                           mountPath:
                             type: string
                           mountPropagation:
