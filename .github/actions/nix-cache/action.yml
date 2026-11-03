@@ -1,5 +1,5 @@
 name: Cache Nix builds
-description: Reuse GitHub-cached builds after checking the public Nix cache
+description: Reuse GitHub-cached builds after checking the public and numtide Nix caches
 
 runs:
   using: composite
@@ -23,5 +23,10 @@ runs:
             raise SystemExit("Expected one Magic Nix Cache substituter in nix.conf")
         # cache.nixos.org has priority 40. Magic's default of 1 queries GitHub
         # for public packages too; one rate-limit response stops all uploads.
-        config.write_text(text.replace(old, old.replace("&priority=1\n", "&priority=60\n")))
+        text = text.replace(old, old.replace("&priority=1\n", "&priority=60\n"))
+        # llm-agents doesn't follow our nixpkgs, so its builds (codex, T3 Code)
+        # are only cached by numtide; from source they outlast the job timeout.
+        text += "extra-substituters = https://cache.numtide.com\n"
+        text += "extra-trusted-public-keys = niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=\n"
+        config.write_text(text)
         PY
