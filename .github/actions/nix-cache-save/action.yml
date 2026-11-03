@@ -12,36 +12,8 @@ runs:
       shell: bash
       run: |
         cache="$HOME/.cache/homelab-nix"
-        nix path-info --all --json --json-format 1 | python3 -c '
-        import json
-        import sys
-        from pathlib import Path
-
-        cache = Path(sys.argv[1])
-        info = json.load(sys.stdin)
-        present = {Path(path).name.split("-", 1)[0] for path in info}
-
-        def nar_url(narinfo):
-            for line in narinfo.read_text().splitlines():
-                if line.startswith("URL: "):
-                    return line.removeprefix("URL: ")
-
-        stale = [n for n in cache.glob("*.narinfo") if n.stem not in present]
-        # Identical contents share one NAR, so keep any still referenced.
-        kept = {nar_url(n) for n in cache.glob("*.narinfo") if n.stem in present}
-        for narinfo in stale:
-            if (url := nar_url(narinfo)) not in kept:
-                (cache / url).unlink(missing_ok=True)
-            narinfo.unlink()
-
-        for path, meta in info.items():
-            if meta.get("ultimate") and not path.endswith(".drv"):
-                print(path)
-        ' "$cache" > "$RUNNER_TEMP/built-paths"
-        if [[ -s "$RUNNER_TEMP/built-paths" ]]; then
-          nix copy --no-recursive --to "file://$cache?compression=zstd&parallel-compression=true" \
-            --stdin < "$RUNNER_TEMP/built-paths"
-        fi
+        nix path-info --all --json --json-format 1 \
+          | python3 "$GITHUB_ACTION_PATH/collect.py" "$cache"
         du -sh "$cache"
     - uses: actions/cache/save@v6.1.0
       with:
