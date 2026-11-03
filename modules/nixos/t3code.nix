@@ -103,10 +103,6 @@ in
         T3CODE_TELEMETRY_ENABLED = "false";
       };
 
-      # A restart kills every running agent, including one deploying this
-      # host. Pick up new builds with `sudo systemctl restart t3code`.
-      restartIfChanged = false;
-
       serviceConfig = {
         User = cfg.user;
         Group = user.group;
