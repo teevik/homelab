@@ -22,7 +22,7 @@ spec:
         - env:
             - name: TZ
               value: Europe/Oslo
-          image: registry.tail84b6c.ts.net/amp:v27-ebe3ce56
+          image: registry.tail84b6c.ts.net/amp:v30-e260d1b1
           livenessProbe:
             exec:
               command:
