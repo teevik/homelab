@@ -24,9 +24,9 @@
   "prHourlyLimit": 0,
   "rebaseWhen": "behind-base-branch",
 
-  // Generated manifests are committed by this workflow bot. Ignore that
-  // author so Renovate can recreate its branch, then let the workflow rerun.
-  "gitIgnoredAuthors": ["github-actions[bot]@users.noreply.github.com"],
+  // Renovate owns its branches: any extra commits (regenerate bot, "Update
+  // branch" merges, manual edits) get rebased away or recreated.
+  "gitIgnoredAuthors": ["*"],
   "separateMinorPatch": false,
 
   // Custom managers preserve Nix syntax while updating container images and
