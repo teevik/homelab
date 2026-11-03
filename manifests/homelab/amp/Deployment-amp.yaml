@@ -22,7 +22,7 @@ spec:
         - env:
             - name: TZ
               value: Europe/Oslo
-          image: registry.tail84b6c.ts.net/amp:v27-72ed7f6b
+          image: registry.tail84b6c.ts.net/amp:v27-ebe3ce56
           livenessProbe:
             exec:
               command:
@@ -100,7 +100,7 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
-      terminationGracePeriodSeconds: 360
+      terminationGracePeriodSeconds: 660
       volumes:
         - name: data
           persistentVolumeClaim:

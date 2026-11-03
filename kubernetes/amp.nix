@@ -116,7 +116,8 @@ in
             dnsPolicy = "ClusterFirstWithHostNet";
             nodeSelector."kubernetes.io/hostname" = "homelab";
             automountServiceAccountToken = false;
-            terminationGracePeriodSeconds = 360;
+            # entrypoint.py's 600s shutdown budget plus QuickStart cleanup.
+            terminationGracePeriodSeconds = 660;
             securityContext = {
               runAsNonRoot = true;
               runAsUser = 1000;

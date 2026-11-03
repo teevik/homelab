@@ -35,6 +35,10 @@ data:
     STATE = Path('/home/amp/.homelab')
     READY = Path('/tmp/amp-ready')
     SECRETS = Path('/run/secrets/amp')
+    INSTANCES = Path('/home/amp/.ampdata/instances')
+    # Must exceed every game's AMP stop limit (Minecraft: 300s) and fit within the
+    # pod's terminationGracePeriodSeconds.
+    SHUTDOWN_SECONDS = 600
     STOPPING = threading.Event()
 
 
@@ -81,14 +85,14 @@ data:
                 raise RuntimeError('AMP did not accept its configuration')
 
 
-    def manager(*args, wait=True):
+    def manager(*args, wait=True, timeout=240):
         # QuickStart requires its bootstrap password as a CLI argument. No shell
         # interpolation and no manager output: upstream can print provisioning data.
         process = subprocess.Popen(['ampinstmgr', *args], stdin=subprocess.DEVNULL,
                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if not wait:
             return process
-        if process.wait(timeout=240):
+        if process.wait(timeout=timeout):
             raise RuntimeError(f'AMP instance manager failed: {args[0]}')
 
 
@@ -130,6 +134,31 @@ data:
     def stop(_signum=None, _frame=None):
         STOPPING.set()
         READY.unlink(missing_ok=True)
+
+
+    def instance_processes():
+        # Games run as our user from their instance directory. Other users'
+        # processes and those that have exited are unreadable and skipped.
+        running = []
+        for process in Path('/proc').glob('[0-9]*'):
+            try:
+                if os.readlink(process / 'cwd').startswith(f'{INSTANCES}/'):
+                    running.append(process.name)
+            except OSError:
+                continue
+        return running
+
+
+    def stop_instances():
+        deadline = time.monotonic() + SHUTDOWN_SECONDS
+        manager('StopAll', timeout=SHUTDOWN_SECONDS)
+        # StopAll can return while games are still saving. Exiting now would let
+        # Tini kill them mid-save, so wait until they have exited.
+        while instance_processes():
+            if time.monotonic() > deadline:
+                raise RuntimeError('Game instances were still running at the shutdown deadline')
+            time.sleep(1)
+        print('All game instances and AMP stopped.')
 
 
     def safe_error(error):
@@ -192,7 +221,7 @@ data:
         finally:
             stop()
             print('Stopping game instances and AMP gracefully.')
-            manager('StopAll')
+            stop_instances()
             if quickstart and quickstart.poll() is None:
                 quickstart.terminate()
                 quickstart.wait(timeout=30)

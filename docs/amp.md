@@ -195,6 +195,12 @@ Use AMP's update controls for the controller, instances, templates and games.
 Pod restarts do not force upgrades. Rolling back the Kubernetes image does not
 roll back AMP's persisted binaries or databases.
 
+On pod termination the supervisor runs `ampinstmgr StopAll`, then waits until no
+process is left running from an instance directory, so games finish saving
+before the container exits. The shutdown budget is 600 seconds, above
+Minecraft's 300-second stop limit; the pod's grace period is 660 seconds. Raise
+both if a game needs a longer stop limit.
+
 Sources: [AMP container support](https://discourse.cubecoders.com/t/configuring-amp-to-use-docker-podman-for-instances/1957),
 [proxy configuration](https://discourse.cubecoders.com/t/setting-up-secure-http-https-with-amp/2305),
 [Valheim ports](https://github.com/CubeCoders/AMPTemplates/blob/main/valheimports.json),
