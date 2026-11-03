@@ -1,32 +1,33 @@
 name: Cache Nix builds
-description: Reuse GitHub-cached builds after checking the public and numtide Nix caches
+description: Substitute store paths that earlier CI runs built locally, plus numtide's cache
+
+# Magic Nix Cache stored one GitHub cache entry per store path. Parallel PR runs
+# hit GitHub's cache rate limit, which disabled uploads for the whole job, so
+# nothing was ever reused. One archive per run is a single request each way.
+# Jobs that should publish their builds also run ./.github/actions/nix-cache-save.
 
 runs:
   using: composite
   steps:
-    - uses: DeterminateSystems/magic-nix-cache-action@v15
+    - uses: actions/cache/restore@v6.1.0
       with:
-        use-gha-cache: enabled
-        use-flakehub: disabled
-    - name: Prefer the public Nix cache
+        path: ~/.cache/homelab-nix
+        key: homelab-nix-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: homelab-nix-
+    - name: Substitute from earlier builds
       shell: bash
       run: |
-        python3 - <<'PY'
-        import os
-        from pathlib import Path
-
-        config = Path.home() / ".config/nix/nix.conf"
-        text = config.read_text()
-        address = os.environ["MAGIC_NIX_CACHE_ADDRESS"]
-        old = f"http://{address}?trusted=1&compression=zstd&parallel-compression=true&priority=1\n"
-        if text.count(old) != 1:
-            raise SystemExit("Expected one Magic Nix Cache substituter in nix.conf")
-        # cache.nixos.org has priority 40. Magic's default of 1 queries GitHub
-        # for public packages too; one rate-limit response stops all uploads.
-        text = text.replace(old, old.replace("&priority=1\n", "&priority=60\n"))
+        cache="$HOME/.cache/homelab-nix"
+        mkdir -p "$cache" ~/.config/nix
+        # Initialise as the runner; the root daemon would otherwise create
+        # directories that the save step cannot write to.
+        nix store info --store "file://$cache" >/dev/null
+        # Local disk answers before cache.nixos.org (priority 40). Fall back to
+        # building if an entry is unreadable instead of failing the job.
         # llm-agents doesn't follow our nixpkgs, so its builds (codex, T3 Code)
         # are only cached by numtide; from source they outlast the job timeout.
-        text += "extra-substituters = https://cache.numtide.com\n"
-        text += "extra-trusted-public-keys = niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=\n"
-        config.write_text(text)
-        PY
+        cat >> ~/.config/nix/nix.conf <<EOF
+        extra-substituters = file://$cache?trusted=1&priority=10 https://cache.numtide.com
+        fallback = true
+        extra-trusted-public-keys = niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
+        EOF

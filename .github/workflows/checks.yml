@@ -29,6 +29,10 @@ jobs:
         run: test -r /dev/kvm && test -w /dev/kvm
       - name: Build and test the flake
         run: nix flake check -L --no-update-lock-file --max-jobs 2 --cores 2
+      # The flake check builds everything the other jobs render, so only this
+      # job publishes. Successful outputs are kept even when a later check fails.
+      - uses: ./.github/actions/nix-cache-save
+        if: ${{ !cancelled() }}
 
   image-plan:
     name: Changed image sources

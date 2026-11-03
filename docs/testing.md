@@ -50,17 +50,22 @@ the runner cannot provide it. The VM uses 4 GiB RAM, two CPUs, and an 8 GiB
 disposable disk. Its initial local runtime was about three minutes, including
 an orderly reboot. Nix caches successful deterministic checks.
 
-All CI jobs use `.github/actions/nix-cache` to share Nix build and successful
-test outputs through GitHub Actions' cache. The public `cache.nixos.org` cache
-is checked first (priority 40), then Magic Nix Cache (priority 60) for outputs
-not available upstream. Magic's default priority 1 also queries GitHub for
-public packages; GitHub rate limits then disable both cache reads and uploads
-for the rest of the job. Keeping upstream requests off GitHub avoids this
-unnecessary cache traffic. All flake checks still run through Nix; identical
+All CI jobs use `.github/actions/nix-cache` to reuse Nix build and successful
+test outputs from earlier runs. The Nix checks job then runs
+`.github/actions/nix-cache-save`, which copies every path the run built
+locally into a `file://` binary cache and saves it as one GitHub Actions cache
+entry. Restored paths the run did not need are dropped, so the entry tracks
+current outputs instead of growing. Public packages are not stored; they still
+come from `cache.nixos.org`, or `cache.numtide.com` for llm-agents builds. The
+local cache has priority 10, ahead of `cache.nixos.org`'s 40.
+
+Magic Nix Cache was replaced because it makes one GitHub cache request per
+store path. Parallel Renovate PRs hit GitHub's rate limit, which disabled
+uploads for the rest of the job, so the VM test and custom packages were
+rebuilt on every run. All flake checks still run through Nix; identical
 successful outputs are reused when cached, and cache misses run the checks.
-PRs can restore the base/default branch's cache and save entries scoped to the
-PR. FlakeHub caching is explicitly disabled because these workflows use the
-GitHub cache backend.
+PRs restore the newest entry from their own branch, else from `main`, and
+save entries scoped to the PR.
 
 ## Updating expectations
 
