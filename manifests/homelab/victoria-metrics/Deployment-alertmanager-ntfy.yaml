@@ -10,6 +10,8 @@ spec:
       app: alertmanager-ntfy
   template:
     metadata:
+      annotations:
+        checksum/config: 45ae5fb6c4e574ab9594f92aaa801c6691b5309b2e1573cac5f5005f08239907
       labels:
         app: alertmanager-ntfy
     spec:

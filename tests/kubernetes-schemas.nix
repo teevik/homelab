@@ -1,16 +1,16 @@
 { pkgs }:
 let
-  baseUrl = "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/491f6d0bac338516572de67fbd5ec4c510f7e657/v1.35.7-local";
+  baseUrl = "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/f7d855e49c34b039c9ef2196444910275e31e09e/v1.36.5-local";
 in
 {
-  version = "1.35.7";
+  version = "1.36.5";
   source = pkgs.fetchFromGitHub {
     owner = "yannh";
     repo = "kubernetes-json-schema";
-    rev = "491f6d0bac338516572de67fbd5ec4c510f7e657";
-    sparseCheckout = [ "v1.35.7-standalone-strict" ];
-    rootDir = "v1.35.7-standalone-strict";
-    hash = "sha256-fUZijoJ60vnRnY13VIqHpte4KpBw+c/FqCQIVzNMK78=";
+    rev = "f7d855e49c34b039c9ef2196444910275e31e09e";
+    sparseCheckout = [ "v1.36.5-standalone-strict" ];
+    rootDir = "v1.36.5-standalone-strict";
+    hash = "sha256-WG2b2k2kuv2fRjsWDdg6uB3hjSXDjKPS4lktnU2wNmg=";
   };
   # Recursive CRD schemas cannot be emitted as standalone schemas. Keep the
   # schema and its local references together instead of skipping CRDs.
@@ -20,6 +20,6 @@ in
   };
   definitions = pkgs.fetchurl {
     url = "${baseUrl}/_definitions.json";
-    hash = "sha256-g5BZMgnAqn11nBS0+GCfL3seywENG5nPHOKWQ6FIcLs=";
+    hash = "sha256-qemM3GqwmYDyO16Yel8R0OwfyDgYfvuS80fM847Y/WU=";
   };
 }
