@@ -43,7 +43,6 @@ the service.
 ## Updates
 
 Config's `flake.lock` pins T3 Code and the bundled agents: update Config, then
-run `just deploy` here or `just deploy-homelab` in Config. The service
-has `restartIfChanged = false`, because a restart kills running agents, including
-one that is deploying this host. After `just deploy`, run
-`sudo systemctl restart t3code` when no agent is busy.
+run `just deploy` here or `just deploy-homelab` in Config. A deploy that
+changes the service restarts it, which ends every running agent session, so
+deploy when no agent is busy.
