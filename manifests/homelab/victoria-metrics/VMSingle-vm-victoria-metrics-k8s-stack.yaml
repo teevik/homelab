@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/instance: vm
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: victoria-metrics-k8s-stack
-    app.kubernetes.io/version: v1.153.0
+    app.kubernetes.io/version: v1.155.0
     helm.sh/chart: victoria-metrics-k8s-stack-0.93.0
   name: vm-victoria-metrics-k8s-stack
   namespace: victoria-metrics
@@ -14,7 +14,7 @@ spec:
   extraArgs:
     vmalert.proxyURL: http://vmalert-vm-victoria-metrics-k8s-stack.victoria-metrics.svc.cluster.local.:8080
   image:
-    tag: v1.153.0@sha256:5eff7af5341e401471002f58d106d399e614a62f3d240f2dbc21901e49eed5dd
+    tag: v1.155.0@sha256:f60dc268b54ecf87f6e09d740c2b732838aa9193090cc741417c9f6386a130df
   port: "8428"
   replicaCount: 1
   retentionPeriod: "3"
