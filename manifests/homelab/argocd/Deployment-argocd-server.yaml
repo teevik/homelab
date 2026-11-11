@@ -7,8 +7,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: argocd-server
     app.kubernetes.io/part-of: argocd
-    app.kubernetes.io/version: v3.5.3
-    helm.sh/chart: argo-cd-10.9.2
+    app.kubernetes.io/version: v3.6.1
+    helm.sh/chart: argo-cd-10.17.1
   name: argocd-server
   namespace: argocd
 spec:
@@ -21,7 +21,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/cm: 3571aba1cfa92eaaafb796cbef67db3bf99ddb5c9db8df2ed5418b8fa2c47345
+        checksum/cm: 8f1a82c5f6d133d7a5b70c956e34a8d36721c47e10f1c06fd8b0c03d1bdba756
         checksum/cmd-params: 53cfc3aa5e92c7b4386c14a2855ad5ee722740d7b21f53fc0e2d076c0889f91f
       labels:
         app.kubernetes.io/component: server
@@ -29,8 +29,7 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: argocd-server
         app.kubernetes.io/part-of: argocd
-        app.kubernetes.io/version: v3.5.3
-        helm.sh/chart: argo-cd-10.9.2
+        app.kubernetes.io/version: v3.6.1
     spec:
       affinity:
         podAntiAffinity:
@@ -105,6 +104,12 @@ spec:
                   key: server.disable.auth
                   name: argocd-cmd-params-cm
                   optional: true
+            - name: ARGOCD_SERVER_DISABLE_SWAGGER_UI
+              valueFrom:
+                configMapKeyRef:
+                  key: server.disable.swagger.ui
+                  name: argocd-cmd-params-cm
+                  optional: true
             - name: ARGOCD_SERVER_ENABLE_GZIP
               valueFrom:
                 configMapKeyRef:
@@ -171,6 +176,12 @@ spec:
                   key: server.tls.ciphers
                   name: argocd-cmd-params-cm
                   optional: true
+            - name: ARGOCD_TLS_CURVE_PREFERENCES
+              valueFrom:
+                configMapKeyRef:
+                  key: server.tls.curvepreferences
+                  name: argocd-cmd-params-cm
+                  optional: true
             - name: ARGOCD_SERVER_CONNECTION_STATUS_CACHE_EXPIRATION
               valueFrom:
                 configMapKeyRef:
@@ -201,6 +212,18 @@ spec:
                   key: redis.server
                   name: argocd-cmd-params-cm
                   optional: true
+            - name: REDIS_SENTINEL_HOSTS
+              valueFrom:
+                configMapKeyRef:
+                  key: redis.sentinel.hosts
+                  name: argocd-cmd-params-cm
+                  optional: true
+            - name: REDIS_SENTINEL_MASTER
+              valueFrom:
+                configMapKeyRef:
+                  key: redis.sentinel.master
+                  name: argocd-cmd-params-cm
+                  optional: true
             - name: REDIS_COMPRESSION
               valueFrom:
                 configMapKeyRef:
@@ -211,6 +234,12 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   key: redis.db
+                  name: argocd-cmd-params-cm
+                  optional: true
+            - name: ARGOCD_REDIS_KEY_PREFIX
+              valueFrom:
+                configMapKeyRef:
+                  key: redis.key.prefix
                   name: argocd-cmd-params-cm
                   optional: true
             - name: REDIS_USERNAME
@@ -283,6 +312,12 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   key: otlp.attrs
+                  name: argocd-cmd-params-cm
+                  optional: true
+            - name: ARGOCD_SERVER_OTLP_SAMPLE_RATIO
+              valueFrom:
+                configMapKeyRef:
+                  key: otlp.sample.ratio
                   name: argocd-cmd-params-cm
                   optional: true
             - name: ARGOCD_APPLICATION_NAMESPACES
@@ -363,7 +398,7 @@ spec:
                   key: server.sync.replace.allowed
                   name: argocd-cmd-params-cm
                   optional: true
-          image: quay.io/argoproj/argocd:v3.5.3
+          image: quay.io/argoproj/argocd:v3.6.1
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -421,6 +456,9 @@ spec:
       dnsPolicy: ClusterFirst
       nodeSelector:
         kubernetes.io/os: linux
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: argocd-server
       terminationGracePeriodSeconds: 30
       volumes:
