@@ -184,7 +184,7 @@ in
           spec = {
             containers.gotenberg = {
               # renovate: datasource=docker depName=gotenberg/gotenberg
-              image = "gotenberg/gotenberg:8.37@sha256:f29984bd1e226bf1b93ba90af06000afa8b315853e99d27b9aaa41b93f15c769";
+              image = "gotenberg/gotenberg:9.2@sha256:e1840b4c1ee113078cc153b8359433c9511ab544c1a15cd45b09f81c9329118a";
               command = [
                 "gotenberg"
                 "--chromium-disable-javascript=true"
