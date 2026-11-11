@@ -53,7 +53,7 @@ spec:
               value: immich-valkey
             - name: TRANSFORMERS_CACHE
               value: /cache
-          image: ghcr.io/immich-app/immich-machine-learning:v3.1.0-rocm@sha256:dd0984a9d61172d45ab4cc3508e3e9861d5262b50ede18200bb5fa56b3addb49
+          image: ghcr.io/immich-app/immich-machine-learning:v3.3.6-rocm@sha256:03b4105bdd486a08c762a5da7cb9432cf0b0cd5d5309c9180a8d88f723218be9
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 60

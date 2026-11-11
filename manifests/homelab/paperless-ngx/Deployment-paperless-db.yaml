@@ -26,7 +26,7 @@ spec:
                   name: paperless-secrets
             - name: POSTGRES_USER
               value: paperless
-          image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+          image: postgres:17-alpine@sha256:3540c0362c809df084ffac0ae69fe794515f9de92692f02178bcdce0ef0302ac
           name: postgres
           ports:
             - containerPort: 5432
