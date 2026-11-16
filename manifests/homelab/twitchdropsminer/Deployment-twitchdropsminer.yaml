@@ -21,7 +21,7 @@ spec:
               value: "1"
             - name: TZ
               value: Europe/Oslo
-          image: docker.io/dungfu/twitch-drops-miner:latest@sha256:853eeb90c13dfbc555d5d47913039d53a23c63228618ca1dc46d94e38c5d8ae7
+          image: docker.io/dungfu/twitch-drops-miner:latest@sha256:a4c1f98e3678d1ae07817d042ba884f8d3ac240ca70964db9c0576953f0742f0
           name: twitchdropsminer
           ports:
             - containerPort: 5800

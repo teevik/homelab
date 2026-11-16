@@ -11,7 +11,7 @@
         # Pin Immich image tag to stay current when chart lags app releases
         # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
         controllers.main.containers.main.image.tag =
-          "v3.2.4@sha256:d317916b28090c33eb36b308464ea391f8b7df1d850fcfea227a39ec879718c2";
+          "v3.4.1@sha256:7c489add298fc2f92cda4c777de6462aa206877e04087b815f62c7664af0b53b";
 
         # Database connection (shared across components); the password comes
         # from the sops-provisioned immich-secrets (modules/nixos/kubernetes.nix)
@@ -30,7 +30,7 @@
           enabled = true;
           # renovate: datasource=docker depName=docker.io/valkey/valkey
           controllers.main.containers.main.image.tag =
-            "9.1.2-alpine@sha256:48332870af354a799964c0012ae1194a0bf2bf894eb508f945810596dc2d8d11";
+            "9.1.3-alpine@sha256:bf09d58e96d6b4524a15396b65b242bbe18beebbcc15a04d8ee75ddac62fae0b";
           persistence.data = {
             enabled = true;
             type = "persistentVolumeClaim";
@@ -47,7 +47,7 @@
           controllers.main = {
             containers.main = {
               # renovate: datasource=docker depName=ghcr.io/immich-app/immich-machine-learning
-              image.tag = "v3.1.0-rocm@sha256:dd0984a9d61172d45ab4cc3508e3e9861d5262b50ede18200bb5fa56b3addb49";
+              image.tag = "v3.4.1-rocm@sha256:3a54d7a2e7c00b7888388e1cb9bb943a68e5576add7640c17283e059454eda13";
               env.HSA_OVERRIDE_GFX_VERSION = "10.3.0";
               # MIGraphX model compilation blocks /ping for several minutes on gfx1032.
               probes.liveness.spec.failureThreshold = 60;
