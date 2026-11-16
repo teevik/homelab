@@ -84,7 +84,7 @@ in
       restartPolicy = "Never";
       automountServiceAccountToken = false;
       containers.buildkit = {
-        image = "docker.io/moby/buildkit:v0.33.1-rootless@sha256:f8a833b2de9d68e27f0815e4a737abdfaf8a2e4c615650557df11025101557b4";
+        image = "docker.io/moby/buildkit:v0.35.0-rootless@sha256:5987568f92dafbfb679879de59c1cd8d26597f5f6635c314e166164e2615870c";
         command = [
           "sh"
           "-c"

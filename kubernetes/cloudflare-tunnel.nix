@@ -17,7 +17,7 @@
           metadata.labels.app = "cloudflared";
           spec = {
             containers.cloudflared = {
-              image = "cloudflare/cloudflared:2026.9.3@sha256:072c067d25ccbe61d46e18f0d0723255f2bb5304f7317caa95b27031520ff92c";
+              image = "cloudflare/cloudflared:2026.11.0@sha256:b94b96edf2c9c4360f8879c8580cfaa99077f19c849ec595ca2f711b27d4f344";
               args = [
                 "tunnel"
                 "--no-autoupdate"
