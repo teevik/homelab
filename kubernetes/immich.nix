@@ -11,7 +11,7 @@
         # Pin Immich image tag to stay current when chart lags app releases
         # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
         controllers.main.containers.main.image.tag =
-          "v3.2.4@sha256:d317916b28090c33eb36b308464ea391f8b7df1d850fcfea227a39ec879718c2";
+          "v3.4.2@sha256:fc880c1bf665b4aab1e74c15e56ab871225989cd546536e6b77e771869af06bd";
 
         # Database connection (shared across components); the password comes
         # from the sops-provisioned immich-secrets (modules/nixos/kubernetes.nix)
@@ -30,7 +30,7 @@
           enabled = true;
           # renovate: datasource=docker depName=docker.io/valkey/valkey
           controllers.main.containers.main.image.tag =
-            "9.1.2-alpine@sha256:48332870af354a799964c0012ae1194a0bf2bf894eb508f945810596dc2d8d11";
+            "9.2.0-alpine@sha256:c8e2d17498838af5d91e12eb7c11220b3434a7b7131a333e3af52ad5e0b80882";
           persistence.data = {
             enabled = true;
             type = "persistentVolumeClaim";
@@ -47,7 +47,7 @@
           controllers.main = {
             containers.main = {
               # renovate: datasource=docker depName=ghcr.io/immich-app/immich-machine-learning
-              image.tag = "v3.1.0-rocm@sha256:dd0984a9d61172d45ab4cc3508e3e9861d5262b50ede18200bb5fa56b3addb49";
+              image.tag = "v3.4.2-rocm@sha256:d6910817cb774b1211b2475eb5844af783386eaed00106dea1f0fee9d6184042";
               env.HSA_OVERRIDE_GFX_VERSION = "10.3.0";
               # MIGraphX model compilation blocks /ping for several minutes on gfx1032.
               probes.liveness.spec.failureThreshold = 60;
@@ -205,7 +205,7 @@
             automountServiceAccountToken = false;
             containers.proxy = {
               # renovate: datasource=docker depName=ghcr.io/alangrainger/immich-public-proxy
-              image = "ghcr.io/alangrainger/immich-public-proxy:4.1.2@sha256:d6480d1e6beb3da661cb895e1b368340df48904ecbfe53ece2d5da343e78b857";
+              image = "ghcr.io/alangrainger/immich-public-proxy:4.2.0@sha256:ebf84972652c4cf5a7ef7d2359db35ddca46a5cf17714975abf5a8674b05935d";
               ports.http.containerPort = 3000;
               env.IMMICH_URL.value = "http://immich-server:2283";
               securityContext = {
