@@ -197,6 +197,8 @@
     githubTokenSecret = "t3code_github_token";
   };
 
+  environment.systemPackages = [ pkgs.git-lfs-transfer ];
+
   # Enable GPU driver/firmware support (needed for ROCm in containers)
   hardware.graphics.enable = true;
 
