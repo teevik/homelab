@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/name: prometheus-node-exporter
     app.kubernetes.io/part-of: prometheus-node-exporter
     app.kubernetes.io/version: 1.12.1
-    helm.sh/chart: prometheus-node-exporter-4.59.0
+    helm.sh/chart: prometheus-node-exporter-5.1.0
   name: vm-prometheus-node-exporter
   namespace: victoria-metrics
 spec:
@@ -68,7 +68,7 @@ spec:
             initialDelaySeconds: 0
             periodSeconds: 10
             successThreshold: 1
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           name: node-exporter
           ports:
             - containerPort: 9100
@@ -83,9 +83,15 @@ spec:
             initialDelaySeconds: 0
             periodSeconds: 10
             successThreshold: 1
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
             readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
           volumeMounts:
             - mountPath: /host/proc
               name: proc
